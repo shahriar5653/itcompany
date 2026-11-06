@@ -9,17 +9,24 @@
     <meta name="description" content="We turn ideas into reliable digital products—from discovery and UI/UX design to full-stack development, deployment, and ongoing support for European and international businesses." />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#f8f9fa" />
+    <link rel="canonical" href="https://tecklumo.com/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
 
     <!-- OpenGraph Social Cards -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Tecklumo – Software Development &amp; Technology Solutions" />
     <meta property="og:description" content="Turn ideas into reliable digital products. Custom software development, web &amp; mobile apps, SaaS platforms, and AI automation." />
     <meta property="og:site_name" content="Tecklumo" />
+    <meta property="og:url" content="https://tecklumo.com/" />
+    <meta property="og:image" content="https://tecklumo.com/assets/aistudio/Screenshot_2026-11-06_at_1.50.42_AM_998767d7.png" />
+    <meta property="og:image:alt" content="Tecklumo product engineering dashboard preview" />
 
     <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Tecklumo – Software Development &amp; Technology Solutions" />
     <meta name="twitter:description" content="Turn ideas into reliable digital products. Custom software development, web &amp; mobile apps, SaaS platforms, and AI automation." />
+    <meta name="twitter:image" content="https://tecklumo.com/assets/aistudio/Screenshot_2026-11-06_at_1.50.42_AM_998767d7.png" />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -76,7 +83,15 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <a href="#contact" class="btn btn-primary btn-sm">Discuss Your Project</a>
+          <label class="language-switcher" aria-label="Select language">
+            <span aria-hidden="true">文</span>
+            <select id="languageSelect" autocomplete="language">
+              <option value="en">EN</option>
+              <option value="de">DE</option>
+            </select>
+          </label>
+          <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch to dark mode" title="Switch theme"><span class="theme-icon" aria-hidden="true">☾</span></button>
+          <a href="#contact" class="btn btn-primary btn-sm">Start Your Project</a>
           <!-- Mobile Menu Trigger -->
           <button type="button" class="mobile-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNavDrawer">
             <svg class="hamburger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -116,6 +131,13 @@
         <a href="#faq" class="mobile-nav-link">FAQ</a>
       </div>
       <a href="#contact" class="btn btn-primary mobile-drawer-cta">Discuss Your Project</a>
+      <label class="language-switcher mobile-language-switcher" aria-label="Select language">
+        <span aria-hidden="true">文</span>
+        <select id="mobileLanguageSelect" autocomplete="language">
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </label>
     </div>
 
     <!-- Main Content Area -->
@@ -135,14 +157,14 @@
                 <span class="announcement-text">Senior Product Engineering</span>
               </div>
               <h1 class="hero-headline">
-                Your next big idea. <span class="text-gradient">Built into a real product.</span>
+                Build digital products <span class="text-gradient">that move your business forward.</span>
               </h1>
               <p class="hero-subhead">
-                We turn complex business challenges into reliable digital products—from discovery and UI/UX design to robust full-stack development, cloud infrastructure, and ongoing maintenance.
+                From first idea to production-ready software, we help ambitious businesses launch faster with reliable design, development, and ongoing support.
               </p>
               <div class="hero-cta-group">
                 <a href="#contact" class="btn btn-primary hero-btn-primary">
-                  <span>Discuss Your Project</span>
+                  <span>Start Your Project</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
@@ -167,6 +189,18 @@
                 <span class="capability-tag">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                   AI Solutions
+                </span>
+                <span class="capability-tag">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
+                  ERP &amp; Business Systems
+                </span>
+                <span class="capability-tag">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9h8M8 15h8"/><path d="M5 6h14v12H5z"/><path d="m9 6-2-3M15 6l2-3"/></svg>
+                  APIs &amp; Integrations
+                </span>
+                <span class="capability-tag">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
+                  Cloud &amp; DevOps
                 </span>
               </div>
             </div>
@@ -386,14 +420,27 @@
         </div>
       </section>
 
+      <!-- Quick credibility strip -->
+      <section class="trust-strip" aria-label="Tecklumo delivery principles">
+        <div class="container trust-strip-inner">
+          <span class="trust-label">Built for serious delivery</span>
+          <div class="trust-items">
+            <span><strong>01</strong> Senior engineering</span>
+            <span><strong>02</strong> Weekly demos</span>
+            <span><strong>03</strong> Full code ownership</span>
+            <span><strong>04</strong> European time-zone overlap</span>
+          </div>
+        </div>
+      </section>
+
       <!-- 2. Services Section (Varied Editorial Bento Layout) -->
       <section class="section section-alt" id="services">
         <div class="container">
           <div class="section-header reveal">
             <span class="section-kicker">What We Build</span>
-            <h2 class="section-title">End-to-end technology solutions tailored to your business model.</h2>
+            <h2 class="section-title">Software built around your business<span class="text-gradient">—not the other way around.</span></h2>
             <p class="section-description">
-              We operate as a committed engineering extension of your team, delivering robust codebases, clean user experiences, and measurable operational reliability.
+              From ERP systems and SaaS platforms to AI workflows and mobile apps, we design and build technology that makes your business faster, smarter, and easier to scale.
             </p>
           </div>
 
@@ -589,9 +636,9 @@
         <div class="container">
           <div class="section-header centered reveal">
             <span class="section-kicker">Portfolio &amp; Prototypes</span>
-            <h2 class="section-title">Engineered concepts built for real-world business challenges.</h2>
+            <h2 class="section-title">Real products start with <span class="text-gradient">real problems.</span></h2>
             <p class="section-description">
-              Explore our concept architecture projects spanning logistics, healthcare, energy, fintech, wholesale commerce, and agriculture. Each project highlights our approach to UI/UX, system design, and technical execution.
+              Explore selected product concepts across logistics, healthcare, energy, fintech, and commerce—each shaped around a real operational challenge.
             </p>
           </div>
 
@@ -602,12 +649,15 @@
             <button type="button" class="filter-btn" data-filter="mobile" aria-pressed="false">Mobile Apps</button>
             <button type="button" class="filter-btn" data-filter="saas" aria-pressed="false">SaaS Platforms</button>
             <button type="button" class="filter-btn" data-filter="ai" aria-pressed="false">AI &amp; Automation</button>
+            <button type="button" class="filter-btn" data-filter="erp" aria-pressed="false">ERP &amp; Business</button>
+            <button type="button" class="filter-btn" data-filter="integration" aria-pressed="false">APIs &amp; Integrations</button>
+            <button type="button" class="filter-btn" data-filter="cloud" aria-pressed="false">Cloud &amp; DevOps</button>
           </div>
 
           <!-- Projects Grid -->
           <div class="portfolio-grid">
             <!-- Project 1: NordicLogix (SaaS / Web) -->
-            <article class="project-card" data-category="saas web">
+            <article class="project-card" data-category="saas web erp cloud">
               <div class="project-mockup-frame">
                 <!-- SVG UI Mockup: Logistics Map & Route Telemetry -->
                 <svg width="100%" height="100%" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="NordicLogix interface mockup">
@@ -657,7 +707,7 @@
             </article>
 
             <!-- Project 2: KlinikFlow (Web / SaaS) -->
-            <article class="project-card" data-category="saas web">
+            <article class="project-card" data-category="saas web erp integration">
               <div class="project-mockup-frame">
                 <!-- SVG UI Mockup: Clinical Appointment Triage -->
                 <svg width="100%" height="100%" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="KlinikFlow interface mockup">
@@ -710,7 +760,7 @@
             </article>
 
             <!-- Project 3: VoltGrid IQ (AI / Web) -->
-            <article class="project-card" data-category="ai web">
+            <article class="project-card" data-category="ai web cloud integration">
               <div class="project-mockup-frame">
                 <!-- SVG UI Mockup: Energy Dispatch Bar Graph & Prediction Line -->
                 <svg width="100%" height="100%" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="VoltGrid IQ interface mockup">
@@ -764,7 +814,7 @@
             </article>
 
             <!-- Project 4: AuraPay (Mobile / Web) -->
-            <article class="project-card" data-category="mobile web">
+            <article class="project-card" data-category="mobile web integration">
               <div class="project-mockup-frame">
                 <!-- SVG UI Mockup: Mobile Wallet Device Frame -->
                 <svg width="100%" height="100%" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="AuraPay interface mockup">
@@ -815,7 +865,7 @@
             </article>
 
             <!-- Project 5: CraftBourse (Web / E-Commerce) -->
-            <article class="project-card" data-category="web saas">
+            <article class="project-card" data-category="web saas erp integration">
               <div class="project-mockup-frame">
                 <!-- SVG UI Mockup: B2B Wholesale Marketplace -->
                 <svg width="100%" height="100%" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="CraftBourse interface mockup">
@@ -871,7 +921,7 @@
             </article>
 
             <!-- Project 6: Sensora Field (Mobile / AI) -->
-            <article class="project-card" data-category="mobile ai">
+            <article class="project-card" data-category="mobile ai cloud integration">
               <div class="project-mockup-frame">
                 <!-- SVG UI Mockup: Agronomy Sensor & Soil Map -->
                 <svg width="100%" height="100%" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Sensora Field interface mockup">
@@ -927,9 +977,9 @@
         <div class="container">
           <div class="section-header centered reveal">
             <span class="section-kicker">How We Deliver</span>
-            <h2 class="section-title">A disciplined five-stage path from discovery to continuous operation.</h2>
+            <h2 class="section-title">From first conversation to <span class="text-gradient">confident launch.</span></h2>
             <p class="section-description">
-              We eliminate guesswork with structured milestone handoffs, transparent weekly sprint reviews, and direct access to your dedicated development team.
+              A clear five-stage process turns your idea into a reliable product—with visible progress, focused collaboration, and no unnecessary surprises.
             </p>
           </div>
 
@@ -1048,9 +1098,9 @@
         <div class="container">
           <div class="section-header reveal">
             <span class="section-kicker">Why Tecklumo</span>
-            <h2 class="section-title">Built on transparent communication and engineering discipline.</h2>
+            <h2 class="section-title">A better way to build software <span class="text-gradient">together.</span></h2>
             <p class="section-description">
-              We focus on the fundamentals that make software partnerships successful over the long haul: clear expectations, readable code, and honest communication.
+              The best products come from strong partnerships—clear communication, thoughtful engineering, and a team that stays accountable from day one.
             </p>
           </div>
 
@@ -1142,9 +1192,9 @@
         <div class="container">
           <div class="section-header reveal">
             <span class="section-kicker">Technical Capabilities</span>
-            <h2 class="section-title">Battle-tested tools and frameworks we build with every day.</h2>
+            <h2 class="section-title">The right technology for <span class="text-gradient">lasting products.</span></h2>
             <p class="section-description">
-              We select established, stable technologies with strong ecosystems so your applications remain maintainable for years to come.
+              We choose proven tools with strong ecosystems—so your product stays fast, maintainable, and ready for what comes next.
             </p>
           </div>
 
@@ -1160,6 +1210,10 @@
                 <span class="tech-badge">HTML5</span>
                 <span class="tech-badge">CSS3</span>
                 <span class="tech-badge">Tailwind CSS</span>
+                <span class="tech-badge">Vue.js</span>
+                <span class="tech-badge">Angular</span>
+                <span class="tech-badge">Svelte</span>
+                <span class="tech-badge">Storybook</span>
               </div>
             </div>
 
@@ -1173,6 +1227,10 @@
                 <span class="tech-badge">Dart</span>
                 <span class="tech-badge">SQLite</span>
                 <span class="tech-badge">Push Notifications</span>
+                <span class="tech-badge">Swift / iOS</span>
+                <span class="tech-badge">Kotlin / Android</span>
+                <span class="tech-badge">Expo</span>
+                <span class="tech-badge">Firebase</span>
               </div>
             </div>
 
@@ -1187,6 +1245,12 @@
                 <span class="tech-badge">PHP</span>
                 <span class="tech-badge">Python</span>
                 <span class="tech-badge">REST &amp; GraphQL</span>
+                <span class="tech-badge">Go</span>
+                <span class="tech-badge">Java / Spring</span>
+                <span class="tech-badge">.NET / C#</span>
+                <span class="tech-badge">NestJS</span>
+                <span class="tech-badge">FastAPI</span>
+                <span class="tech-badge">WebSockets</span>
               </div>
             </div>
 
@@ -1199,6 +1263,11 @@
                 <span class="tech-badge">MySQL</span>
                 <span class="tech-badge">Redis</span>
                 <span class="tech-badge">Database Migrations</span>
+                <span class="tech-badge">MongoDB</span>
+                <span class="tech-badge">MariaDB</span>
+                <span class="tech-badge">DynamoDB</span>
+                <span class="tech-badge">Elasticsearch</span>
+                <span class="tech-badge">Supabase</span>
               </div>
             </div>
 
@@ -1212,6 +1281,11 @@
                 <span class="tech-badge">CI/CD Pipelines</span>
                 <span class="tech-badge">Linux Server Admin</span>
                 <span class="tech-badge">Cloud Run / AWS</span>
+                <span class="tech-badge">Kubernetes</span>
+                <span class="tech-badge">Terraform</span>
+                <span class="tech-badge">GitHub Actions</span>
+                <span class="tech-badge">Azure / GCP</span>
+                <span class="tech-badge">Monitoring &amp; Observability</span>
               </div>
             </div>
 
@@ -1224,6 +1298,12 @@
                 <span class="tech-badge">Document Parsing</span>
                 <span class="tech-badge">Embedding Search</span>
                 <span class="tech-badge">Automated Webhooks</span>
+                <span class="tech-badge">OpenAI / Gemini</span>
+                <span class="tech-badge">LangChain</span>
+                <span class="tech-badge">RAG Pipelines</span>
+                <span class="tech-badge">OCR &amp; Vision</span>
+                <span class="tech-badge">Vector Databases</span>
+                <span class="tech-badge">Make / Zapier</span>
               </div>
             </div>
           </div>
@@ -1237,7 +1317,7 @@
             <div class="about-grid">
               <div class="about-text">
                 <span class="section-kicker">About Tecklumo</span>
-                <h3>A dedicated engineering team connecting Bangladesh with European business standards.</h3>
+                <h3>A dedicated team for <span class="text-gradient">ambitious digital products.</span></h3>
                 <p>
                   Tecklumo is an independent software development team headquartered in Dhaka, Bangladesh. We build high-quality digital products for international businesses, with a particular focus on clients in Germany and broader European markets.
                 </p>
@@ -1299,9 +1379,9 @@
         <div class="container">
           <div class="section-header centered reveal">
             <span class="section-kicker">Frequently Asked Questions</span>
-            <h2 class="section-title">Clear answers about how we collaborate and deliver.</h2>
+            <h2 class="section-title">Clear answers for a <span class="text-gradient">confident start.</span></h2>
             <p class="section-description">
-              Have questions about process, code ownership, or timeline estimation? Here is how we typically approach common client inquiries.
+              Everything you need to know about our process, communication, ownership, and delivery timelines.
             </p>
           </div>
 
@@ -1407,9 +1487,9 @@
             <div class="contact-info reveal">
               <div>
                 <span class="section-kicker">Start a Conversation</span>
-                <h2 class="section-title">Tell us about what you want to build.</h2>
+                <h2 class="section-title">Let’s build something <span class="text-gradient">valuable.</span></h2>
                 <p class="section-description">
-                  Whether you have a finalized technical specification or a rough idea on a napkin, we are happy to review your requirements, discuss architectural feasibility, and propose next steps.
+                  Bring us a clear brief or just a rough idea. We’ll help shape the right product, technology, and next step for your business.
                 </p>
               </div>
 
@@ -1487,7 +1567,7 @@
                   </div>
                 </div>
 
-                <div class="form-grid two-col" style="margin-top: 0.5rem;">
+                <div class="form-grid two-col" style="margin-top: 0.25rem;">
                   <!-- Company Name (Optional) -->
                   <div class="form-group">
                     <label for="inquiryCompany" class="form-label">Company Name (Optional)</label>
@@ -1512,20 +1592,28 @@
                   </div>
                 </div>
 
-                <!-- Budget Range (Optional, in EUR) -->
-                <div class="form-group" style="margin-top: 0.5rem;">
-                  <label for="inquiryBudget" class="form-label">Estimated Budget Range (EUR)</label>
-                  <select id="inquiryBudget" name="budget" class="form-select">
-                    <option value="Not sure yet">Not sure yet / Needs discovery</option>
-                    <option value="< €10,000">&lt; €10,000</option>
-                    <option value="€10,000 – €25,000">€10,000 – €25,000</option>
-                    <option value="€25,000 – €50,000">€25,000 – €50,000</option>
-                    <option value="€50,000+">€50,000+</option>
-                  </select>
+                <!-- Budget Range (Optional, EUR / USD / Custom) -->
+                <div class="form-group" style="margin-top: 0.25rem;">
+                  <label for="inquiryBudget" class="form-label">Estimated Budget Range</label>
+                  <div class="budget-input-row">
+                    <select id="inquiryCurrency" name="currency" class="form-select budget-currency" aria-label="Budget currency">
+                      <option value="EUR">EUR €</option>
+                      <option value="USD">USD $</option>
+                    </select>
+                    <select id="inquiryBudget" name="budget" class="form-select">
+                      <option value="Not sure yet">Not sure yet / Needs discovery</option>
+                      <option value="under-10000">&lt; 10,000</option>
+                      <option value="10000-25000">10,000 – 25,000</option>
+                      <option value="25000-50000">25,000 – 50,000</option>
+                      <option value="50000-plus">50,000+</option>
+                      <option value="custom">Custom amount</option>
+                    </select>
+                  </div>
+                  <input type="number" id="inquiryCustomBudget" name="customBudget" class="form-input custom-budget-input" placeholder="Enter your budget amount" min="0" step="100" hidden />
                 </div>
 
                 <!-- Project Description (Required) -->
-                <div class="form-group" style="margin-top: 1rem;">
+                <div class="form-group" style="margin-top: 0.75rem;">
                   <label for="inquiryDesc" class="form-label">
                     Project Requirements <span class="required-mark" aria-hidden="true">*</span>
                   </label>
@@ -1534,7 +1622,7 @@
                 </div>
 
                 <!-- Privacy Acknowledgment Checkbox (Required, unchecked by default) -->
-                <div class="form-group" style="margin-top: 0.75rem;">
+                <div class="form-group" style="margin-top: 0.5rem;">
                   <label class="form-checkbox-label">
                     <input type="checkbox" id="inquiryPrivacy" name="privacyAccepted" class="form-checkbox" required aria-describedby="privacyError" />
                     <span>
@@ -1546,7 +1634,7 @@
                 </div>
 
                 <!-- Submit Button -->
-                <div style="margin-top: 1.5rem;">
+                <div style="margin-top: 1rem;">
                   <button type="submit" id="inquirySubmitBtn" class="btn btn-primary btn-lg" style="width: 100%;">
                     Submit Project Inquiry
                   </button>

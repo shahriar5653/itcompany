@@ -13,6 +13,43 @@ const CONFIG = {
   companyEmail: 'inquiry@tecklumo.com'
 };
 
+const LANGUAGE_COPY = {
+  de: {
+    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'FAQ': 'FAQ',
+    'Discuss Your Project': 'Projekt besprechen', 'Start Your Project': 'Projekt starten', 'Explore Our Work': 'Unsere Projekte ansehen',
+    'Europe & DACH': 'Europa & DACH', 'Senior Product Engineering': 'Senior Product Engineering',
+    'Build digital products': 'Digitale Produkte entwickeln', 'that move your business forward.': 'die Ihr Unternehmen voranbringen.',
+    'From first idea to production-ready software, we help ambitious businesses launch faster with reliable design, development, and ongoing support.': 'Von der ersten Idee bis zur produktionsreifen Software unterstützen wir ambitionierte Unternehmen mit zuverlässigem Design, Entwicklung und laufender Betreuung.',
+    'Web Platforms': 'Webplattformen', 'Mobile Apps': 'Mobile Apps', 'SaaS Systems': 'SaaS-Systeme', 'AI Solutions': 'KI-Lösungen', 'ERP & Business Systems': 'ERP & Geschäftssysteme', 'APIs & Integrations': 'APIs & Integrationen', 'Cloud & DevOps': 'Cloud & DevOps', 'ERP & Business': 'ERP & Geschäftssysteme',
+    'Built for serious delivery': 'Für zuverlässige Umsetzung', 'Senior engineering': 'Senior Engineering', 'Weekly demos': 'Wöchentliche Demos', 'Full code ownership': 'Volle Code-Rechte', 'European time-zone overlap': 'Europäische Zeitzonen-Überschneidung',
+    'What We Build': 'Unsere Leistungen', 'Software built around your business': 'Software, die sich an Ihrem Unternehmen orientiert', '—not the other way around.': '– nicht umgekehrt.',
+    'From ERP systems and SaaS platforms to AI workflows and mobile apps, we design and build technology that makes your business faster, smarter, and easier to scale.': 'Von ERP-Systemen und SaaS-Plattformen bis hin zu KI-Workflows und mobilen Apps entwickeln wir Technologie, die Ihr Unternehmen schneller, intelligenter und skalierbarer macht.',
+    'Portfolio & Prototypes': 'Portfolio & Prototypen', 'Real products start with': 'Echte Produkte beginnen mit', 'real problems.': 'echten Problemen.', 'Explore selected product concepts across logistics, healthcare, energy, fintech, and commerce—each shaped around a real operational challenge.': 'Entdecken Sie ausgewählte Produktkonzepte für Logistik, Gesundheitswesen, Energie, Fintech und Handel – jeweils entwickelt für eine konkrete operative Herausforderung.',
+    'How We Deliver': 'Unsere Vorgehensweise', 'From first conversation to': 'Vom ersten Gespräch bis zum', 'confident launch.': 'sicheren Launch.', 'A clear five-stage process turns your idea into a reliable product—with visible progress, focused collaboration, and no unnecessary surprises.': 'Ein klarer Prozess in fünf Phasen verwandelt Ihre Idee in ein zuverlässiges Produkt – mit sichtbarem Fortschritt, fokussierter Zusammenarbeit und ohne unnötige Überraschungen.',
+    'Why Tecklumo': 'Warum Tecklumo', 'A better way to build software': 'Software gemeinsam besser entwickeln', 'together.': '– gemeinsam.', 'The best products come from strong partnerships—clear communication, thoughtful engineering, and a team that stays accountable from day one.': 'Die besten Produkte entstehen durch starke Partnerschaften – klare Kommunikation, durchdachte Technik und ein Team, das vom ersten Tag an Verantwortung übernimmt.',
+    'Technical Capabilities': 'Technische Kompetenzen', 'The right technology for': 'Die richtige Technologie für', 'lasting products.': 'nachhaltige Produkte.', 'We choose proven tools with strong ecosystems—so your product stays fast, maintainable, and ready for what comes next.': 'Wir wählen bewährte Technologien mit starken Ökosystemen, damit Ihr Produkt schnell, wartbar und zukunftssicher bleibt.',
+    'About Tecklumo': 'Über Tecklumo', 'A dedicated team for': 'Ein engagiertes Team für', 'ambitious digital products.': 'ambitionierte digitale Produkte.', 'Frequently Asked Questions': 'Häufige Fragen', 'Clear answers for a': 'Klare Antworten für einen', 'confident start.': 'sicheren Start.', 'Everything you need to know about our process, communication, ownership, and delivery timelines.': 'Alles über unseren Prozess, Kommunikation, Eigentum und Lieferzeiten.',
+    'Start a Conversation': 'Gespräch starten', 'Let’s build something': 'Lassen Sie uns etwas', 'valuable.': 'Wertvolles entwickeln.', 'Bring us a clear brief or just a rough idea. We’ll help shape the right product, technology, and next step for your business.': 'Bringen Sie uns ein klares Briefing oder nur eine grobe Idee. Wir helfen Ihnen beim passenden Produkt, der Technologie und dem nächsten Schritt.',
+    'Direct Email': 'Direkte E-Mail', 'Response Time': 'Antwortzeit', 'Mutual Non-Disclosure': 'Gegenseitige Vertraulichkeit',
+    'Submit Project Inquiry': 'Projektanfrage senden', 'Full Name': 'Vollständiger Name', 'Company Name (Optional)': 'Unternehmen (optional)', 'Service Interest': 'Gewünschte Leistung', 'Project Requirements': 'Projektanforderungen'
+  }
+};
+const ORIGINAL_TEXT = new WeakMap();
+
+function applyLanguage(language) {
+  const translations = LANGUAGE_COPY[language] || {};
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((node) => {
+    if (!ORIGINAL_TEXT.has(node)) ORIGINAL_TEXT.set(node, node.nodeValue);
+    const source = ORIGINAL_TEXT.get(node);
+    const original = source.trim();
+    if (!original) return;
+    node.nodeValue = translations[original] ? source.replace(original, translations[original]) : source;
+  });
+}
+
 // Case Study Projects Database (Concept Projects)
 const CASE_STUDIES = {
   nordiclogix: {
@@ -176,6 +213,8 @@ const LEGAL_CONTENT = {
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeSwitcher();
+  initLanguageSwitcher();
   initMobileNav();
   initHeroConsoleTabs();
   initLiveWorldClocks();
@@ -190,6 +229,43 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollReveals();
   updateFooterYear();
 });
+
+function initThemeSwitcher() {
+  const button = document.querySelector('#themeToggle');
+  if (!button) return;
+  const saved = localStorage.getItem('tecklumo-theme');
+  const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(theme, button);
+  button.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('tecklumo-theme', next); setTheme(next, button);
+  });
+}
+
+function setTheme(theme, button) {
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark';
+  button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  button.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
+}
+
+function initLanguageSwitcher() {
+  const selectors = [document.querySelector('#languageSelect'), document.querySelector('#mobileLanguageSelect')].filter(Boolean);
+  const savedLanguage = localStorage.getItem('tecklumo-language') || 'en';
+  selectors.forEach((select) => {
+    select.value = savedLanguage;
+    select.addEventListener('change', (event) => {
+      const language = event.target.value;
+      localStorage.setItem('tecklumo-language', language);
+      selectors.forEach((other) => { other.value = language; });
+      document.documentElement.lang = language;
+      applyLanguage(language);
+      document.dispatchEvent(new CustomEvent('languagechange', { detail: { language } }));
+    });
+  });
+  document.documentElement.lang = savedLanguage;
+  if (savedLanguage === 'de') applyLanguage('de');
+}
 
 
 /* ==========================================================================
@@ -265,8 +341,8 @@ function initPortfolioFilter() {
       const filterVal = btn.getAttribute('data-filter');
 
       projectCards.forEach(card => {
-        const category = card.getAttribute('data-category');
-        const matches = (filterVal === 'all' || category === filterVal || (filterVal === 'web' && category.includes('web')) || (filterVal === 'saas' && category.includes('saas')));
+        const categories = (card.getAttribute('data-category') || '').split(/\s+/);
+        const matches = filterVal === 'all' || categories.includes(filterVal);
         if (matches) {
           card.classList.remove('hidden');
           card.classList.remove('card-entered');
@@ -478,6 +554,9 @@ function initContactForm() {
   const emailInput = document.getElementById('inquiryEmail');
   const serviceInput = document.getElementById('inquiryService');
   const descInput = document.getElementById('inquiryDesc');
+  const budgetInput = document.getElementById('inquiryBudget');
+  const currencyInput = document.getElementById('inquiryCurrency');
+  const customBudgetInput = document.getElementById('inquiryCustomBudget');
   const privacyCheckbox = document.getElementById('inquiryPrivacy');
   const honeypot = document.getElementById('inquiryHoneypot');
 
@@ -507,6 +586,12 @@ function initContactForm() {
   if (emailInput) emailInput.addEventListener('input', () => clearFieldError(emailInput, 'emailError'));
   if (serviceInput) serviceInput.addEventListener('change', () => clearFieldError(serviceInput, 'serviceError'));
   if (descInput) descInput.addEventListener('input', () => clearFieldError(descInput, 'descError'));
+  if (budgetInput) budgetInput.addEventListener('change', () => {
+    const custom = budgetInput.value === 'custom';
+    customBudgetInput.hidden = !custom;
+    customBudgetInput.required = custom;
+    if (!custom) customBudgetInput.value = '';
+  });
   if (privacyCheckbox) privacyCheckbox.addEventListener('change', () => clearFieldError(privacyCheckbox, 'privacyError'));
 
   form.addEventListener('submit', async (e) => {
@@ -585,7 +670,9 @@ function initContactForm() {
       email: emailInput.value.trim(),
       company: document.getElementById('inquiryCompany')?.value.trim() || '',
       service: serviceInput.value,
-      budget: document.getElementById('inquiryBudget')?.value || 'Not sure yet',
+      budget: budgetInput?.value || 'Not sure yet',
+      customBudget: customBudgetInput?.value || '',
+      currency: currencyInput?.value || 'EUR',
       description: descInput.value.trim(),
       timestamp: new Date().toISOString()
     };

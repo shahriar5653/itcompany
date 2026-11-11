@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSTechwerk Control Engine – Admin Portal &amp; Content Management</title>
+    <meta name="description" content="Administration, Content Management System and Leads CRM for RSTechwerk software engineering landing page." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Admin Stylesheet -->
+    <link rel="stylesheet" href="/admin.css" />
+  </head>
+  <body class="admin-body">
+    <!-- Top Global App Bar -->
+    <header class="admin-topbar">
+      <div class="admin-topbar-left">
+        <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation drawer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        <a href="/admin.html" class="admin-brand">
+          <svg class="admin-brand-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="1" y="1" width="34" height="34" rx="9" fill="#0b1320" stroke="#10b981" stroke-width="1.5" />
+            <circle cx="28" cy="8" r="1.75" fill="#38bdf8" />
+            <path d="M9 26V10H16C18.4853 10 20.5 12.0147 20.5 14.5C20.5 16.9853 18.4853 19 16 19H9M14.5 19L21 26" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M23 13C23 13 26 13 27 14.2C28 15.4 26.8 17 24.8 17.6C22.8 18.2 21.8 19.8 22.8 21.2C23.8 22.6 26.5 22.5 27.5 22" stroke="#34d399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div class="admin-brand-text">
+            <span class="brand-name"><span style="color:#10b981; font-weight:900;">RS</span>Techwerk</span>
+            <span class="brand-badge">Control Engine v2.4</span>
+          </div>
+        </a>
+
+        <div class="env-indicator">
+          <span class="status-dot pulse"></span>
+          <span class="env-label">Production Live</span>
+        </div>
+      </div>
+
+      <div class="admin-topbar-center">
+        <div class="global-search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="globalSearchInput" placeholder="Search inquiries, services, projects, FAQs (Press '/' to focus)..." aria-label="Global Admin Search" />
+          <kbd class="search-kbd">/</kbd>
+        </div>
+      </div>
+
+      <div class="admin-topbar-right">
+        <!-- Quick View Live Website -->
+        <a href="/" class="btn-topbar-action" title="View live public landing page">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          <span>View Live Website</span>
+        </a>
+
+        <!-- Reset / Sync Trigger -->
+        <button type="button" class="btn-icon-topbar" id="syncLiveBtn" title="Sync &amp; Apply Changes to Live Website">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button type="button" class="btn-icon-topbar" id="adminThemeToggle" title="Toggle Light / Dark mode" aria-label="Toggle theme">
+          <span id="adminThemeIcon">☀</span>
+        </button>
+
+        <!-- Admin Profile -->
+        <div class="admin-profile-pill">
+          <div class="admin-avatar">TL</div>
+          <div class="admin-meta">
+            <span class="admin-name">Admin Lead</span>
+            <span class="admin-role">Dhaka / Berlin</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div class="admin-layout">
+      <!-- Left Sidebar Navigation -->
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-section-kicker">Navigation</div>
+        <nav class="sidebar-nav" role="navigation" aria-label="Admin Navigation">
+          <button type="button" class="nav-tab-btn active" data-tab="tab-dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9"></rect>
+              <rect x="14" y="3" width="7" height="5"></rect>
+              <rect x="14" y="12" width="7" height="9"></rect>
+              <rect x="3" y="16" width="7" height="5"></rect>
+            </svg>
+            <span>Overview &amp; Telemetry</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-inquiries">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <span>Inquiries &amp; Leads</span>
+            <span class="badge-count" id="inquiriesCountBadge">4</span>
+          </button>
+
+          <div class="sidebar-section-kicker" style="margin-top: 1.25rem;">Landing Page Content</div>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-hero">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Hero &amp; Announcement</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-services">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span>Services &amp; Bento</span>
+            <span class="badge-count" id="servicesCountBadge">6</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-portfolio">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span>Portfolio &amp; Work</span>
+            <span class="badge-count" id="portfolioCountBadge">6</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-maintenance">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>
+            <span>Maintenance &amp; Retainers</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-faq">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span>FAQ Accordion</span>
+            <span class="badge-count" id="faqCountBadge">6</span>
+          </button>
+
+          <div class="sidebar-section-kicker" style="margin-top: 1.25rem;">Configuration &amp; API</div>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Company Info &amp; SEO</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-api">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <span>API &amp; Backend Schemas</span>
+            <span class="badge-pill-accent">Ready</span>
+          </button>
+        </nav>
+
+        <!-- Sidebar Footer Status -->
+        <div class="sidebar-footer">
+          <div class="sidebar-footer-card">
+            <div class="card-status-row">
+              <span class="status-indicator-green"></span>
+              <span class="card-status-title">Storage Sync Active</span>
+            </div>
+            <p class="card-status-desc">All edits are stored locally and will map directly into your future REST or GraphQL API.</p>
+            <button type="button" class="btn-restore-defaults" id="resetDefaultsBtn">Reset to Default Data</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="admin-main" id="adminMainContent">
+        <!-- Toast Notification Box -->
+        <div class="admin-toast-container" id="adminToastContainer" aria-live="polite"></div>
+
+        <!-- ====================================================================
+             1. TAB: OVERVIEW & TELEMETRY
+             ==================================================================== -->
+        <section class="admin-tab-panel active" id="tab-dashboard" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Operations &amp; Delivery Telemetry</h1>
+              <p class="panel-subtitle">Real-time pulse of inbound project leads, active client engagement, and content status.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="exportLeadsBtn">Export Leads (CSV)</button>
+              <button type="button" class="btn btn-primary btn-sm" id="quickNewLeadBtn">+ Add Manual Lead</button>
+            </div>
+          </div>
+
+          <!-- Key Metrics Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Inbound Leads (30d)</span>
+                <span class="stat-badge positive">+38% vs prev</span>
+              </div>
+              <div class="stat-value" id="statInboundLeads">24</div>
+              <div class="stat-footnote">8 DACH region · 12 Europe · 4 Global</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Active Retainers</span>
+                <span class="stat-badge neutral">100% Retained</span>
+              </div>
+              <div class="stat-value" id="statActiveRetainers">7 Pods</div>
+              <div class="stat-footnote">40h Growth &amp; 160h Dedicated teams</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Avg. Response Time</span>
+                <span class="stat-badge positive">&lt; 3.2 Hours</span>
+              </div>
+              <div class="stat-value">1.8h</div>
+              <div class="stat-footnote">Guaranteed SLA: 24 business hours</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Pageview Conversions</span>
+                <span class="stat-badge positive">4.92%</span>
+              </div>
+              <div class="stat-value">4.9%</div>
+              <div class="stat-footnote">High-intent European enterprise traffic</div>
+            </div>
+          </div>
+
+          <!-- Recent Inquiries & System Health Row -->
+          <div class="dashboard-row two-col">
+            <!-- Left: Recent Inquiries Stream -->
+            <div class="content-box">
+              <div class="box-header">
+                <div>
+                  <h2 class="box-title">Recent Inbound Inquiries</h2>
+                  <p class="box-subtitle">Latest proposals requested through the public landing page form.</p>
+                </div>
+                <button type="button" class="btn-text-link" id="viewAllInquiriesLink">View All &rarr;</button>
+              </div>
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Client / Company</th>
+                      <th>Service Category</th>
+                      <th>Budget</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardInquiriesTbody">
+                    <!-- Populated by admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: System & Deployment Status -->
+            <div class="content-box">
+              <div class="box-header">
+                <div>
+                  <h2 class="box-title">Engineering Pipeline Status</h2>
+                  <p class="box-subtitle">Live health of client repositories and deployment nodes.</p>
+                </div>
+                <span class="status-chip success">99.98% Uptime</span>
+              </div>
+
+              <div class="health-list">
+                <div class="health-item">
+                  <div class="health-icon success">✓</div>
+                  <div class="health-info">
+                    <div class="health-title">Hetzner Frankfurt EU Cluster</div>
+                    <div class="health-meta">Latency: 14ms · Zero pending incidents</div>
+                  </div>
+                  <span class="health-tag">Primary</span>
+                </div>
+
+                <div class="health-item">
+                  <div class="health-icon success">✓</div>
+                  <div class="health-info">
+                    <div class="health-title">Client Staging CI/CD Runners</div>
+                    <div class="health-meta">GitHub Actions + Docker Mirror active</div>
+                  </div>
+                  <span class="health-tag">Automated</span>
+                </div>
+
+                <div class="health-item">
+                  <div class="health-icon success">✓</div>
+                  <div class="health-info">
+                    <div class="health-title">Timezone Synchronization</div>
+                    <div class="health-meta">Berlin (CET) &amp; Dhaka (BST) 4h overlap running</div>
+                  </div>
+                  <span class="health-tag">Live</span>
+                </div>
+
+                <div class="health-item">
+                  <div class="health-icon info">ℹ</div>
+                  <div class="health-info">
+                    <div class="health-title">Dual Language Switcher Engine</div>
+                    <div class="health-meta">English &amp; Deutsch (DE) translation dictionary active</div>
+                  </div>
+                  <span class="health-tag">EN / DE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             2. TAB: INQUIRIES & LEADS CRM
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-inquiries" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Inbound Inquiries &amp; Lead Management</h1>
+              <p class="panel-subtitle">Review, qualify, categorize, and follow up with businesses requesting digital product development.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="exportLeadsCsvBtn">Export CSV</button>
+              <button type="button" class="btn btn-primary btn-sm" id="createNewInquiryBtn">+ Add New Inquiry</button>
+            </div>
+          </div>
+
+          <!-- Filter & Controls Toolbar -->
+          <div class="table-toolbar">
+            <div class="toolbar-left">
+              <input type="text" id="inquiryFilterSearch" class="form-input search-input" placeholder="Filter by name, company, or email..." />
+              <select id="inquiryStatusFilter" class="form-select filter-select">
+                <option value="all">All Statuses</option>
+                <option value="new">New (Unreviewed)</option>
+                <option value="contacted">Contacted</option>
+                <option value="discovery">In Discovery</option>
+                <option value="proposal">Proposal Sent</option>
+                <option value="won">Client Won / Retained</option>
+                <option value="archived">Archived</option>
+              </select>
+              <select id="inquiryServiceFilter" class="form-select filter-select">
+                <option value="all">All Services</option>
+                <option value="custom-software">Custom Software &amp; ERP</option>
+                <option value="web-saas">Web &amp; SaaS Platforms</option>
+                <option value="mobile-apps">Mobile Apps</option>
+                <option value="ai-automation">AI &amp; Automation</option>
+                <option value="maintenance">Maintenance &amp; Retainers</option>
+              </select>
+            </div>
+            <div class="toolbar-right">
+              <span class="results-counter" id="inquiriesResultsCounter">Showing 4 leads</span>
+            </div>
+          </div>
+
+          <!-- Main Leads Table -->
+          <div class="content-box">
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Full Name &amp; Company</th>
+                    <th>Email Contact</th>
+                    <th>Service Requested</th>
+                    <th>Est. Budget</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="inquiriesMasterTbody">
+                  <!-- Populated by admin.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             3. TAB: HERO & ANNOUNCEMENT MANAGER
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-hero" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Hero Section &amp; Brand Positioning</h1>
+              <p class="panel-subtitle">Manage high-impact headlines, European market positioning, CTA buttons, and capability tags.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="saveHeroBtn">Save Hero Changes</button>
+            </div>
+          </div>
+
+          <div class="dashboard-row two-col">
+            <!-- Left: Edit Form -->
+            <div class="content-box">
+              <h2 class="box-title">Main Hero Copy</h2>
+              <form id="heroContentForm" class="admin-form">
+                <div class="form-grid two-col">
+                  <div class="form-group">
+                    <label class="form-label" for="heroAnnouncementPill">Region Pill Text</label>
+                    <input type="text" id="heroAnnouncementPill" class="form-input" value="Europe &amp; DACH" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="heroAnnouncementText">Sub-Tag Text</label>
+                    <input type="text" id="heroAnnouncementText" class="form-input" value="Senior Product Engineering" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="heroHeadlinePrefix">Headline (Main Title Prefix)</label>
+                  <input type="text" id="heroHeadlinePrefix" class="form-input" value="Build digital products" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="heroHeadlineGradient">Headline (Gradient Highlight Text)</label>
+                  <input type="text" id="heroHeadlineGradient" class="form-input" value="that move your business forward." />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="heroSubhead">Supporting Subheading Paragraph</label>
+                  <textarea id="heroSubhead" class="form-textarea" rows="3">From first idea to production-ready software, we help ambitious businesses launch faster with reliable design, development, and ongoing support.</textarea>
+                </div>
+
+                <div class="form-grid three-col">
+                  <div class="form-group">
+                    <label class="form-label" for="heroPrimaryCtaText">Primary CTA Label</label>
+                    <input type="text" id="heroPrimaryCtaText" class="form-input" value="Start Your Project" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="heroSecondaryCtaText">Secondary CTA Label</label>
+                    <input type="text" id="heroSecondaryCtaText" class="form-input" value="Explore Our Work" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="heroMaintenanceCtaText">Maintenance CTA Label</label>
+                    <input type="text" id="heroMaintenanceCtaText" class="form-input" value="Maintain Your Project" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="heroCapabilitiesTags">Hero Capability Badges (Comma-separated)</label>
+                  <input type="text" id="heroCapabilitiesTags" class="form-input" value="Web Platforms, Mobile Apps, SaaS Systems, AI Solutions, ERP &amp; Business Systems, APIs &amp; Integrations, Cloud &amp; DevOps, Maintenance &amp; Retainers" />
+                  <span class="form-help">These render in the balanced 2x4 capability badges grid beneath the hero buttons.</span>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right: Real-Time Preview Card -->
+            <div class="content-box">
+              <h2 class="box-title">Live Preview Simulation</h2>
+              <p class="box-subtitle">How this will appear on the public desktop and mobile screens.</p>
+
+              <div class="hero-preview-canvas">
+                <div class="preview-announcement">
+                  <span class="preview-pill" id="prevHeroPill">Europe &amp; DACH</span>
+                  <span class="preview-subtext" id="prevHeroSubtext">Senior Product Engineering</span>
+                </div>
+                <h3 class="preview-headline">
+                  <span id="prevHeroPrefix">Build digital products</span>
+                  <span class="preview-gradient" id="prevHeroGradient">that move your business forward.</span>
+                </h3>
+                <p class="preview-subhead" id="prevHeroSubhead">
+                  From first idea to production-ready software, we help ambitious businesses launch faster with reliable design, development, and ongoing support.
+                </p>
+                <div class="preview-cta-row">
+                  <button type="button" class="btn btn-primary btn-sm" id="prevPrimaryBtn">Start Your Project &rarr;</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="prevSecondaryBtn">Explore Our Work</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="prevMaintenanceBtn">Maintain Your Project</button>
+                </div>
+                <div class="preview-tags-wrap" id="prevTagsWrap">
+                  <!-- Badges rendered live -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             4. TAB: SERVICES & BENTO MANAGER
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-services" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Services &amp; Bento Grid Manager</h1>
+              <p class="panel-subtitle">Configure the 6+ editorial service offerings, technical stack tags, and deliverables list.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="addNewServiceBtn">+ Add New Service Card</button>
+            </div>
+          </div>
+
+          <div class="services-admin-grid" id="servicesAdminContainer">
+            <!-- Populated by admin.js -->
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             5. TAB: PORTFOLIO & WORK MANAGER
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-portfolio" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Portfolio &amp; Case Studies</h1>
+              <p class="panel-subtitle">Manage project concept case studies, industry problems, technical solutions, and interactive dialog details.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="addNewProjectBtn">+ Add New Project</button>
+            </div>
+          </div>
+
+          <div class="portfolio-admin-grid" id="portfolioAdminContainer">
+            <!-- Populated by admin.js -->
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             6. TAB: MAINTENANCE & RETAINERS MANAGER
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-maintenance" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Maintenance &amp; Dedicated Pods</h1>
+              <p class="panel-subtitle">Adjust monthly retainer packages, hourly sprint packs, guaranteed SLAs, and included features.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="saveMaintenanceTiersBtn">Save Tiers Changes</button>
+            </div>
+          </div>
+
+          <div class="content-box">
+            <h2 class="box-title">Monthly Dedicated Retainers (3 Tiers)</h2>
+            <div class="tiers-admin-grid" id="monthlyTiersAdminContainer">
+              <!-- Populated by admin.js -->
+            </div>
+          </div>
+
+          <div class="content-box" style="margin-top: 1.5rem;">
+            <h2 class="box-title">Hourly &amp; Sprint Packs (3 Tiers)</h2>
+            <div class="tiers-admin-grid" id="hourlyTiersAdminContainer">
+              <!-- Populated by admin.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             7. TAB: FAQ ACCORDION MANAGER
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-faq" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Frequently Asked Questions (FAQ)</h1>
+              <p class="panel-subtitle">Add, edit, reorder, and refine clear answers regarding scope, IP ownership, and post-launch support.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="addNewFaqBtn">+ Add New Question</button>
+            </div>
+          </div>
+
+          <div class="content-box">
+            <div class="faq-admin-list" id="faqAdminListContainer">
+              <!-- Populated by admin.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             8. TAB: COMPANY SETTINGS & SEO
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-settings" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Company Settings, SEO &amp; Compliance</h1>
+              <p class="panel-subtitle">Configure contact email, response SLAs, dual clock locations, OpenGraph metadata, and legal terms.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="saveCompanySettingsBtn">Save All Settings</button>
+            </div>
+          </div>
+
+          <div class="dashboard-row two-col">
+            <!-- Left: Company & Contact -->
+            <div class="content-box">
+              <h2 class="box-title">General Company Information</h2>
+              <form id="settingsCompanyForm" class="admin-form">
+                <div class="form-group">
+                  <label class="form-label" for="settingCompanyName">Company Brand Name</label>
+                  <input type="text" id="settingCompanyName" class="form-input" value="RSTechwerk" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="settingInquiryEmail">Official Inquiry Email</label>
+                  <input type="email" id="settingInquiryEmail" class="form-input" value="inquiry@rstechwerk.com" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="settingResponseSla">Response Time Guarantee</label>
+                  <input type="text" id="settingResponseSla" class="form-input" value="We reply to every business inquiry within 24 business hours." />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="settingNdaText">Mutual NDA Notice</label>
+                  <input type="text" id="settingNdaText" class="form-input" value="We gladly sign standard mutual NDAs prior to detailed technical discussions." />
+                </div>
+
+                <div class="form-grid two-col">
+                  <div class="form-group">
+                    <label class="form-label" for="settingCityOne">Location 1</label>
+                    <input type="text" id="settingCityOne" class="form-input" value="Berlin (CET)" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="settingCityTwo">Location 2</label>
+                    <input type="text" id="settingCityTwo" class="form-input" value="Dhaka (BST)" />
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right: Search Engine Optimization (SEO) -->
+            <div class="content-box">
+              <h2 class="box-title">SEO &amp; Social Meta Tags</h2>
+              <form id="settingsSeoForm" class="admin-form">
+                <div class="form-group">
+                  <label class="form-label" for="settingMetaTitle">Meta Title (&lt;title&gt;)</label>
+                  <input type="text" id="settingMetaTitle" class="form-input" value="RSTechwerk – Software Development &amp; Technology Solutions | rstechwerk.com" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="settingMetaDescription">Meta Description</label>
+                  <textarea id="settingMetaDescription" class="form-textarea" rows="3">RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.</textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="settingCanonicalUrl">Canonical Site URL</label>
+                  <input type="url" id="settingCanonicalUrl" class="form-input" value="https://rstechwerk.com/" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="settingOgImage">OpenGraph Image Preview URL</label>
+                  <input type="text" id="settingOgImage" class="form-input" value="https://rstechwerk.com/og-preview.png" />
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             9. TAB: API & BACKEND SCHEMAS (Future Connection Ready)
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-api" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">API Contracts &amp; Backend Endpoints</h1>
+              <p class="panel-subtitle">Ready-to-connect REST endpoint specifications and JSON payload schemas for your future backend.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="testApiEndpointBtn">Test Local Endpoint</button>
+              <button type="button" class="btn btn-primary btn-sm" id="saveApiConfigBtn">Save Endpoint Config</button>
+            </div>
+          </div>
+
+          <div class="dashboard-row two-col">
+            <!-- Left: Config & Tester -->
+            <div class="content-box">
+              <h2 class="box-title">Backend Connection Configuration</h2>
+              <div class="form-group">
+                <label class="form-label" for="backendBaseUrl">Backend Base URL</label>
+                <input type="text" id="backendBaseUrl" class="form-input" placeholder="e.g. https://api.rstechwerk.com or /api" value="/api" />
+                <span class="form-help">When you build your Express / Node / Laravel backend, enter the base URL here to activate direct transmission.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="webhookInquiryUrl">Inbound Lead Webhook (Slack / Discord / Teams)</label>
+                <input type="text" id="webhookInquiryUrl" class="form-input" placeholder="https://hooks.slack.com/services/..." />
+                <span class="form-help">Optional: receive instant lead pings directly in your engineering Slack or Teams channel.</span>
+              </div>
+
+              <h3 class="box-title" style="margin-top: 1.5rem; font-size: 1.05rem;">Available Endpoints</h3>
+              <div class="api-endpoint-card">
+                <div class="endpoint-header">
+                  <span class="http-badge post">POST</span>
+                  <code class="endpoint-path">/api/inquiries</code>
+                </div>
+                <p class="endpoint-desc">Accepts inbound leads validated from the public project contact form.</p>
+              </div>
+
+              <div class="api-endpoint-card">
+                <div class="endpoint-header">
+                  <span class="http-badge get">GET</span>
+                  <code class="endpoint-path">/api/content</code>
+                </div>
+                <p class="endpoint-desc">Returns all published landing page content, services, projects, and tiers.</p>
+              </div>
+
+              <div class="api-endpoint-card">
+                <div class="endpoint-header">
+                  <span class="http-badge put">PUT</span>
+                  <code class="endpoint-path">/api/content/hero</code>
+                </div>
+                <p class="endpoint-desc">Updates headline, subhead, and capability tags with audit log.</p>
+              </div>
+            </div>
+
+            <!-- Right: Interactive JSON Schema Preview -->
+            <div class="content-box">
+              <h2 class="box-title">Live JSON Schema Payload</h2>
+              <p class="box-subtitle">Current structured state ready to be dispatched or persisted.</p>
+
+              <div class="code-editor-frame">
+                <div class="code-editor-header">
+                  <span class="file-name">rstechwerk-manifest.json</span>
+                  <button type="button" class="btn-copy-code" id="copyJsonSchemaBtn">Copy JSON</button>
+                </div>
+                <pre class="code-block"><code id="jsonSchemaDisplay">// Loading active landing page configuration...</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ======================================================================
+         MODALS & DIALOGS
+         ====================================================================== -->
+
+    <!-- Modal: View & Update Inquiry Details -->
+    <div class="admin-modal-backdrop" id="inquiryDetailModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="admin-modal-card">
+        <div class="admin-modal-header">
+          <div>
+            <span class="modal-badge-kicker" id="modalInquiryId">LEAD-8041</span>
+            <h3 class="admin-modal-title" id="modalInquiryName">Johannes Weber</h3>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeInquiryModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+          <div class="inquiry-meta-grid">
+            <div>
+              <span class="meta-label">Email:</span>
+              <a href="#" class="meta-value email-link" id="modalInquiryEmail">johannes@logixgmbh.de</a>
+            </div>
+            <div>
+              <span class="meta-label">Company:</span>
+              <span class="meta-value" id="modalInquiryCompany">Logix GmbH</span>
+            </div>
+            <div>
+              <span class="meta-label">Service Requested:</span>
+              <span class="meta-value" id="modalInquiryService">Custom Software &amp; Enterprise ERP</span>
+            </div>
+            <div>
+              <span class="meta-label">Estimated Budget:</span>
+              <span class="meta-value" id="modalInquiryBudget">EUR €25,000 – 50,000</span>
+            </div>
+          </div>
+
+          <div class="inquiry-message-box">
+            <span class="meta-label">Project Requirements:</span>
+            <p class="inquiry-full-text" id="modalInquiryDesc"></p>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label class="form-label" for="modalInquiryStatusSelect">Update Lead Status</label>
+            <select id="modalInquiryStatusSelect" class="form-select">
+              <option value="new">New (Unreviewed)</option>
+              <option value="contacted">Contacted</option>
+              <option value="discovery">In Discovery</option>
+              <option value="proposal">Proposal Sent</option>
+              <option value="won">Client Won / Retained</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modalInquiryInternalNotes">Internal Engineering Notes</label>
+            <textarea id="modalInquiryInternalNotes" class="form-textarea" rows="2" placeholder="e.g. Met on Google Meet, needs PostgreSQL multi-tenant schema with GoBD compliance..."></textarea>
+          </div>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="deleteInquiryBtn" style="color: #ef4444;">Delete Lead</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="#" class="btn btn-secondary btn-sm" id="emailClientBtn">Open Email Draft</a>
+            <button type="button" class="btn btn-primary btn-sm" id="saveInquiryModalBtn">Save Status &amp; Notes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add / Edit Service Card -->
+    <div class="admin-modal-backdrop" id="serviceEditModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="admin-modal-card">
+        <div class="admin-modal-header">
+          <h3 class="admin-modal-title" id="serviceModalTitle">Edit Service Card</h3>
+          <button type="button" class="modal-close-btn" id="closeServiceModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+          <form id="serviceModalForm" class="admin-form">
+            <input type="hidden" id="serviceModalId" />
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="serviceModalNumber">Kicker / Number</label>
+                <input type="text" id="serviceModalNumber" class="form-input" placeholder="e.g. 01. Enterprise Core" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="serviceModalTitleInput">Service Title</label>
+                <input type="text" id="serviceModalTitleInput" class="form-input" placeholder="e.g. Custom Software Development" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="serviceModalDesc">Service Summary</label>
+              <textarea id="serviceModalDesc" class="form-textarea" rows="3" placeholder="Explain the business value..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="serviceModalTech">Tech Stack Highlights</label>
+              <input type="text" id="serviceModalTech" class="form-input" placeholder="e.g. TypeScript, Node.js, PostgreSQL, Docker" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="serviceModalDeliverables">Key Deliverables (One per line)</label>
+              <textarea id="serviceModalDeliverables" class="form-textarea" rows="4" placeholder="Architecture blueprints\nBespoke business logic\nRole-based access control\nSource code ownership"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="cancelServiceModalBtn">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="saveServiceModalBtn">Save Service Card</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add / Edit Portfolio Project -->
+    <div class="admin-modal-backdrop" id="projectEditModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="admin-modal-card">
+        <div class="admin-modal-header">
+          <h3 class="admin-modal-title" id="projectModalTitle">Edit Case Study</h3>
+          <button type="button" class="modal-close-btn" id="closeProjectModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+          <form id="projectModalForm" class="admin-form">
+            <input type="hidden" id="projectModalKey" />
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="projectModalName">Project Title</label>
+                <input type="text" id="projectModalName" class="form-input" placeholder="e.g. NordicLogix" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="projectModalIndustry">Industry Domain</label>
+                <input type="text" id="projectModalIndustry" class="form-input" placeholder="e.g. Freight &amp; Logistics Orchestration" required />
+              </div>
+            </div>
+
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="projectModalCategories">Filter Tags (e.g. saas, web, erp, cloud)</label>
+                <input type="text" id="projectModalCategories" class="form-input" placeholder="saas web erp" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="projectModalBadge">Badge Label</label>
+                <input type="text" id="projectModalBadge" class="form-input" value="Concept Project · SaaS / Web" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="projectModalSummary">Short Card Summary</label>
+              <textarea id="projectModalSummary" class="form-textarea" rows="2" placeholder="Brief 1-2 sentence overview shown in the grid..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="projectModalProblem">The Challenge (Problem)</label>
+              <textarea id="projectModalProblem" class="form-textarea" rows="2" placeholder="Operational bottleneck or pain point..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="projectModalSolution">The Solution</label>
+              <textarea id="projectModalSolution" class="form-textarea" rows="2" placeholder="Architecture and technical approach..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="projectModalTech">Technology Stack</label>
+              <input type="text" id="projectModalTech" class="form-input" placeholder="TypeScript, React, Node.js, PostgreSQL, Docker" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="projectModalFeatures">Implemented Features (One per line)</label>
+              <textarea id="projectModalFeatures" class="form-textarea" rows="3" placeholder="Real-time GPS vehicle tracking\nDigital e-CMR document generation\nRoute optimization engine"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="cancelProjectModalBtn">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="saveProjectModalBtn">Save Case Study</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Script -->
+    <script src="/admin.js"></script>
+  </body>
+</html>

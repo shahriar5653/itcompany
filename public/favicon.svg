@@ -1,4 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#ecfdf5"/>
-  <path d="M16 20h32M32 20v28M40 32l8 8M48 32l-8 8" fill="none" stroke="#16805d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="rs-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1320" />
+      <stop offset="100%" stop-color="#041f17" />
+    </linearGradient>
+    <linearGradient id="rs-glow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="rs-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Rounded Tech Squircle -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#rs-bg-grad)" stroke="url(#rs-glow-grad)" stroke-width="2.5" />
+  
+  <!-- Precision Circuit Accent Node -->
+  <circle cx="50" cy="14" r="3" fill="#38bdf8" />
+  <path d="M47 14H40" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+  
+  <!-- Letter R: Bold Tech Monogram -->
+  <path d="M16 46V18H28C32.4183 18 36 21.5817 36 26C36 30.4183 32.4183 34 28 34H16M26 34L37 46" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Letter S: Dynamic Overlapping Flow -->
+  <path d="M41 22C41 22 46 22 47.5 24C49 26 47 28.5 44 29.5C41 30.5 39 33 40.5 35.5C42 38 46 38 48 37" stroke="url(#rs-accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

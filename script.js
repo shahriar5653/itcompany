@@ -1,5 +1,6 @@
 /**
- * Tecklumo - Software Development & Technology Solutions
+ * RSTechwerk - Software Development & Technology Solutions
+ * Domain: rstechwerk.com
  * Vanilla JavaScript: Accessible Interactions, Portfolio Filter, Case Study Dialogs, FAQ Accordion, Form Validation
  */
 
@@ -10,13 +11,15 @@ document.documentElement.classList.add('js');
 const CONFIG = {
   // Replace with live backend endpoint URL when deploying (e.g. '/api/inquiry')
   apiEndpoint: null,
-  companyEmail: 'inquiry@tecklumo.com'
+  companyName: 'RSTechwerk',
+  companyDomain: 'rstechwerk.com',
+  companyEmail: 'inquiry@rstechwerk.com'
 };
 
 const LANGUAGE_COPY = {
   de: {
     'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'FAQ': 'FAQ',
-    'Discuss Your Project': 'Projekt besprechen', 'Start Your Project': 'Projekt starten', 'Explore Our Work': 'Unsere Projekte ansehen',
+    'Discuss Your Project': 'Projekt besprechen', 'Start Your Project': 'Projekt starten', 'Explore Our Work': 'Unsere Projekte ansehen', 'Maintain Your Project': 'Projektwartung & Retainer',
     'Europe & DACH': 'Europa & DACH', 'Senior Product Engineering': 'Senior Product Engineering',
     'Build digital products': 'Digitale Produkte entwickeln', 'that move your business forward.': 'die Ihr Unternehmen voranbringen.',
     'From first idea to production-ready software, we help ambitious businesses launch faster with reliable design, development, and ongoing support.': 'Von der ersten Idee bis zur produktionsreifen Software unterstützen wir ambitionierte Unternehmen mit zuverlässigem Design, Entwicklung und laufender Betreuung.',
@@ -26,12 +29,24 @@ const LANGUAGE_COPY = {
     'From ERP systems and SaaS platforms to AI workflows and mobile apps, we design and build technology that makes your business faster, smarter, and easier to scale.': 'Von ERP-Systemen und SaaS-Plattformen bis hin zu KI-Workflows und mobilen Apps entwickeln wir Technologie, die Ihr Unternehmen schneller, intelligenter und skalierbarer macht.',
     'Portfolio & Prototypes': 'Portfolio & Prototypen', 'Real products start with': 'Echte Produkte beginnen mit', 'real problems.': 'echten Problemen.', 'Explore selected product concepts across logistics, healthcare, energy, fintech, and commerce—each shaped around a real operational challenge.': 'Entdecken Sie ausgewählte Produktkonzepte für Logistik, Gesundheitswesen, Energie, Fintech und Handel – jeweils entwickelt für eine konkrete operative Herausforderung.',
     'How We Deliver': 'Unsere Vorgehensweise', 'From first conversation to': 'Vom ersten Gespräch bis zum', 'confident launch.': 'sicheren Launch.', 'A clear five-stage process turns your idea into a reliable product—with visible progress, focused collaboration, and no unnecessary surprises.': 'Ein klarer Prozess in fünf Phasen verwandelt Ihre Idee in ein zuverlässiges Produkt – mit sichtbarem Fortschritt, fokussierter Zusammenarbeit und ohne unnötige Überraschungen.',
-    'Why Tecklumo': 'Warum Tecklumo', 'A better way to build software': 'Software gemeinsam besser entwickeln', 'together.': '– gemeinsam.', 'The best products come from strong partnerships—clear communication, thoughtful engineering, and a team that stays accountable from day one.': 'Die besten Produkte entstehen durch starke Partnerschaften – klare Kommunikation, durchdachte Technik und ein Team, das vom ersten Tag an Verantwortung übernimmt.',
+    'Why RSTechwerk': 'Warum RSTechwerk', 'Why Tecklumo': 'Warum RSTechwerk', 'A better way to build software': 'Software gemeinsam besser entwickeln', 'together.': '– gemeinsam.', 'The best products come from strong partnerships—clear communication, thoughtful engineering, and a team that stays accountable from day one.': 'Die besten Produkte entstehen durch starke Partnerschaften – klare Kommunikation, durchdachte Technik und ein Team, das vom ersten Tag an Verantwortung übernimmt.',
     'Technical Capabilities': 'Technische Kompetenzen', 'The right technology for': 'Die richtige Technologie für', 'lasting products.': 'nachhaltige Produkte.', 'We choose proven tools with strong ecosystems—so your product stays fast, maintainable, and ready for what comes next.': 'Wir wählen bewährte Technologien mit starken Ökosystemen, damit Ihr Produkt schnell, wartbar und zukunftssicher bleibt.',
-    'About Tecklumo': 'Über Tecklumo', 'A dedicated team for': 'Ein engagiertes Team für', 'ambitious digital products.': 'ambitionierte digitale Produkte.', 'Frequently Asked Questions': 'Häufige Fragen', 'Clear answers for a': 'Klare Antworten für einen', 'confident start.': 'sicheren Start.', 'Everything you need to know about our process, communication, ownership, and delivery timelines.': 'Alles über unseren Prozess, Kommunikation, Eigentum und Lieferzeiten.',
+    'About RSTechwerk': 'Über RSTechwerk', 'About Tecklumo': 'Über RSTechwerk', 'A dedicated team for': 'Ein engagiertes Team für', 'ambitious digital products.': 'ambitionierte digitale Produkte.', 'Frequently Asked Questions': 'Häufige Fragen', 'Clear answers for a': 'Klare Antworten für einen', 'confident start.': 'sicheren Start.', 'Everything you need to know about our process, communication, ownership, and delivery timelines.': 'Alles über unseren Prozess, Kommunikation, Eigentum und Lieferzeiten.',
     'Start a Conversation': 'Gespräch starten', 'Let’s build something': 'Lassen Sie uns etwas', 'valuable.': 'Wertvolles entwickeln.', 'Bring us a clear brief or just a rough idea. We’ll help shape the right product, technology, and next step for your business.': 'Bringen Sie uns ein klares Briefing oder nur eine grobe Idee. Wir helfen Ihnen beim passenden Produkt, der Technologie und dem nächsten Schritt.',
     'Direct Email': 'Direkte E-Mail', 'Response Time': 'Antwortzeit', 'Mutual Non-Disclosure': 'Gegenseitige Vertraulichkeit',
-    'Submit Project Inquiry': 'Projektanfrage senden', 'Full Name': 'Vollständiger Name', 'Company Name (Optional)': 'Unternehmen (optional)', 'Service Interest': 'Gewünschte Leistung', 'Project Requirements': 'Projektanforderungen'
+    'Submit Project Inquiry': 'Projektanfrage senden', 'Full Name': 'Vollständiger Name', 'Company Name (Optional)': 'Unternehmen (optional)', 'Service Interest': 'Gewünschte Leistung', 'Project Requirements': 'Projektanforderungen',
+    'Maintenance': 'Wartung & Support', 'Maintenance & Retainers': 'Wartung & Retainer', 'Dedicated Engineering & Retainers': 'Dedizierte Entwicklung & Wartung',
+    'Hire an expert engineering team': 'Erfahrenes Entwicklerteam mieten', 'monthly or on demand.': 'monatlich oder auf Abruf.',
+    'Keep your production software reliable, secure, and continuously evolving. Hire our senior engineering squad for monthly maintenance retainers or book flexible hourly sprint packs—with guaranteed SLAs, direct developer communication, and complete code ownership.': 'Halten Sie Ihre produktive Software zuverlässig, sicher und zukunftsfähig. Mieten Sie unser Senior-Entwicklerteam auf monatlicher Retainer-Basis oder buchen Sie flexible Stundenpakete – mit garantierten SLAs, direktem Entwicklerkontakt und vollem Code-Eigentum.',
+    'Monthly Dedicated Retainers': 'Monatliche Retainer (Dediziertes Team)', 'Hourly & Sprint Packs': 'Stunden- & Sprint-Pakete (Flexibel)',
+    'Essential Care': 'Essential Care', 'Growth & Scale Pod': 'Growth & Scale Pod', 'Dedicated Team Pod': 'Dediziertes Team-Pod',
+    'Quick-Fix Sprint': 'Quick-Fix Sprint', 'Modernization Pack': 'Modernisierungs-Paket', 'Flexible Engineering Bucket': 'Flexibles Stundenkontingent',
+    'per month dedicated': 'pro Monat dediziert', 'full-time team pod': 'Vollzeit-Team-Pod',
+    'valid for 60 calendar days': 'gültig für 60 Kalendertage', 'valid for 90 calendar days': 'gültig für 90 Kalendertage', 'valid for 180 calendar days': 'gültig für 180 Kalendertage',
+    'Select Essential Retainer': 'Essential Retainer wählen', 'Select Growth Retainer': 'Growth Retainer wählen', 'Hire Dedicated Team': 'Dediziertes Team mieten',
+    'Book 10h Quick-Fix': '10h Quick-Fix buchen', 'Book 25h Modernization': '25h Modernisierung buchen', 'Book 50h Flexible Bucket': '50h Kontingent buchen',
+    'European Timezone Overlap': 'Europäische Zeitzonen-Überschneidung', '100% Client Code Ownership': '100% Code-Eigentum beim Kunden',
+    'Direct Senior Developer Access': 'Direkter Kontakt zu Senior-Entwicklern', 'Tested on Staging First': 'Zuerst auf Staging getestet'
   }
 };
 const ORIGINAL_TEXT = new WeakMap();
@@ -151,15 +166,15 @@ const LEGAL_CONTENT = {
     content: `
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Prototype & Demonstration Notice</h4>
-        <p>This website serves as a design and functional prototype for Tecklumo. Any contact information entered into the demonstration contact form is processed strictly in your local browser session and is not stored in a persistent database unless an operational backend endpoint is connected.</p>
+        <p>This website serves as a design and functional prototype for RSTechwerk (rstechwerk.com). Any contact information entered into the demonstration contact form is processed strictly in your local browser session and is not stored in a persistent database unless an operational backend endpoint is connected.</p>
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Data Protection Standards</h4>
-        <p>In production operations, Tecklumo adheres to applicable data protection principles, including the European Union General Data Protection Regulation (GDPR). When contacting us regarding a real project, your contact details (name, email, company, and project scope) are used solely for communicating regarding your specific project inquiry and are never sold or shared with unauthorized third parties.</p>
+        <p>In production operations, RSTechwerk adheres to applicable data protection principles, including the European Union General Data Protection Regulation (GDPR). When contacting us regarding a real project, your contact details (name, email, company, and project scope) are used solely for communicating regarding your specific project inquiry and are never sold or shared with unauthorized third parties.</p>
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Your Rights</h4>
-        <p>You have the right to request access to any personal data held about you, request corrections, or request deletion of your information at any time by contacting our team at <strong>inquiry@tecklumo.com</strong>.</p>
+        <p>You have the right to request access to any personal data held about you, request corrections, or request deletion of your information at any time by contacting our team at <strong>inquiry@rstechwerk.com</strong>.</p>
       </div>
     `
   },
@@ -168,18 +183,18 @@ const LEGAL_CONTENT = {
     content: `
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Website Provider Information</h4>
-        <p><strong>Tecklumo</strong><br>
-        Software Development & Technology Solutions<br>
+        <p><strong>RSTechwerk</strong><br>
+        Software Development & Technology Solutions (rstechwerk.com)<br>
         Primary Operational Team: Dhaka, Bangladesh<br>
-        Contact Email: <a href="mailto:inquiry@tecklumo.com" style="color:var(--color-accent); text-decoration:underline;">inquiry@tecklumo.com</a></p>
+        Contact Email: <a href="mailto:inquiry@rstechwerk.com" style="color:var(--color-accent); text-decoration:underline;">inquiry@rstechwerk.com</a></p>
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Prototype Notice</h4>
-        <p>This web application is an interactive presentation of Tecklumo's design, technology capabilities, and software delivery process. Portfolio items displayed are conceptual prototypes developed to demonstrate system architecture across various industries.</p>
+        <p>This web application is an interactive presentation of RSTechwerk's design, technology capabilities, and software delivery process. Portfolio items displayed are conceptual prototypes developed to demonstrate system architecture across various industries.</p>
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Copyright & Intellectual Property</h4>
-        <p>All website content, custom mockups, layout code, and graphics are the property of Tecklumo unless otherwise indicated. Unauthorized reproduction of code or brand elements is prohibited.</p>
+        <p>All website content, custom mockups, layout code, and graphics are the property of RSTechwerk unless otherwise indicated. Unauthorized reproduction of code or brand elements is prohibited.</p>
       </div>
     `
   },
@@ -188,7 +203,7 @@ const LEGAL_CONTENT = {
     content: `
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Commitment to Accessibility</h4>
-        <p>Tecklumo is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone, applying relevant Web Content Accessibility Guidelines (WCAG 2.1 Level AA) standards.</p>
+        <p>RSTechwerk is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone, applying relevant Web Content Accessibility Guidelines (WCAG 2.1 Level AA) standards.</p>
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Measures Taken</h4>
@@ -202,7 +217,7 @@ const LEGAL_CONTENT = {
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Feedback</h4>
-        <p>If you encounter any accessibility barriers on this website, please let us know at <strong>inquiry@tecklumo.com</strong> and we will address it promptly.</p>
+        <p>If you encounter any accessibility barriers on this website, please let us know at <strong>inquiry@rstechwerk.com</strong> and we will address it promptly.</p>
       </div>
     `
   }
@@ -224,10 +239,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initCaseStudyModal();
   initLegalModal();
   initFaqAccordion();
+  initMaintenanceToggle();
   initContactForm();
   initScrollSpyAndSmoothScroll();
   initScrollReveals();
   updateFooterYear();
+  applyPublishedAdminContent();
 });
 
 function initThemeSwitcher() {
@@ -539,6 +556,73 @@ function initFaqAccordion() {
 }
 
 /* ==========================================================================
+   Maintenance & Dedicated Team Engagement Switcher & CTAs
+   ========================================================================== */
+
+function initMaintenanceToggle() {
+  const toggleBtns = document.querySelectorAll('.maintenance-toggle-btn');
+  const cards = document.querySelectorAll('.maintenance-card');
+  const planCtaBtns = document.querySelectorAll('.plan-cta-btn');
+  const serviceSelect = document.getElementById('inquiryService');
+
+  if (!toggleBtns.length || !cards.length) return;
+
+  toggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.getAttribute('data-maintenance-mode');
+
+      toggleBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+
+      cards.forEach(card => {
+        const cardMode = card.getAttribute('data-plan-mode');
+        if (cardMode === mode) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Wire up Plan CTA Buttons to preselect service and smooth scroll to contact form
+  planCtaBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetService = btn.getAttribute('data-plan-service');
+
+      if (serviceSelect && targetService) {
+        serviceSelect.value = targetService;
+        serviceSelect.dispatchEvent(new Event('change'));
+      }
+
+      const contactSection = document.getElementById('contact');
+      if (contactSection) {
+        const header = document.querySelector('.site-header');
+        const headerHeight = header ? header.offsetHeight : 72;
+        const targetPos = contactSection.getBoundingClientRect().top + window.pageYOffset - headerHeight - 16;
+
+        window.scrollTo({
+          top: targetPos,
+          behavior: 'smooth'
+        });
+
+        setTimeout(() => {
+          const descInput = document.getElementById('inquiryDesc');
+          if (descInput) {
+            descInput.focus();
+          }
+        }, 600);
+      }
+    });
+  });
+}
+
+/* ==========================================================================
    Contact / Project Inquiry Form Validation & Submission
    ========================================================================== */
 
@@ -700,6 +784,45 @@ function initContactForm() {
           <strong>Demo validated. Your message has not been sent.</strong><br>
           All form fields passed validation. To send real inquiries, configure the backend endpoint in <code>script.js</code> or contact us directly at <a href="mailto:${CONFIG.companyEmail}" style="text-decoration:underline; font-weight:600;">${CONFIG.companyEmail}</a>.
         `;
+
+        // Store into localStorage for instant sync with the Admin Panel Leads CRM
+        try {
+          const serviceLabel = serviceInput.options[serviceInput.selectedIndex]?.text || payload.service;
+          const budgetLabel = payload.budget === 'custom' && payload.customBudget 
+            ? `${payload.currency} ${Number(payload.customBudget).toLocaleString()}` 
+            : `${payload.currency} ${payload.budget}`;
+
+          const newLead = {
+            id: `LEAD-${Math.floor(1000 + Math.random() * 9000)}`,
+            date: new Date().toISOString().split('T')[0],
+            name: payload.fullName,
+            company: payload.company || 'Direct Website Inquiry',
+            email: payload.email,
+            service: payload.service,
+            serviceName: serviceLabel,
+            budget: budgetLabel,
+            description: payload.description,
+            timestamp: payload.timestamp
+          };
+
+          localStorage.setItem('tecklumo_latest_inquiry', JSON.stringify(newLead));
+
+          // Also directly append to admin state if present
+          const existingAdminState = localStorage.getItem('tecklumo_admin_state_v1');
+          if (existingAdminState) {
+            const parsed = JSON.parse(existingAdminState);
+            if (Array.isArray(parsed.inquiries)) {
+              parsed.inquiries.unshift({
+                ...newLead,
+                status: 'new',
+                internalNotes: 'Auto-ingested from live website submission.'
+              });
+              localStorage.setItem('tecklumo_admin_state_v1', JSON.stringify(parsed));
+            }
+          }
+        } catch (storageErr) {
+          console.warn('Could not sync to admin storage', storageErr);
+        }
         // Do not clear fields on validation demo so user can verify what they typed
       } else {
         feedbackEl.className = 'form-feedback error';
@@ -983,6 +1106,49 @@ function animateCardsStaggered(cardsList, stepDelay = 80) {
       card.classList.add('card-entered');
     }, 25);
   });
+}
+
+/* ==========================================================================
+   Reflect Admin Content Updates on Public Landing Page
+   ========================================================================== */
+
+function applyPublishedAdminContent() {
+  try {
+    const raw = localStorage.getItem('tecklumo_published_content');
+    if (!raw) return;
+    const published = JSON.parse(raw);
+
+    // 1. Hero Content
+    if (published.hero) {
+      const hero = published.hero;
+      const pillEl = document.querySelector('.hero-announcement .announcement-pill');
+      const textEl = document.querySelector('.hero-announcement .announcement-text');
+      const headlineEl = document.querySelector('.hero-headline');
+      const subheadEl = document.querySelector('.hero-subhead');
+      const primaryCta = document.querySelector('.hero-btn-primary span');
+      const secondaryCta = document.querySelector('.hero-btn-secondary');
+      const maintenanceCta = document.querySelector('.hero-btn-maintenance span');
+
+      if (pillEl && hero.pill) pillEl.textContent = hero.pill;
+      if (textEl && hero.subtext) textEl.textContent = hero.subtext;
+      if (headlineEl && hero.headlinePrefix && hero.headlineGradient) {
+        headlineEl.innerHTML = `${escapeText(hero.headlinePrefix)} <span class="text-gradient">${escapeText(hero.headlineGradient)}</span>`;
+      }
+      if (subheadEl && hero.subhead) subheadEl.textContent = hero.subhead;
+      if (primaryCta && hero.primaryCtaText) primaryCta.textContent = hero.primaryCtaText;
+      if (secondaryCta && hero.secondaryCtaText) secondaryCta.textContent = hero.secondaryCtaText;
+      if (maintenanceCta && hero.maintenanceCtaText) maintenanceCta.textContent = hero.maintenanceCtaText;
+    }
+  } catch (e) {
+    console.warn('Could not apply published admin content', e);
+  }
+}
+
+function escapeText(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 

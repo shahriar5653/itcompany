@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Tecklumo Design System & Stylesheet
+   RSTechwerk Design System & Stylesheet (rstechwerk.com)
    Ultra-Modern, Google AI Studio / Linear-inspired Aesthetics
    Vanilla CSS - Responsive, Accessible, High Visual Fidelity
    ========================================================================== */
@@ -109,6 +109,7 @@ html {
   color: var(--color-text-primary);
   background-color: var(--color-canvas);
   scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height) + 1.25rem);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -337,19 +338,69 @@ button, input, select, textarea {
   gap: 0.75rem;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   letter-spacing: -0.04em;
   color: var(--color-text-primary);
   white-space: nowrap;
   flex-shrink: 0;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.brand:hover {
+  opacity: 0.92;
 }
 
 .brand-emblem {
-  width: 32px;
-  height: 32px;
-  color: var(--color-accent);
-  filter: drop-shadow(0 2px 8px var(--color-accent-glow));
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
+  transition: transform var(--transition-normal), filter var(--transition-normal);
+  filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.25));
+}
+
+.brand:hover .brand-emblem {
+  transform: translateY(-1px) scale(1.03);
+  filter: drop-shadow(0 4px 14px rgba(16, 185, 129, 0.4));
+}
+
+.brand-text {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+.brand-rs {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-right: 0.04em;
+}
+
+.brand-tech {
+  color: var(--color-text-primary);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.brand-domain-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-accent);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  margin-left: 0.5rem;
+  text-transform: lowercase;
+  vertical-align: middle;
 }
 
 .desktop-nav {
@@ -397,13 +448,51 @@ button, input, select, textarea {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 
-.theme-toggle { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text-primary); cursor: pointer; font-size: 1.1rem; transition: all var(--transition-fast); }
-.theme-toggle:hover { border-color: var(--color-accent-border); transform: translateY(-1px); }
-.theme-toggle:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 1.05rem;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle .theme-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.05rem;
+  transform: translateY(-0.5px);
+}
+
+.theme-toggle:hover {
+  border-color: var(--color-accent-border);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
 html[data-theme="dark"] body { background-image: radial-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px); }
 html[data-theme="dark"] .site-header { background: rgba(11, 24, 24, 0.92); border-bottom-color: #1f4038; }
 html[data-theme="dark"] .section-alt { background-color: var(--color-canvas-subtle); border-color: var(--color-border); }
@@ -417,9 +506,15 @@ html[data-theme="dark"] .btn-secondary { color: var(--color-text-primary); borde
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
+  height: 38px;
+  padding: 0 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  flex-shrink: 0;
 }
 
-.language-switcher span { color: var(--color-accent); font-size: 0.9rem; }
+.language-switcher span { color: var(--color-accent); font-size: 0.9rem; line-height: 1; }
 .language-switcher select {
   appearance: none;
   border: 0;
@@ -428,7 +523,8 @@ html[data-theme="dark"] .btn-secondary { color: var(--color-text-primary); borde
   cursor: pointer;
   font: inherit;
   outline: none;
-  padding: 0.4rem 0;
+  padding: 0;
+  line-height: 1;
 }
 .language-switcher select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; border-radius: 4px; }
 .mobile-language-switcher { display: none; justify-content: space-between; border-top: 1px solid var(--color-border-subtle); padding-top: 1rem; margin-top: auto; }
@@ -498,14 +594,30 @@ html[data-theme="dark"] .btn-secondary { color: var(--color-text-primary); borde
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  padding: 0.5rem;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--color-text-primary);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.mobile-nav-toggle:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+
+.hamburger-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 @media (min-width: 900px) {
@@ -690,7 +802,7 @@ html[data-theme="dark"] .btn-secondary { color: var(--color-text-primary); borde
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
   margin-bottom: 2.5rem;
   width: 100%;
   max-width: 100%;
@@ -705,6 +817,22 @@ html[data-theme="dark"] .btn-secondary { color: var(--color-text-primary); borde
 .hero-btn-secondary {
   padding: 0.85rem 1.5rem;
   font-size: 0.95rem;
+}
+
+.hero-btn-maintenance {
+  padding: 0.85rem 1.45rem;
+  font-size: 0.95rem;
+  gap: 0.55rem;
+  transition: all var(--transition-fast);
+}
+
+.hero-btn-maintenance svg {
+  color: var(--color-accent);
+  transition: transform var(--transition-fast);
+}
+
+.hero-btn-maintenance:hover svg {
+  transform: rotate(-15deg);
 }
 
 /* Capability Badges with Icons (Clean, No Dangling Punctuation) */
@@ -1921,7 +2049,323 @@ html[data-theme="dark"] .service-card:nth-child(2) .service-title {
 }
 
 /* ==========================================================================
-   Why Tecklumo Section
+   Software Maintenance & Dedicated Engineering Section
+   ========================================================================== */
+
+.maintenance-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.maintenance-toggle-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2.25rem;
+  margin-bottom: 2.75rem;
+}
+
+.maintenance-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 5px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  max-width: 100%;
+}
+
+.maintenance-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.maintenance-toggle-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.maintenance-toggle-btn.active {
+  background: var(--color-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
+}
+
+.maintenance-toggle-btn svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .maintenance-mode-toggle {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+  }
+  .maintenance-toggle-btn {
+    width: 100%;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
+.maintenance-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+  align-items: stretch;
+}
+
+@media (min-width: 900px) {
+  .maintenance-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.maintenance-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.maintenance-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent), rgba(56, 189, 248, 0.7));
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+}
+
+.maintenance-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.maintenance-card:hover::before {
+  opacity: 1;
+}
+
+.maintenance-card.featured {
+  border: 1.5px solid var(--color-accent);
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px -6px rgba(5, 150, 105, 0.12), var(--shadow-card);
+}
+
+html[data-theme="dark"] .maintenance-card.featured {
+  border-color: rgba(52, 211, 153, 0.55);
+  box-shadow: 0 14px 34px -6px rgba(16, 185, 129, 0.18), var(--shadow-card);
+}
+
+.plan-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.plan-pill {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
+}
+
+.plan-pill.popular {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+
+.plan-sla-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  padding: 0.2rem 0.5rem;
+  background: var(--color-canvas-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.plan-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.plan-desc {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  min-height: 48px;
+}
+
+.plan-hours-banner {
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.hours-val {
+  font-family: var(--font-mono);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.hours-period {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.plan-features-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-subtle);
+  margin-bottom: 0.85rem;
+}
+
+.plan-features-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+}
+
+.plan-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.865rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.plan-feature-item .check-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  color: var(--color-accent);
+  margin-top: 2px;
+}
+
+.plan-action {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.plan-cta-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+/* Maintenance Trust Pillars */
+.maintenance-pillars-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 3.5rem;
+  padding-top: 2.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (min-width: 640px) {
+  .maintenance-pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .maintenance-pillars-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.75rem;
+  }
+}
+
+.pillar-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.pillar-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--color-accent-border);
+}
+
+.pillar-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.pillar-desc {
+  font-size: 0.825rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   Why RSTechwerk Section
    ========================================================================== */
 
 .why-grid {
@@ -2657,6 +3101,10 @@ html[data-theme="dark"] .service-card:nth-child(2) .service-title {
   margin-bottom: 1rem;
 }
 
+.footer-brand .brand-tech {
+  color: #ffffff;
+}
+
 .footer-bio {
   color: #94a3b8;
   font-size: 0.95rem;
@@ -2828,6 +3276,27 @@ html[data-theme="dark"] .service-card:nth-child(2) .service-title {
 }
 
 /* ==========================================================================
+   Floating Admin Launcher Badge & Header Navigation Button
+   ========================================================================== */
+
+.admin-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+
+
+/* ==========================================================================
    Comprehensive Mobile & Computer (Desktop) Responsive System
    Covers 360px Mobile, 768px Tablet, 1024px Laptop, 1280px+ Large Desktop
    ========================================================================== */
@@ -2851,21 +3320,84 @@ html, body {
   }
 }
 
-/* Header & Navigation Responsiveness */
-@media (max-width: 560px) {
-  .header-container {
-    gap: 0.75rem;
-  }
+/* Header & Navigation Responsiveness across 899px, 640px, and 380px */
+@media (max-width: 899px) {
   .header-actions .btn-sm {
-    display: none; /* Fully preserved inside mobile drawer */
+    display: none !important; /* Preserved inside mobile drawer CTA */
+  }
+  .brand-domain-pill {
+    display: none !important; /* Keep mobile header clean and prevent overflow */
+  }
+}
+
+@media (max-width: 640px) {
+  .header-container {
+    gap: 0.5rem;
   }
   .brand {
-    font-size: 1.25rem;
-    gap: 0.5rem;
+    font-size: 1.15rem;
+    gap: 0.45rem;
+    min-width: 0;
   }
   .brand-emblem {
     width: 28px;
     height: 28px;
+  }
+  .header-actions {
+    gap: 0.4rem;
+  }
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 1rem;
+  }
+  .mobile-nav-toggle {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+  .hamburger-icon {
+    width: 20px;
+    height: 20px;
+  }
+  .language-switcher {
+    height: 36px;
+    padding: 0 0.45rem;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .brand {
+    font-size: 1.05rem;
+    gap: 0.35rem;
+  }
+  .brand-emblem {
+    width: 26px;
+    height: 26px;
+  }
+  .header-actions {
+    gap: 0.3rem;
+  }
+  .theme-toggle {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .mobile-nav-toggle {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .language-switcher {
+    height: 34px;
+    padding: 0 0.35rem;
+    font-size: 0.68rem;
   }
 }
 
@@ -2897,7 +3429,7 @@ html, body {
     gap: 0.75rem;
     margin-bottom: 2rem;
   }
-  .hero-btn-primary, .hero-btn-secondary {
+  .hero-btn-primary, .hero-btn-secondary, .hero-btn-maintenance {
     width: 100%;
     height: 48px;
     display: inline-flex;

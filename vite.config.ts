@@ -5,7 +5,25 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'admin-route-rewrite',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const pathname = req.url ? req.url.split('?')[0] : '';
+            if (pathname === '/admin' || pathname === '/admin/') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/admin.html');
+              res.end();
+              return;
+            }
+            next();
+          });
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -17,6 +35,14 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+          admin: path.resolve(__dirname, 'admin.html'),
+        },
+      },
     },
   };
 });

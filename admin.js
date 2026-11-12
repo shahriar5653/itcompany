@@ -358,6 +358,96 @@ const DEFAULT_ADMIN_DATA = {
       answer: 'Yes. We offer structured monthly maintenance retainers (20h, 40h, and dedicated 160h pods) covering 99.9% uptime monitoring, security updates, database optimizations, and on-demand feature iterations with guaranteed response SLAs.'
     }
   ],
+  process: {
+    kicker: 'How We Deliver',
+    title: 'From first conversation to confident launch.',
+    description: 'A clear five-stage process turns your idea into a reliable product—with visible progress, focused collaboration, and no unnecessary surprises.',
+    trustBadges: [
+      { id: 'trust-1', icon: '🛡️', label: 'GDPR-Compliant', detail: 'Strict EU Data Privacy Standards' },
+      { id: 'trust-2', icon: '⚡', label: '99.98% SLA', detail: 'High-Availability EU Infrastructure' },
+      { id: 'trust-3', icon: '🔑', label: '100% IP Transfer', detail: 'Full Source Code & License Ownership' },
+      { id: 'trust-4', icon: '⏱️', label: 'European Overlap', detail: 'Direct Sync in CET & BST Timezones' }
+    ],
+    stages: [
+      {
+        id: 'proc-1',
+        step: '01. STAGE',
+        title: 'Discover',
+        desc: 'We align on core business objectives, define user journeys, assess technical constraints, and agree on an unambiguous functional scope.',
+        deliverables: 'Architecture blueprint, user stories, technical feasibility matrix & sprint roadmap.',
+        involvement: 'Collaborative discovery sessions and scope confirmation.'
+      },
+      {
+        id: 'proc-2',
+        step: '02. STAGE',
+        title: 'Design',
+        desc: 'We translate technical requirements into clean, accessible design systems and interactive UI prototypes tested for intuitive flows.',
+        deliverables: 'Interactive design mockups, responsive component system & clickable user flows.',
+        involvement: 'UX feedback rounds and visual approval sign-off.'
+      },
+      {
+        id: 'proc-3',
+        step: '03. STAGE',
+        title: 'Develop',
+        desc: 'We build your application in bi-weekly iterative sprints using modular, typed, and maintainable frontend and backend architectures.',
+        deliverables: 'Weekly deployed test builds, clean Git repositories, and automated CI pipelines.',
+        involvement: 'Bi-weekly sprint demos and test environment reviews.'
+      },
+      {
+        id: 'proc-4',
+        step: '04. STAGE',
+        title: 'Test & Launch',
+        desc: 'Comprehensive end-to-end integration testing, accessibility verification, and zero-downtime production deployment with container orchestration.',
+        deliverables: 'Audited release build, automated health monitoring & production deployment.',
+        involvement: 'Final user acceptance testing and release go-ahead.'
+      },
+      {
+        id: 'proc-5',
+        step: '05. STAGE',
+        title: 'Retain & Scale',
+        desc: 'Proactive maintenance, dependency security updates, feature enhancements, and dedicated engineering capacity as your user base expands.',
+        deliverables: 'Guaranteed response SLAs, monthly performance audits & dedicated sprint hours.',
+        involvement: 'Quarterly roadmap reviews and prioritized feature requests.'
+      }
+    ]
+  },
+  techStack: {
+    kicker: 'Technical Capabilities',
+    title: 'The right technology for lasting products.',
+    description: 'We choose proven tools with strong ecosystems—so your product stays fast, maintainable, and ready for what comes next.',
+    categories: [
+      {
+        id: 'cat-1',
+        name: 'Frontend Engineering',
+        role: 'Responsive web apps, administrative consoles & design systems.',
+        tags: ['React', 'Next.js', 'TypeScript', 'HTML5', 'CSS3', 'Tailwind CSS', 'Vue.js', 'Angular', 'Svelte', 'Storybook']
+      },
+      {
+        id: 'cat-2',
+        name: 'Mobile Applications',
+        role: 'Cross-platform iOS and Android apps with native device integration.',
+        tags: ['Flutter', 'React Native', 'Dart', 'SQLite', 'Push Notifications', 'Swift / iOS', 'Kotlin / Android', 'Expo', 'Firebase']
+      },
+      {
+        id: 'cat-3',
+        name: 'Backend & APIs',
+        role: 'High-throughput RESTful endpoints, worker queues & service layers.',
+        tags: ['Node.js', 'Express', 'Laravel', 'PHP', 'Python', 'REST & GraphQL', 'Go', 'Java / Spring', '.NET / C#', 'NestJS', 'FastAPI', 'WebSockets']
+      },
+      {
+        id: 'cat-4',
+        name: 'Data Storage & Caching',
+        role: 'Reliable relational data models, transactions & low-latency caches.',
+        tags: ['PostgreSQL', 'MySQL', 'Redis', 'Database Migrations', 'MongoDB', 'MariaDB', 'DynamoDB', 'Elasticsearch', 'Supabase']
+      },
+      {
+        id: 'cat-5',
+        name: 'Delivery & Cloud DevOps',
+        role: 'Automated CI/CD pipelines, container orchestration & low-latency European hosting.',
+        tags: ['Docker', 'AWS', 'Hetzner Cloud', 'GitHub Actions', 'Linux / Ubuntu', 'NGINX', 'Cloudflare', 'Sentry Alerting']
+      }
+    ]
+  },
   settings: {
     companyName: 'RSTechwerk',
     inquiryEmail: 'inquiry@rstechwerk.com',
@@ -382,7 +472,12 @@ function loadAdminState() {
     const raw = localStorage.getItem(STORAGE_KEY_ADMIN);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { ...DEFAULT_ADMIN_DATA, ...parsed };
+      return {
+        ...DEFAULT_ADMIN_DATA,
+        ...parsed,
+        process: parsed.process ? { ...DEFAULT_ADMIN_DATA.process, ...parsed.process } : DEFAULT_ADMIN_DATA.process,
+        techStack: parsed.techStack ? { ...DEFAULT_ADMIN_DATA.techStack, ...parsed.techStack } : DEFAULT_ADMIN_DATA.techStack
+      };
     }
   } catch (e) {
     console.error('Failed to load admin state from localStorage', e);
@@ -398,6 +493,8 @@ function saveAdminState() {
       hero: adminState.hero,
       services: adminState.services,
       portfolio: adminState.portfolio,
+      process: adminState.process,
+      techStack: adminState.techStack,
       settings: adminState.settings
     }));
   } catch (e) {
@@ -425,8 +522,57 @@ function showToast(message, type = 'success') {
   }, 3200);
 }
 
+const ADMIN_SESSION_KEY = 'rstechwerk_admin_session';
+
+function checkAdminAuth() {
+  try {
+    const raw = localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY);
+    if (!raw) {
+      window.location.href = '/login.html?redirect=admin';
+      return false;
+    }
+    const session = JSON.parse(raw);
+    if (!session || !session.token) {
+      window.location.href = '/login.html?redirect=admin';
+      return false;
+    }
+    // Update user profile in topbar if present
+    const nameEl = document.getElementById('adminUserName');
+    const avatarEl = document.getElementById('adminUserAvatar');
+    if (nameEl && session.name) nameEl.textContent = session.name;
+    if (avatarEl && session.name) avatarEl.textContent = session.name.substring(0, 2).toUpperCase();
+    return true;
+  } catch (e) {
+    window.location.href = '/login.html?redirect=admin';
+    return false;
+  }
+}
+
+function initAdminLogout() {
+  const logoutBtn = document.getElementById('adminLogoutBtn');
+  const sidebarLogout = document.getElementById('sidebarLogoutBtn');
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    if (confirm('Sign out of RSTechwerk Control Engine?')) {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      showToast('Signed out successfully. Redirecting to login...', 'success');
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 400);
+    }
+  };
+
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+  if (sidebarLogout) sidebarLogout.addEventListener('click', handleLogout);
+}
+
 // DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
+  if (!checkAdminAuth()) return;
+
+  initAdminLogout();
   initThemeToggle();
   initSidebarAndTabs();
   initGlobalSearch();
@@ -435,8 +581,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeroModule();
   initServicesModule();
   initPortfolioModule();
+  initProcessModule();
   initMaintenanceModule();
+  initTechStackModule();
   initFaqModule();
+  initSeoLiveModule();
   initSettingsModule();
   initApiModule();
   initResetDataHandler();
@@ -570,6 +719,31 @@ function initGlobalSearch() {
 }
 
 /* ==========================================================================
+   3.1 Operations & Delivery Dashboard Telemetry
+   ========================================================================== */
+
+function initDashboard() {
+  updateDashboardStats();
+  renderInquiriesTable();
+}
+
+function updateDashboardStats() {
+  const statLeads = document.getElementById('statInboundLeads');
+  const statRetainers = document.getElementById('statActiveRetainers');
+
+  if (statLeads && window.adminState && Array.isArray(adminState.inquiries)) {
+    statLeads.textContent = adminState.inquiries.length;
+  }
+
+  if (statRetainers) {
+    const tierCount = (window.adminState && adminState.maintenance && Array.isArray(adminState.maintenance.tiers))
+      ? adminState.maintenance.tiers.length
+      : 3;
+    statRetainers.textContent = `${tierCount} Tiers · Active`;
+  }
+}
+
+/* ==========================================================================
    4. Inquiries & CRM Module
    ========================================================================== */
 
@@ -691,6 +865,7 @@ function updateInquiriesBadges() {
   const statLeads = document.getElementById('statInboundLeads');
   if (badge) badge.textContent = adminState.inquiries.length;
   if (statLeads) statLeads.textContent = adminState.inquiries.length;
+  updateDashboardStats();
 }
 
 // Modal View & Update
@@ -1234,6 +1409,217 @@ window.deleteProject = function(key) {
 };
 
 /* ==========================================================================
+   7.1 Process & Trust Strip Module
+   ========================================================================== */
+
+function initProcessModule() {
+  renderProcessHeader();
+  renderTrustBadges();
+  renderProcessStages();
+  initProcessStageModal();
+
+  const saveHeaderBtn = document.getElementById('saveProcessHeaderBtn');
+  if (saveHeaderBtn) {
+    saveHeaderBtn.addEventListener('click', () => {
+      const kicker = document.getElementById('processKickerInput')?.value || '';
+      const title = document.getElementById('processTitleInput')?.value || '';
+      const desc = document.getElementById('processDescInput')?.value || '';
+      if (!adminState.process) adminState.process = {};
+      adminState.process.kicker = kicker;
+      adminState.process.title = title;
+      adminState.process.description = desc;
+      saveAdminState();
+      showToast('Process section header saved!');
+    });
+  }
+
+  const saveTrustBtn = document.getElementById('saveTrustStripBtn');
+  if (saveTrustBtn) {
+    saveTrustBtn.addEventListener('click', () => {
+      if (!adminState.process || !Array.isArray(adminState.process.trustBadges)) return;
+      adminState.process.trustBadges.forEach((tb, i) => {
+        const labelEl = document.getElementById(`trust-label-${i}`);
+        const detailEl = document.getElementById(`trust-detail-${i}`);
+        if (labelEl) tb.label = labelEl.value;
+        if (detailEl) tb.detail = detailEl.value;
+      });
+      saveAdminState();
+      showToast('Trust strip principles saved!');
+    });
+  }
+
+  const addBtn = document.getElementById('addNewProcessStageBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => openStageModal());
+  }
+}
+
+function renderProcessHeader() {
+  const kicker = document.getElementById('processKickerInput');
+  const title = document.getElementById('processTitleInput');
+  const desc = document.getElementById('processDescInput');
+  if (kicker && adminState.process?.kicker) kicker.value = adminState.process.kicker;
+  if (title && adminState.process?.title) title.value = adminState.process.title;
+  if (desc && adminState.process?.description) desc.value = adminState.process.description;
+}
+
+function renderTrustBadges() {
+  const container = document.getElementById('trustBadgesAdminContainer');
+  if (!container || !adminState.process?.trustBadges) return;
+
+  container.innerHTML = adminState.process.trustBadges.map((tb, idx) => `
+    <div class="trust-badge-card">
+      <div class="form-group" style="margin-bottom:0.4rem;">
+        <label class="form-label">Title / Metric (${tb.icon || '✓'})</label>
+        <input type="text" id="trust-label-${idx}" class="form-input" value="${escapeHtml(tb.label)}" />
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Institutional Detail</label>
+        <input type="text" id="trust-detail-${idx}" class="form-input" value="${escapeHtml(tb.detail)}" />
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderProcessStages() {
+  const container = document.getElementById('processStagesAdminContainer');
+  const countBadge = document.getElementById('processCountBadge');
+  if (!container || !adminState.process?.stages) return;
+
+  if (countBadge) countBadge.textContent = adminState.process.stages.length;
+
+  container.innerHTML = adminState.process.stages.map(st => `
+    <div class="process-admin-card" data-id="${st.id}">
+      <div class="card-top-row">
+        <span class="process-stage-badge">${escapeHtml(st.step)}</span>
+        <div style="display:flex; gap:0.4rem;">
+          <button type="button" class="btn-action-icon" onclick="openStageModal('${st.id}')">Edit</button>
+          <button type="button" class="btn-action-icon" style="color:#ef4444;" onclick="deleteProcessStage('${st.id}')">Delete</button>
+        </div>
+      </div>
+      <h3 class="card-title">${escapeHtml(st.title)}</h3>
+      <p class="card-desc">${escapeHtml(st.desc)}</p>
+
+      <div class="process-detail-item">
+        <div class="process-detail-label">Key Deliverables</div>
+        <div class="process-detail-text">${escapeHtml(st.deliverables || 'N/A')}</div>
+      </div>
+
+      <div class="process-detail-item">
+        <div class="process-detail-label">Client Involvement</div>
+        <div class="process-detail-text">${escapeHtml(st.involvement || 'N/A')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function initProcessStageModal() {
+  const modal = document.getElementById('stageEditModal');
+  const closeBtn = document.getElementById('closeStageModalBtn');
+  const cancelBtn = document.getElementById('cancelStageModalBtn');
+  const saveBtn = document.getElementById('saveStageModalBtn');
+  if (!modal) return;
+
+  const hide = () => modal.classList.remove('open');
+  if (closeBtn) closeBtn.addEventListener('click', hide);
+  if (cancelBtn) cancelBtn.addEventListener('click', hide);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) hide();
+  });
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const id = document.getElementById('stageModalId')?.value;
+      const step = document.getElementById('stageModalStep')?.value.trim();
+      const title = document.getElementById('stageModalTitleInput')?.value.trim();
+      const desc = document.getElementById('stageModalDesc')?.value.trim();
+      const deliverables = document.getElementById('stageModalDeliverables')?.value.trim();
+      const involvement = document.getElementById('stageModalInvolvement')?.value.trim();
+
+      if (!title || !step) {
+        showToast('Please provide a step number and stage title', 'error');
+        return;
+      }
+
+      if (!adminState.process) adminState.process = { stages: [] };
+      if (!Array.isArray(adminState.process.stages)) adminState.process.stages = [];
+
+      if (id) {
+        const stage = adminState.process.stages.find(s => s.id === id);
+        if (stage) {
+          stage.step = step;
+          stage.title = title;
+          stage.desc = desc;
+          stage.deliverables = deliverables;
+          stage.involvement = involvement;
+        }
+      } else {
+        adminState.process.stages.push({
+          id: `proc-${Date.now()}`,
+          step,
+          title,
+          desc,
+          deliverables,
+          involvement
+        });
+      }
+
+      saveAdminState();
+      renderProcessStages();
+      hide();
+      showToast('Process stage saved successfully!');
+    });
+  }
+}
+
+window.openStageModal = function(id) {
+  const modal = document.getElementById('stageEditModal');
+  if (!modal) return;
+  const titleEl = document.getElementById('stageModalTitle');
+  const idInput = document.getElementById('stageModalId');
+  const stepInput = document.getElementById('stageModalStep');
+  const titleInput = document.getElementById('stageModalTitleInput');
+  const descInput = document.getElementById('stageModalDesc');
+  const delInput = document.getElementById('stageModalDeliverables');
+  const invInput = document.getElementById('stageModalInvolvement');
+
+  if (id) {
+    const stage = adminState.process?.stages?.find(s => s.id === id);
+    if (!stage) return;
+    titleEl.textContent = 'Edit Process Stage';
+    idInput.value = stage.id;
+    stepInput.value = stage.step;
+    titleInput.value = stage.title;
+    descInput.value = stage.desc;
+    delInput.value = stage.deliverables;
+    invInput.value = stage.involvement;
+  } else {
+    titleEl.textContent = 'Add New Process Stage';
+    idInput.value = '';
+    const stagesLen = adminState.process?.stages?.length || 0;
+    const nextNum = (stagesLen + 1).toString().padStart(2, '0');
+    stepInput.value = `${nextNum}. STAGE`;
+    titleInput.value = '';
+    descInput.value = '';
+    delInput.value = 'Architecture blueprint & sprint roadmap.';
+    invInput.value = 'Collaborative review and sprint confirmation.';
+  }
+
+  modal.classList.add('open');
+};
+
+window.deleteProcessStage = function(id) {
+  if (confirm('Delete this delivery stage?')) {
+    if (adminState.process?.stages) {
+      adminState.process.stages = adminState.process.stages.filter(s => s.id !== id);
+      saveAdminState();
+      renderProcessStages();
+      showToast('Process stage deleted', 'error');
+    }
+  }
+};
+
+/* ==========================================================================
    8. Maintenance Tiers Module
    ========================================================================== */
 
@@ -1328,6 +1714,194 @@ function renderMaintenanceTiers() {
 }
 
 /* ==========================================================================
+   8.1 Tech Stack & Tools Module
+   ========================================================================== */
+
+function initTechStackModule() {
+  renderTechHeader();
+  renderTechCategories();
+  initTechCategoryModal();
+
+  const saveHeaderBtn = document.getElementById('saveTechHeaderBtn');
+  if (saveHeaderBtn) {
+    saveHeaderBtn.addEventListener('click', () => {
+      const kicker = document.getElementById('techKickerInput')?.value || '';
+      const title = document.getElementById('techTitleInput')?.value || '';
+      const desc = document.getElementById('techDescInput')?.value || '';
+      if (!adminState.techStack) adminState.techStack = {};
+      adminState.techStack.kicker = kicker;
+      adminState.techStack.title = title;
+      adminState.techStack.description = desc;
+      saveAdminState();
+      showToast('Tech stack header saved!');
+    });
+  }
+
+  const addBtn = document.getElementById('addNewTechCategoryBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => openTechModal());
+  }
+}
+
+function renderTechHeader() {
+  const kicker = document.getElementById('techKickerInput');
+  const title = document.getElementById('techTitleInput');
+  const desc = document.getElementById('techDescInput');
+  if (kicker && adminState.techStack?.kicker) kicker.value = adminState.techStack.kicker;
+  if (title && adminState.techStack?.title) title.value = adminState.techStack.title;
+  if (desc && adminState.techStack?.description) desc.value = adminState.techStack.description;
+}
+
+function renderTechCategories() {
+  const container = document.getElementById('techCategoriesAdminContainer');
+  const countBadge = document.getElementById('techCountBadge');
+  if (!container || !adminState.techStack?.categories) return;
+
+  if (countBadge) countBadge.textContent = adminState.techStack.categories.length;
+
+  container.innerHTML = adminState.techStack.categories.map(cat => `
+    <div class="tech-category-card" data-id="${cat.id}">
+      <div class="card-top-row">
+        <h3 class="card-title" style="margin:0;">${escapeHtml(cat.name)}</h3>
+        <div style="display:flex; gap:0.4rem;">
+          <button type="button" class="btn-action-icon" onclick="openTechModal('${cat.id}')">Edit</button>
+          <button type="button" class="btn-action-icon" style="color:#ef4444;" onclick="deleteTechCategory('${cat.id}')">Delete</button>
+        </div>
+      </div>
+      <p class="card-desc" style="margin-top:0.35rem; margin-bottom:0.75rem;">${escapeHtml(cat.role)}</p>
+
+      <div class="tech-tags-wrapper">
+        ${(cat.tags || []).map((t, idx) => `
+          <span class="tech-tag-chip">
+            <span>${escapeHtml(t)}</span>
+            <button type="button" class="tech-tag-remove-btn" onclick="removeTechTag('${cat.id}', ${idx})" title="Remove tag">&times;</button>
+          </span>
+        `).join('')}
+      </div>
+
+      <div class="tech-add-tag-form">
+        <input type="text" class="form-input form-input-sm" id="new-tag-input-${cat.id}" placeholder="Add tool (e.g. Next.js)..." />
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addTechTag('${cat.id}')">+ Add</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.addTechTag = function(catId) {
+  const input = document.getElementById(`new-tag-input-${catId}`);
+  if (!input || !input.value.trim()) return;
+  const cat = adminState.techStack?.categories?.find(c => c.id === catId);
+  if (!cat) return;
+  if (!Array.isArray(cat.tags)) cat.tags = [];
+  cat.tags.push(input.value.trim());
+  input.value = '';
+  saveAdminState();
+  renderTechCategories();
+  showToast('Tool added to stack');
+};
+
+window.removeTechTag = function(catId, tagIndex) {
+  const cat = adminState.techStack?.categories?.find(c => c.id === catId);
+  if (!cat || !cat.tags) return;
+  cat.tags.splice(tagIndex, 1);
+  saveAdminState();
+  renderTechCategories();
+};
+
+function initTechCategoryModal() {
+  const modal = document.getElementById('techCategoryModal');
+  const closeBtn = document.getElementById('closeTechCategoryModalBtn');
+  const cancelBtn = document.getElementById('cancelTechCategoryModalBtn');
+  const saveBtn = document.getElementById('saveTechCategoryModalBtn');
+  if (!modal) return;
+
+  const hide = () => modal.classList.remove('open');
+  if (closeBtn) closeBtn.addEventListener('click', hide);
+  if (cancelBtn) cancelBtn.addEventListener('click', hide);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) hide();
+  });
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const id = document.getElementById('techCategoryModalId')?.value;
+      const name = document.getElementById('techCategoryModalName')?.value.trim();
+      const role = document.getElementById('techCategoryModalRole')?.value.trim();
+      const tagsRaw = document.getElementById('techCategoryModalTags')?.value || '';
+      const tags = tagsRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (!name) {
+        showToast('Please provide a category name', 'error');
+        return;
+      }
+
+      if (!adminState.techStack) adminState.techStack = { categories: [] };
+      if (!Array.isArray(adminState.techStack.categories)) adminState.techStack.categories = [];
+
+      if (id) {
+        const cat = adminState.techStack.categories.find(c => c.id === id);
+        if (cat) {
+          cat.name = name;
+          cat.role = role;
+          cat.tags = tags;
+        }
+      } else {
+        adminState.techStack.categories.push({
+          id: `cat-${Date.now()}`,
+          name,
+          role,
+          tags
+        });
+      }
+
+      saveAdminState();
+      renderTechCategories();
+      hide();
+      showToast('Tech category saved successfully!');
+    });
+  }
+}
+
+window.openTechModal = function(id) {
+  const modal = document.getElementById('techCategoryModal');
+  if (!modal) return;
+  const titleEl = document.getElementById('techCategoryModalTitle');
+  const idInput = document.getElementById('techCategoryModalId');
+  const nameInput = document.getElementById('techCategoryModalName');
+  const roleInput = document.getElementById('techCategoryModalRole');
+  const tagsInput = document.getElementById('techCategoryModalTags');
+
+  if (id) {
+    const cat = adminState.techStack?.categories?.find(c => c.id === id);
+    if (!cat) return;
+    titleEl.textContent = 'Edit Stack Category';
+    idInput.value = cat.id;
+    nameInput.value = cat.name;
+    roleInput.value = cat.role;
+    tagsInput.value = (cat.tags || []).join(', ');
+  } else {
+    titleEl.textContent = 'Add New Stack Category';
+    idInput.value = '';
+    nameInput.value = '';
+    roleInput.value = 'Core engineering tools & frameworks';
+    tagsInput.value = 'React, TypeScript, Node.js, Docker';
+  }
+
+  modal.classList.add('open');
+};
+
+window.deleteTechCategory = function(id) {
+  if (confirm('Delete this entire tech category?')) {
+    if (adminState.techStack?.categories) {
+      adminState.techStack.categories = adminState.techStack.categories.filter(c => c.id !== id);
+      saveAdminState();
+      renderTechCategories();
+      showToast('Tech category deleted', 'error');
+    }
+  }
+};
+
+/* ==========================================================================
    9. FAQ Module
    ========================================================================== */
 
@@ -1399,6 +1973,125 @@ window.deleteFaq = function(id) {
     showToast('FAQ removed', 'error');
   }
 };
+
+/* ==========================================================================
+   9.1 Live SEO & Rich Snippets Preview Module
+   ========================================================================== */
+
+function initSeoLiveModule() {
+  const titleInput = document.getElementById('seoQuickTitle');
+  const descInput = document.getElementById('seoQuickDesc');
+  const applyBtn = document.getElementById('applyQuickSeoBtn');
+  const copyBtn = document.getElementById('copySchemaJsonBtn');
+
+  // Populate from settings
+  if (titleInput && adminState.settings?.metaTitle) {
+    titleInput.value = adminState.settings.metaTitle;
+  }
+  if (descInput && adminState.settings?.metaDescription) {
+    descInput.value = adminState.settings.metaDescription;
+  }
+
+  const updatePreview = () => {
+    const titleVal = titleInput?.value || adminState.settings?.metaTitle || 'RSTechwerk – Software Solutions';
+    const descVal = descInput?.value || adminState.settings?.metaDescription || '';
+
+    const titlePreview = document.getElementById('serpTitlePreview');
+    const descPreview = document.getElementById('serpDescPreview');
+    const titleCount = document.getElementById('seoTitleCount');
+    const descCount = document.getElementById('seoDescCount');
+
+    if (titlePreview) titlePreview.textContent = titleVal;
+    if (descPreview) descPreview.textContent = descVal;
+    if (titleCount) titleCount.textContent = `${titleVal.length} / 60 chars`;
+    if (descCount) descCount.textContent = `${descVal.length} / 160 chars`;
+
+    // Social card preview
+    const socialTitle = document.getElementById('socialCardTitle');
+    const socialDesc = document.getElementById('socialCardDesc');
+    if (socialTitle) socialTitle.textContent = titleVal;
+    if (socialDesc) socialDesc.textContent = descVal;
+
+    // Refresh Schema.org JSON-LD
+    renderSchemaJson(titleVal, descVal);
+  };
+
+  if (titleInput) titleInput.addEventListener('input', updatePreview);
+  if (descInput) descInput.addEventListener('input', updatePreview);
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      if (titleInput) adminState.settings.metaTitle = titleInput.value.trim();
+      if (descInput) adminState.settings.metaDescription = descInput.value.trim();
+
+      // Mirror to main settings tab inputs
+      const mainTitle = document.getElementById('settingMetaTitle');
+      const mainDesc = document.getElementById('settingMetaDescription');
+      if (mainTitle && titleInput) mainTitle.value = titleInput.value;
+      if (mainDesc && descInput) mainDesc.value = descInput.value;
+
+      saveAdminState();
+      showToast('SEO metadata saved and applied to live site!');
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const codeBlock = document.getElementById('schemaJsonCodeBlock');
+      if (codeBlock && navigator.clipboard) {
+        navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+          showToast('Schema.org JSON-LD copied to clipboard!');
+        });
+      }
+    });
+  }
+
+  updatePreview();
+}
+
+function renderSchemaJson(title, desc) {
+  const codeBlock = document.getElementById('schemaJsonCodeBlock');
+  if (!codeBlock) return;
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ProfessionalService",
+        "@id": "https://rstechwerk.com/#organization",
+        "name": adminState.settings?.companyName || "RSTechwerk",
+        "url": adminState.settings?.canonicalUrl || "https://rstechwerk.com/",
+        "logo": adminState.settings?.ogImage || "https://rstechwerk.com/og-preview.png",
+        "image": adminState.settings?.ogImage || "https://rstechwerk.com/og-preview.png",
+        "description": desc,
+        "email": adminState.settings?.inquiryEmail || "inquiry@rstechwerk.com",
+        "priceRange": "€€€",
+        "areaServed": ["DE", "AT", "CH", "EU", "GB", "Global"],
+        "knowsAbout": [
+          "Custom Software Development",
+          "Web & SaaS Platforms",
+          "Mobile App Development",
+          "PostgreSQL Architecture",
+          "Full-Stack Engineering Retainers"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://rstechwerk.com/#faq",
+        "mainEntity": (adminState.faqs || []).map(f => ({
+          "@type": "Question",
+          "name": f.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": f.answer
+          }
+        }))
+      }
+    ]
+  };
+
+  codeBlock.textContent = JSON.stringify(schema, null, 2);
+}
 
 /* ==========================================================================
    10. Company Settings & SEO Module

@@ -19,6 +19,12 @@ export default defineConfig(() => {
               res.end();
               return;
             }
+            if (pathname === '/login' || pathname === '/login/' || pathname === '/admin/login') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/login.html');
+              res.end();
+              return;
+            }
             next();
           });
         },
@@ -41,6 +47,7 @@ export default defineConfig(() => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           admin: path.resolve(__dirname, 'admin.html'),
+          login: path.resolve(__dirname, 'login.html'),
         },
       },
     },

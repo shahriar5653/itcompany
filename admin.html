@@ -81,13 +81,20 @@
           <span id="adminThemeIcon">☀</span>
         </button>
 
-        <!-- Admin Profile -->
+        <!-- Admin Profile & Logout -->
         <div class="admin-profile-pill">
-          <div class="admin-avatar">TL</div>
+          <div class="admin-avatar" id="adminUserAvatar">RS</div>
           <div class="admin-meta">
-            <span class="admin-name">Admin Lead</span>
-            <span class="admin-role">Dhaka / Berlin</span>
+            <span class="admin-name" id="adminUserName">Admin Lead</span>
+            <span class="admin-role">Berlin / Dhaka</span>
           </div>
+          <button type="button" class="btn-topbar-logout" id="adminLogoutBtn" title="Sign out of Admin Console" aria-label="Sign out">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
         </div>
       </div>
     </header>
@@ -147,11 +154,31 @@
             <span class="badge-count" id="portfolioCountBadge">6</span>
           </button>
 
+          <button type="button" class="nav-tab-btn" data-tab="tab-process">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Process &amp; Pipeline</span>
+            <span class="badge-count" id="processCountBadge">5</span>
+          </button>
+
           <button type="button" class="nav-tab-btn" data-tab="tab-maintenance">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
             </svg>
             <span>Maintenance &amp; Retainers</span>
+          </button>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-tech">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            <span>Tech Stack &amp; Tools</span>
+            <span class="badge-count" id="techCountBadge">5</span>
           </button>
 
           <button type="button" class="nav-tab-btn" data-tab="tab-faq">
@@ -164,14 +191,23 @@
             <span class="badge-count" id="faqCountBadge">6</span>
           </button>
 
-          <div class="sidebar-section-kicker" style="margin-top: 1.25rem;">Configuration &amp; API</div>
+          <div class="sidebar-section-kicker" style="margin-top: 1.25rem;">SEO &amp; Infrastructure</div>
+
+          <button type="button" class="nav-tab-btn" data-tab="tab-seo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Live SEO &amp; Rich Cards</span>
+            <span class="badge-pill-accent">Google</span>
+          </button>
 
           <button type="button" class="nav-tab-btn" data-tab="tab-settings">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
-            <span>Company Info &amp; SEO</span>
+            <span>Company Info &amp; SLAs</span>
           </button>
 
           <button type="button" class="nav-tab-btn" data-tab="tab-api">
@@ -193,6 +229,14 @@
             </div>
             <p class="card-status-desc">All edits are stored locally and will map directly into your future REST or GraphQL API.</p>
             <button type="button" class="btn-restore-defaults" id="resetDefaultsBtn">Reset to Default Data</button>
+            <button type="button" class="btn-sidebar-signout" id="sidebarLogoutBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Sign Out of Console</span>
+            </button>
           </div>
         </div>
       </aside>
@@ -538,6 +582,65 @@
         </section>
 
         <!-- ====================================================================
+             5.1 TAB: PROCESS & PIPELINE MANAGER
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-process" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Engineering Process &amp; Trust Strip</h1>
+              <p class="panel-subtitle">Manage the 5-stage product delivery workflow, deliverables, client involvement expectations, and EU trust badges.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="addNewProcessStageBtn">+ Add Process Stage</button>
+            </div>
+          </div>
+
+          <!-- Section Copy Editor -->
+          <div class="content-box" style="margin-bottom: 1.5rem;">
+            <h2 class="box-title">Process Section Header</h2>
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="processKickerInput">Section Kicker</label>
+                <input type="text" id="processKickerInput" class="form-input" value="How We Deliver" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="processTitleInput">Section Title</label>
+                <input type="text" id="processTitleInput" class="form-input" value="From first conversation to confident launch." />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="processDescInput">Section Description</label>
+              <textarea id="processDescInput" class="form-textarea" rows="2">A clear five-stage process turns your idea into a reliable product—with visible progress, focused collaboration, and no unnecessary surprises.</textarea>
+            </div>
+            <div style="text-align: right; margin-top: 0.75rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="saveProcessHeaderBtn">Save Header</button>
+            </div>
+          </div>
+
+          <!-- Trust Strip Principles Editor -->
+          <div class="content-box" style="margin-bottom: 1.5rem;">
+            <div class="box-header">
+              <div>
+                <h2 class="box-title">European Delivery Trust Principles (Trust Strip)</h2>
+                <p class="box-subtitle">Four core pillars prominently displayed beneath the hero section to establish institutional credibility.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="saveTrustStripBtn">Save Trust Strip</button>
+            </div>
+            <div class="trust-badges-grid" id="trustBadgesAdminContainer">
+              <!-- Populated by admin.js -->
+            </div>
+          </div>
+
+          <!-- Process Stages Grid -->
+          <div class="content-box">
+            <h2 class="box-title">Delivery Stages (5 Stages)</h2>
+            <div class="process-admin-grid" id="processStagesAdminContainer">
+              <!-- Populated by admin.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
              6. TAB: MAINTENANCE & RETAINERS MANAGER
              ==================================================================== -->
         <section class="admin-tab-panel" id="tab-maintenance" role="tabpanel">
@@ -567,6 +670,48 @@
         </section>
 
         <!-- ====================================================================
+             6.1 TAB: TECH STACK & TOOLS
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-tech" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Technology Stack &amp; Tools</h1>
+              <p class="panel-subtitle">Curate the engineering disciplines, frameworks, databases, and DevOps tooling displayed across the landing page.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="addNewTechCategoryBtn">+ Add Stack Category</button>
+            </div>
+          </div>
+
+          <!-- Section Copy Editor -->
+          <div class="content-box" style="margin-bottom: 1.5rem;">
+            <h2 class="box-title">Tech Stack Section Header</h2>
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="techKickerInput">Section Kicker</label>
+                <input type="text" id="techKickerInput" class="form-input" value="Technical Capabilities" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="techTitleInput">Section Title</label>
+                <input type="text" id="techTitleInput" class="form-input" value="The right technology for lasting products." />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="techDescInput">Section Description</label>
+              <textarea id="techDescInput" class="form-textarea" rows="2">We choose proven tools with strong ecosystems—so your product stays fast, maintainable, and ready for what comes next.</textarea>
+            </div>
+            <div style="text-align: right; margin-top: 0.75rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="saveTechHeaderBtn">Save Header</button>
+            </div>
+          </div>
+
+          <!-- Categories Grid -->
+          <div class="tech-admin-grid" id="techCategoriesAdminContainer">
+            <!-- Populated by admin.js -->
+          </div>
+        </section>
+
+        <!-- ====================================================================
              7. TAB: FAQ ACCORDION MANAGER
              ==================================================================== -->
         <section class="admin-tab-panel" id="tab-faq" role="tabpanel">
@@ -583,6 +728,94 @@
           <div class="content-box">
             <div class="faq-admin-list" id="faqAdminListContainer">
               <!-- Populated by admin.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             7.1 TAB: LIVE SEO & RICH CARDS
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-seo" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Live Search Engine Optimization &amp; Rich Cards</h1>
+              <p class="panel-subtitle">Real-time simulation of Google Search Engine Results Page (SERP), LinkedIn/Twitter social share cards, and Schema.org JSON-LD structured data generator.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="copySchemaJsonBtn">Copy Schema.org JSON-LD</button>
+            </div>
+          </div>
+
+          <div class="dashboard-row two-col">
+            <!-- Left: Google Search SERP Simulator -->
+            <div class="content-box">
+              <div class="box-header">
+                <div>
+                  <h2 class="box-title">Google SERP Desktop &amp; Mobile Preview</h2>
+                  <p class="box-subtitle">Live snippet simulation based on title, meta description, and canonical URL.</p>
+                </div>
+                <span class="status-chip success">100% SEO Ready</span>
+              </div>
+
+              <div class="google-serp-preview" id="googleSerpPreview">
+                <div class="serp-url-row">
+                  <div class="serp-favicon">R</div>
+                  <div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: #202124;" id="serpDomainLabel">rstechwerk.com</div>
+                    <div class="serp-breadcrumb" id="serpBreadcrumb">https://rstechwerk.com &rsaquo; software-engineering</div>
+                  </div>
+                </div>
+                <a href="#" class="serp-title" id="serpTitlePreview">RSTechwerk – Software Development &amp; Technology Solutions | rstechwerk.com</a>
+                <p class="serp-desc" id="serpDescPreview">RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.</p>
+              </div>
+
+              <!-- Quick Meta Inputs for Instant Tuning -->
+              <div class="admin-form" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <label class="form-label" for="seoQuickTitle">SEO Title Tag (&lt;title&gt;)</label>
+                    <span style="font-size: 0.72rem; color: var(--admin-text-muted);" id="seoTitleCount">65 / 60 chars</span>
+                  </div>
+                  <input type="text" id="seoQuickTitle" class="form-input" value="RSTechwerk – Software Development &amp; Technology Solutions | rstechwerk.com" />
+                </div>
+
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <label class="form-label" for="seoQuickDesc">SEO Meta Description</label>
+                    <span style="font-size: 0.72rem; color: var(--admin-text-muted);" id="seoDescCount">155 / 160 chars</span>
+                  </div>
+                  <textarea id="seoQuickDesc" class="form-textarea" rows="3">RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.</textarea>
+                </div>
+
+                <button type="button" class="btn btn-secondary btn-sm" id="applyQuickSeoBtn">Apply to Settings &amp; Site</button>
+              </div>
+            </div>
+
+            <!-- Right: Social Share Preview & Schema.org JSON-LD -->
+            <div class="content-box">
+              <h2 class="box-title">Social Share Card Preview (OpenGraph / LinkedIn / Twitter)</h2>
+              <p class="box-subtitle">How your website displays when shared across messaging apps and professional social feeds.</p>
+
+              <div class="social-card-preview">
+                <div class="social-card-image">
+                  <div class="social-card-image-logo" id="socialCardLogo">RSTechwerk</div>
+                  <div class="social-card-image-tagline" id="socialCardTagline">Engineering Products That Move Business Forward</div>
+                </div>
+                <div class="social-card-body">
+                  <div class="social-card-domain">rstechwerk.com · Official Website</div>
+                  <div class="social-card-title" id="socialCardTitle">RSTechwerk – Senior Product Engineering</div>
+                  <div class="social-card-desc" id="socialCardDesc">From first idea to production-ready software, we help ambitious businesses launch faster with reliable design, development, and ongoing support.</div>
+                </div>
+              </div>
+
+              <!-- Structured Data Code -->
+              <div style="margin-top: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <h3 class="box-title" style="font-size: 0.95rem; margin: 0;">Auto-Generated Schema.org (JSON-LD)</h3>
+                  <span class="status-chip neutral">ProfessionalService &amp; FAQPage</span>
+                </div>
+                <pre class="schema-json-code" id="schemaJsonCodeBlock"></pre>
+              </div>
             </div>
           </div>
         </section>
@@ -913,6 +1146,83 @@
         <div class="admin-modal-footer">
           <button type="button" class="btn btn-secondary btn-sm" id="cancelProjectModalBtn">Cancel</button>
           <button type="button" class="btn btn-primary btn-sm" id="saveProjectModalBtn">Save Case Study</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add / Edit Process Stage -->
+    <div class="admin-modal-backdrop" id="stageEditModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="admin-modal-card">
+        <div class="admin-modal-header">
+          <h3 class="admin-modal-title" id="stageModalTitle">Edit Process Stage</h3>
+          <button type="button" class="modal-close-btn" id="closeStageModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+          <form id="stageModalForm" class="admin-form">
+            <input type="hidden" id="stageModalId" />
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="stageModalStep">Step / Number</label>
+                <input type="text" id="stageModalStep" class="form-input" placeholder="e.g. 01. STAGE" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="stageModalTitleInput">Stage Title</label>
+                <input type="text" id="stageModalTitleInput" class="form-input" placeholder="e.g. Discover" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="stageModalDesc">Stage Summary</label>
+              <textarea id="stageModalDesc" class="form-textarea" rows="3" placeholder="Explain the focus of this stage..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="stageModalDeliverables">Key Deliverables</label>
+              <input type="text" id="stageModalDeliverables" class="form-input" placeholder="e.g. Architecture blueprint, user stories, feasibility matrix" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="stageModalInvolvement">Client Involvement</label>
+              <input type="text" id="stageModalInvolvement" class="form-input" placeholder="e.g. Collaborative discovery sessions and scope confirmation." required />
+            </div>
+          </form>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="cancelStageModalBtn">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="saveStageModalBtn">Save Stage</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add / Edit Tech Category -->
+    <div class="admin-modal-backdrop" id="techCategoryModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="admin-modal-card">
+        <div class="admin-modal-header">
+          <h3 class="admin-modal-title" id="techCategoryModalTitle">Edit Tech Category</h3>
+          <button type="button" class="modal-close-btn" id="closeTechCategoryModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+          <form id="techCategoryModalForm" class="admin-form">
+            <input type="hidden" id="techCategoryModalId" />
+            <div class="form-group">
+              <label class="form-label" for="techCategoryModalName">Category Title</label>
+              <input type="text" id="techCategoryModalName" class="form-input" placeholder="e.g. Frontend Engineering" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="techCategoryModalRole">Role / Application Description</label>
+              <input type="text" id="techCategoryModalRole" class="form-input" placeholder="e.g. Responsive web apps, administrative consoles & design systems." required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="techCategoryModalTags">Technologies &amp; Tools (Comma separated)</label>
+              <textarea id="techCategoryModalTags" class="form-textarea" rows="3" placeholder="React, Next.js, TypeScript, Tailwind CSS, Vue.js"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="cancelTechCategoryModalBtn">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="saveTechCategoryModalBtn">Save Category</button>
         </div>
       </div>
     </div>

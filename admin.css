@@ -338,6 +338,49 @@ body.admin-body {
   color: var(--admin-text-muted);
 }
 
+.btn-topbar-logout {
+  background: none;
+  border: none;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  margin-left: 0.25rem;
+}
+
+.btn-topbar-logout:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.btn-sidebar-signout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.55rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-top: 0.65rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-sidebar-signout:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 /* ==========================================================================
    Admin Workspace Layout
    ========================================================================== */
@@ -1569,4 +1612,351 @@ body.admin-body {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ==========================================================================
+   Process & Trust Strip Admin Styles
+   ========================================================================== */
+.process-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .process-admin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.process-admin-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.process-admin-card:hover {
+  border-color: var(--admin-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.process-stage-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--admin-accent);
+  background: var(--admin-accent-subtle);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-bottom: 0.65rem;
+}
+
+.process-detail-item {
+  background: var(--admin-canvas-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  margin-top: 0.65rem;
+}
+
+.process-detail-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.04em;
+}
+
+.process-detail-text {
+  font-size: 0.8rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.45;
+}
+
+.trust-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .trust-badges-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .trust-badges-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trust-badge-card {
+  background: var(--admin-canvas-subtle);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.trust-badge-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--admin-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.trust-badge-detail {
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Tech Stack Admin Styles
+   ========================================================================== */
+.tech-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .tech-admin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tech-category-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-fast);
+}
+
+.tech-category-card:hover {
+  border-color: var(--admin-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.tech-tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 1rem 0;
+}
+
+.tech-tag-chip {
+  background: var(--admin-canvas-subtle);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all var(--transition-fast);
+}
+
+.tech-tag-chip:hover {
+  border-color: var(--admin-accent);
+  color: var(--admin-accent);
+}
+
+.tech-tag-remove-btn {
+  background: none;
+  border: none;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tech-tag-remove-btn:hover {
+  color: #ef4444;
+}
+
+.tech-add-tag-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--admin-border-subtle);
+}
+
+/* ==========================================================================
+   Live SEO & Social Card Preview Styles
+   ========================================================================== */
+.google-serp-preview {
+  background: #ffffff;
+  border: 1px solid #dfe1e5;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  font-family: Arial, sans-serif;
+  color: #202124;
+  margin-top: 0.75rem;
+}
+
+[data-theme="dark"] .google-serp-preview {
+  background: #202124;
+  border-color: #3c4043;
+  color: #e8eaed;
+}
+
+.serp-url-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #202124;
+  margin-bottom: 0.35rem;
+}
+
+[data-theme="dark"] .serp-url-row {
+  color: #bdc1c6;
+}
+
+.serp-favicon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.serp-breadcrumb {
+  font-size: 0.8rem;
+  color: #4d5156;
+}
+
+[data-theme="dark"] .serp-breadcrumb {
+  color: #9aa0a6;
+}
+
+.serp-title {
+  font-size: 1.25rem;
+  line-height: 1.35;
+  color: #1a0dab;
+  font-weight: 400;
+  cursor: pointer;
+  margin-bottom: 0.35rem;
+  text-decoration: none;
+  display: block;
+}
+
+[data-theme="dark"] .serp-title {
+  color: #8ab4f8;
+}
+
+.serp-title:hover {
+  text-decoration: underline;
+}
+
+.serp-desc {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #4d5156;
+}
+
+[data-theme="dark"] .serp-desc {
+  color: #bdc1c6;
+}
+
+/* Social Card Preview */
+.social-card-preview {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 520px;
+  margin-top: 0.75rem;
+}
+
+.social-card-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #0f172a 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  color: #ffffff;
+  text-align: center;
+  position: relative;
+}
+
+.social-card-image-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.social-card-image-tagline {
+  font-size: 0.85rem;
+  color: #a7f3d0;
+  max-width: 380px;
+}
+
+.social-card-body {
+  padding: 1rem 1.25rem;
+  background: var(--admin-canvas-subtle);
+}
+
+.social-card-domain {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--admin-text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.social-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--admin-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.social-card-desc {
+  font-size: 0.8rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.45;
+}
+
+.schema-json-code {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-height: 340px;
 }

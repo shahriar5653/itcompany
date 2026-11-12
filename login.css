@@ -1,0 +1,391 @@
+/* ==========================================================================
+   RSTechwerk Control Engine – Login Stylesheet (rstechwerk.com)
+   Linear / Stripe-tier Modern Enterprise Authentication Portal
+   ========================================================================== */
+
+.login-page-body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--admin-canvas);
+  color: var(--admin-text-primary);
+  font-family: var(--font-body);
+  position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Background Atmosphere */
+.login-bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px),
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16, 185, 129, 0.15), transparent 75%);
+  background-size: 28px 28px, 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] .login-bg-grid {
+  background-image: 
+    radial-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16, 185, 129, 0.08), transparent 75%);
+}
+
+.login-topbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.login-brand-logo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.login-brand-logo .accent {
+  color: var(--admin-accent);
+}
+
+.login-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.login-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--admin-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.login-back-link:hover {
+  color: var(--admin-accent);
+}
+
+/* Central Card Layout */
+.login-main {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+  box-sizing: border-box;
+}
+
+.login-card-wrapper {
+  width: 100%;
+  max-width: 460px;
+}
+
+.login-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-xl);
+  padding: 2.25rem 2rem;
+  box-shadow: var(--shadow-lg), 0 0 32px rgba(16, 185, 129, 0.08);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #38bdf8 100%);
+}
+
+.login-card-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.login-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--admin-accent-light);
+  border: 1px solid var(--admin-accent-border);
+  color: var(--admin-accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.85rem;
+}
+
+.login-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--admin-text-primary);
+  margin: 0 0 0.4rem 0;
+}
+
+.login-subtitle {
+  font-size: 0.85rem;
+  color: var(--admin-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Quick Demo Profile Banner */
+.demo-credentials-banner {
+  background: var(--admin-canvas-subtle);
+  border: 1px dashed var(--admin-border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.demo-credentials-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-credentials-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--admin-accent);
+}
+
+.demo-credentials-text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--admin-text-secondary);
+}
+
+.btn-fill-demo {
+  background: var(--admin-surface-hover);
+  border: 1px solid var(--admin-border-strong);
+  color: var(--admin-text-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.btn-fill-demo:hover {
+  background: var(--admin-accent);
+  color: #ffffff;
+  border-color: var(--admin-accent);
+}
+
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.login-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.login-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--admin-text-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--admin-canvas-subtle);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.75rem 2.6rem 0.75rem 2.5rem;
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+  transition: all var(--transition-fast);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  background: var(--admin-surface);
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 0.8rem;
+  background: none;
+  border: none;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition-fast);
+}
+
+.btn-toggle-password:hover {
+  color: var(--admin-text-primary);
+}
+
+/* Options Row */
+.login-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.login-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--admin-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-forgot-link {
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.login-forgot-link:hover {
+  color: var(--admin-accent);
+}
+
+/* Submit Button */
+.btn-login-submit {
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-login-submit:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.login-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: loginSpin 0.7s linear infinite;
+}
+
+@keyframes loginSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Shake Animation on Error */
+@keyframes shakeCard {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.login-card.shake {
+  animation: shakeCard 0.4s ease-in-out;
+  border-color: #ef4444;
+}
+
+/* Error Banner */
+.login-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.825rem;
+  line-height: 1.45;
+  display: none;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.login-alert.show {
+  display: flex;
+}
+
+/* Card Footer */
+.login-card-footer {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--admin-border);
+  text-align: center;
+}
+
+.login-security-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--admin-text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Page Footer */
+.login-footer {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+}

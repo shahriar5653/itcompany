@@ -1139,6 +1139,28 @@ function applyPublishedAdminContent() {
       if (secondaryCta && hero.secondaryCtaText) secondaryCta.textContent = hero.secondaryCtaText;
       if (maintenanceCta && hero.maintenanceCtaText) maintenanceCta.textContent = hero.maintenanceCtaText;
     }
+
+    // 2. European Delivery Trust Principles (Trust Strip)
+    const trustBadges = (published.process && Array.isArray(published.process.trustBadges)) 
+      ? published.process.trustBadges 
+      : null;
+
+    if (trustBadges && trustBadges.length > 0) {
+      const container = document.getElementById('trustStripItemsContainer');
+      if (container) {
+        container.innerHTML = trustBadges.map(b => `
+          <div class="trust-principle-card">
+            <div class="trust-card-icon-box">
+              <span style="font-size: 1.1rem; line-height: 1;">${escapeText(b.icon || '✓')}</span>
+            </div>
+            <div class="trust-card-content">
+              <div class="trust-card-title">${escapeText(b.label)}</div>
+              <div class="trust-card-detail">${escapeText(b.detail)}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
   } catch (e) {
     console.warn('Could not apply published admin content', e);
   }

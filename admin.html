@@ -146,6 +146,12 @@
             <span>Hero &amp; Announcement</span>
           </button>
 
+          <button type="button" class="nav-tab-btn" data-tab="tab-multilingual">
+            <span aria-hidden="true">文</span>
+            <span>Multilingual Content</span>
+            <span class="badge-pill-accent">EN · DE · ES</span>
+          </button>
+
           <button type="button" class="nav-tab-btn" data-tab="tab-services">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -858,6 +864,22 @@
         <!-- ====================================================================
              3. TAB: HERO & ANNOUNCEMENT MANAGER
              ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-multilingual" role="tabpanel">
+          <div class="panel-header">
+            <div><h1 class="panel-title">Multilingual Content</h1><p class="panel-subtitle">Manage shared landing-page and client-portal interface translations. Use the exact English text as the key; section editors below handle your changing website content.</p></div>
+            <div class="panel-actions"><button type="button" class="btn btn-primary btn-sm" id="saveMultilingualBtn">Save translations</button></div>
+          </div>
+          <div class="content-box multilingual-editor-box">
+            <div class="multilingual-help">Example: <code>{"Services":"Leistungen"}</code>. English is the fallback for missing translations. Add exact English labels or phrases here to translate shared UI and text that is rendered dynamically in the client portal. For editable landing-page content, use the German/Spanish translation fields inside each section; new English copy needs its own translation.</div>
+            <div class="dashboard-row three-col multilingual-grid">
+              <div class="form-group"><label class="form-label" for="multilingualEn">English (en)</label><textarea id="multilingualEn" class="form-textarea multilingual-json" rows="18" spellcheck="false" placeholder='{"Services":"Services"}'></textarea></div>
+              <div class="form-group"><label class="form-label" for="multilingualDe">Deutsch (de)</label><textarea id="multilingualDe" class="form-textarea multilingual-json" rows="18" spellcheck="false" placeholder='{"Services":"Leistungen"}'></textarea></div>
+              <div class="form-group"><label class="form-label" for="multilingualEs">Español (es)</label><textarea id="multilingualEs" class="form-textarea multilingual-json" rows="18" spellcheck="false" placeholder='{"Services":"Servicios"}'></textarea></div>
+            </div>
+            <p id="multilingualFeedback" class="form-help-text"></p>
+          </div>
+        </section>
+
         <section class="admin-tab-panel" id="tab-hero" role="tabpanel">
           <div class="panel-header">
             <div>
@@ -1671,6 +1693,8 @@
     </div>
 
     <div class="client-edit-modal" id="clientEditModal" aria-hidden="true"><div class="client-edit-modal-backdrop" data-close-client-modal></div><div class="client-edit-modal-dialog" role="dialog" aria-modal="true" aria-label="Edit client profile"><button type="button" class="client-edit-modal-close" data-close-client-modal aria-label="Close">×</button><iframe id="clientEditFrame" title="Edit client profile"></iframe></div></div>
+    <!-- Shared language dictionary, used to seed the multilingual editor -->
+    <script type="module" src="/script.js"></script>
     <!-- Admin Script -->
     <script src="/admin.js"></script>
   </body>

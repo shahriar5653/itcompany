@@ -9,10 +9,23 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createReadStream, existsSync, mkdirSync } from 'node:fs';
+import { readFile, rename, unlink } from 'node:fs/promises';
 import { checkDatabase, initializeDatabase, pool } from './db.js';
 import { emailEnabled, sendNotification } from './mailer.js';
 
 const app = express();
+
+// Express 4 does not forward rejected async route-handler promises to its
+// error middleware. Wrap route callbacks so database/provider failures return
+// a 500 response instead of becoming unhandled rejections that can crash Node.
+for (const method of ['get', 'post', 'put', 'patch', 'delete']) {
+  const registerRoute = app[method].bind(app);
+  app[method] = (...args) => registerRoute(...args.map((handler) => {
+    if (typeof handler !== 'function' || handler.constructor.name !== 'AsyncFunction') return handler;
+    return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+  }));
+}
+
 const port = Number(
   process.env.API_PORT ||
     (process.env.NODE_ENV !== 'production' && process.env.PORT === '8080' ? 4000 : process.env.PORT) ||
@@ -23,6 +36,18 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 
 if (!jwtSecret || jwtSecret.startsWith('replace-with-')) {
   throw new Error('JWT_SECRET must be configured before starting the API');
+}
+if (process.env.NODE_ENV === 'production') {
+  const missingProductionConfig = ['APP_URL', 'CORS_ORIGINS'].filter((key) => !process.env[key]);
+  if (missingProductionConfig.length) {
+    throw new Error(`Missing production environment variables: ${missingProductionConfig.join(', ')}`);
+  }
+  if (!process.env.APP_URL.startsWith('https://')) {
+    throw new Error('APP_URL must use HTTPS in production');
+  }
+  if (jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters in production');
+  }
 }
 
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
@@ -42,10 +67,15 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
     const session = event.data.object;
     const paymentId = session.metadata?.paymentId;
+    const maintenanceInvoiceId = session.metadata?.maintenanceInvoiceId;
+    const paymentSucceeded = event.type === 'checkout.session.async_payment_succeeded' || session.payment_status === 'paid';
+    if (!paymentSucceeded) return res.json({ received: true, ignored: 'payment_not_complete' });
     if (paymentId) {
       await pool.execute('UPDATE payments SET status = ?, provider_reference = ?, paid_at = NOW() WHERE id = ? AND status <> \'paid\'', ['paid', session.payment_intent || session.id, paymentId]);
       await pool.execute('UPDATE project_milestones m JOIN payments p ON p.milestone_id = m.id SET m.status = \'paid\', m.payment_reference = p.provider_reference, m.paid_at = NOW() WHERE p.id = ? AND p.status = \'paid\'', [paymentId]);
-      await pool.execute('UPDATE maintenance_invoices SET status = \'paid\', provider_reference = ?, paid_at = NOW() WHERE id = ? AND status <> \'paid\'', [session.payment_intent || session.id, session.metadata?.maintenanceInvoiceId || '']);
+    }
+    if (maintenanceInvoiceId) {
+      await pool.execute('UPDATE maintenance_invoices SET status = \'paid\', provider_reference = ?, paid_at = NOW() WHERE id = ? AND status <> \'paid\'', [session.payment_intent || session.id, maintenanceInvoiceId]);
     }
   }
   return res.json({ received: true });
@@ -84,6 +114,24 @@ const imageUpload = multer({
     callback(null, ['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.mimetype));
   }
 });
+
+function detectImageFormat(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return { mimeType: 'image/jpeg', extension: '.jpg' };
+  }
+  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+    return { mimeType: 'image/png', extension: '.png' };
+  }
+  if (buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
+    return { mimeType: 'image/webp', extension: '.webp' };
+  }
+  if (buffer.length >= 12 && buffer.toString('ascii', 4, 8) === 'ftyp') {
+    const brands = buffer.toString('ascii', 8, Math.min(buffer.length, 64));
+    if (brands.includes('avif') || brands.includes('avis')) return { mimeType: 'image/avif', extension: '.avif' };
+  }
+  return null;
+}
+
 const documentUpload = multer({
   storage: multer.diskStorage({ destination: documentDirectory, filename: (_req, file, callback) => callback(null, `${randomUUID()}${path.extname(file.originalname).toLowerCase()}`) }),
   limits: { fileSize: 15 * 1024 * 1024 },
@@ -104,17 +152,26 @@ function issueToken(user) {
   return jwt.sign({ sub: user.id, email: user.email, role: user.role }, jwtSecret, { expiresIn: '8h' });
 }
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const header = req.get('authorization') || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   if (!token) return res.status(401).json({ success: false, message: 'Authentication required.' });
 
+  let claims;
   try {
-    req.user = jwt.verify(token, jwtSecret);
-    return next();
+    claims = jwt.verify(token, jwtSecret);
   } catch {
     return res.status(401).json({ success: false, message: 'Invalid or expired session.' });
   }
+
+  const [rows] = await pool.execute('SELECT id, email, role, status FROM admin_users WHERE id = ? LIMIT 1', [claims.sub]);
+  const account = rows[0];
+  if (!account || account.status !== 'active') {
+    return res.status(401).json({ success: false, message: 'Account is unavailable. Please sign in again or contact an administrator.' });
+  }
+  // Use current database permissions so role changes take effect immediately.
+  req.user = { ...claims, sub: account.id, email: account.email, role: account.role };
+  return next();
 }
 
 const STAFF_ROLES = ['Administrator', 'admin', 'sub_admin', 'manager', 'developer'];
@@ -318,7 +375,7 @@ app.post('/api/inquiries', async (req, res) => {
   return res.status(201).json({ success: true, inquiryId: id, message: 'Inquiry received successfully.' });
 });
 
-app.get('/api/inquiries', requireAuth, async (_req, res) => {
+app.get('/api/inquiries', requireAuth, requireStaff, async (_req, res) => {
   const [rows] = await pool.query(`
     SELECT id, full_name AS fullName, email, phone, company, service, budget, custom_budget AS customBudget,
            currency, description, status, internal_notes AS internalNotes, created_at AS createdAt, updated_at AS updatedAt
@@ -327,7 +384,7 @@ app.get('/api/inquiries', requireAuth, async (_req, res) => {
   return res.json({ success: true, inquiries: rows });
 });
 
-app.get('/api/dashboard/stats', requireAuth, async (_req, res) => {
+app.get('/api/dashboard/stats', requireAuth, requireStaff, async (_req, res) => {
   const [rows] = await pool.query(`
     SELECT COUNT(*) AS total,
       SUM(status = 'new') AS newCount,
@@ -339,7 +396,7 @@ app.get('/api/dashboard/stats', requireAuth, async (_req, res) => {
   return res.json({ success: true, stats: rows[0] });
 });
 
-app.patch('/api/inquiries/:id', requireAuth, async (req, res) => {
+app.patch('/api/inquiries/:id', requireAuth, requireStaff, async (req, res) => {
   const status = cleanString(req.body?.status, 40);
   const internalNotes = cleanString(req.body?.internalNotes, 5000);
   const allowedStatuses = new Set(['new', 'discovery', 'proposal', 'won', 'lost']);
@@ -349,7 +406,7 @@ app.patch('/api/inquiries/:id', requireAuth, async (req, res) => {
   return res.json({ success: true });
 });
 
-app.delete('/api/inquiries/:id', requireAuth, async (req, res) => {
+app.delete('/api/inquiries/:id', requireAuth, requireStaff, async (req, res) => {
   const [result] = await pool.execute('DELETE FROM inquiries WHERE id = ?', [req.params.id]);
   if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Inquiry not found.' });
   return res.json({ success: true });
@@ -594,13 +651,16 @@ app.post('/api/maintenance/invoices/:id/checkout', requireAuth, async (req, res)
 });
 
 app.post('/api/maintenance/invoices/:id/paypal/capture', requireAuth, async (req, res) => {
-  const [rows] = await pool.execute('SELECT id, client_id AS clientId, provider_reference AS providerReference, status FROM maintenance_invoices WHERE id = ? LIMIT 1', [req.params.id]);
+  const [rows] = await pool.execute('SELECT id, client_id AS clientId, provider_reference AS providerReference, amount, currency, status FROM maintenance_invoices WHERE id = ? LIMIT 1', [req.params.id]);
   const invoice = rows[0]; if (!invoice || (!isStaffRole(req.user.role) && invoice.clientId !== (await pool.query('SELECT id FROM clients WHERE user_id = ? LIMIT 1', [req.user.sub]))[0][0]?.id)) return res.status(404).json({ success:false, message:'Maintenance invoice not found.' });
   if (!invoice.providerReference || invoice.status === 'paid') return res.status(400).json({ success:false, message:'PayPal order is unavailable.' });
+  if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) return res.status(503).json({ success:false, message:'PayPal is not configured.' });
   const base = process.env.PAYPAL_ENV === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'; const basic = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
   const tokenResponse = await fetch(`${base}/v1/oauth2/token`, { method:'POST', headers:{ Authorization:`Basic ${basic}`, 'Content-Type':'application/x-www-form-urlencoded' }, body:'grant_type=client_credentials' }); const tokenData = await tokenResponse.json();
+  if (!tokenResponse.ok || !tokenData.access_token) return res.status(502).json({ success:false, message:'PayPal authentication failed.' });
   const captureResponse = await fetch(`${base}/v2/checkout/orders/${encodeURIComponent(invoice.providerReference)}/capture`, { method:'POST', headers:{ Authorization:`Bearer ${tokenData.access_token}`, 'Content-Type':'application/json' } }); const capture = await captureResponse.json();
   if (!captureResponse.ok) return res.status(502).json({ success:false, message:capture.message || 'PayPal capture failed.' });
+  if (!isPayPalCaptureConfirmed(capture, invoice.providerReference, invoice.amount, invoice.currency)) return res.status(409).json({ success:false, message:'PayPal has not confirmed the expected invoice amount yet.' });
   await pool.execute('UPDATE maintenance_invoices SET status = \'paid\', paid_at = NOW() WHERE id = ?', [invoice.id]); return res.json({ success:true, status:'paid' });
 });
 
@@ -646,9 +706,38 @@ app.get('/api/projects', requireAuth, async (req, res) => {
 app.post('/api/projects', requireAuth, requireStaff, async (req, res) => {
   const clientId = cleanString(req.body?.clientId, 36);
   const name = cleanString(req.body?.name, 255);
+  const proposalId = cleanString(req.body?.proposalId, 36) || null;
   if (!clientId || !name) return res.status(400).json({ success: false, message: 'Client and project name are required.' });
   const id = randomUUID();
-  await pool.execute('INSERT INTO projects (id, client_id, proposal_id, name, description, status, start_date, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [id, clientId, cleanString(req.body?.proposalId, 36) || null, name, cleanString(req.body?.description, 5000) || null, cleanString(req.body?.status, 40) || 'draft', req.body?.startDate || null, req.body?.dueDate || null]);
+  const values = [id, clientId, proposalId, name, cleanString(req.body?.description, 5000) || null, cleanString(req.body?.status, 40) || 'draft', req.body?.startDate || null, req.body?.dueDate || null];
+
+  if (proposalId) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [proposalRows] = await connection.execute('SELECT client_id AS clientId, status FROM proposals WHERE id = ? FOR UPDATE', [proposalId]);
+      const proposal = proposalRows[0];
+      if (!proposal || proposal.clientId !== clientId || proposal.status !== 'accepted') {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: 'Project must reference an accepted proposal belonging to this client.' });
+      }
+      const [existingProjects] = await connection.execute('SELECT id FROM projects WHERE proposal_id = ? LIMIT 1', [proposalId]);
+      if (existingProjects[0]) {
+        await connection.commit();
+        return res.status(200).json({ success: true, projectId: existingProjects[0].id, alreadyExists: true });
+      }
+      await connection.execute('INSERT INTO projects (id, client_id, proposal_id, name, description, status, start_date, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', values);
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+    return res.status(201).json({ success: true, projectId: id });
+  }
+
+  await pool.execute('INSERT INTO projects (id, client_id, proposal_id, name, description, status, start_date, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', values);
   return res.status(201).json({ success: true, projectId: id });
 });
 
@@ -740,6 +829,17 @@ async function getMilestoneForUser(projectId, milestoneId, user) {
   return item;
 }
 
+function isPayPalCaptureConfirmed(order, expectedOrderId, expectedAmount, expectedCurrency) {
+  if (order?.id !== expectedOrderId || order.status !== 'COMPLETED') return false;
+  const captures = (order.purchase_units || []).flatMap((unit) => unit.payments?.captures || []);
+  const expectedMinorUnits = Math.round(Number(expectedAmount) * 100);
+  return captures.some((capture) =>
+    capture.status === 'COMPLETED' &&
+    String(capture.amount?.currency_code || '').toUpperCase() === String(expectedCurrency).toUpperCase() &&
+    Math.round(Number(capture.amount?.value) * 100) === expectedMinorUnits
+  );
+}
+
 app.post('/api/projects/:id/milestones/:milestoneId/checkout', requireAuth, async (req, res) => {
   const provider = cleanString(req.body?.provider, 20).toLowerCase();
   const milestone = await getMilestoneForUser(req.params.id, req.params.milestoneId, req.user);
@@ -777,16 +877,18 @@ app.post('/api/projects/:id/milestones/:milestoneId/checkout', requireAuth, asyn
 app.post('/api/projects/:id/milestones/:milestoneId/paypal/capture', requireAuth, async (req, res) => {
   const milestone = await getMilestoneForUser(req.params.id, req.params.milestoneId, req.user);
   if (!milestone || !process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) return res.status(404).json({ success: false, message: 'PayPal payment is unavailable.' });
-  const [payments] = await pool.execute('SELECT id, provider_reference AS providerReference FROM payments WHERE milestone_id = ? AND provider = \'paypal\' AND status = \'pending\' ORDER BY created_at DESC LIMIT 1', [req.params.milestoneId]);
+  const [payments] = await pool.execute('SELECT id, provider_reference AS providerReference, amount, currency FROM payments WHERE milestone_id = ? AND provider = \'paypal\' AND status = \'pending\' ORDER BY created_at DESC LIMIT 1', [req.params.milestoneId]);
   const payment = payments[0];
   if (!payment?.providerReference) return res.status(404).json({ success: false, message: 'PayPal order not found.' });
   const base = process.env.PAYPAL_ENV === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
   const basic = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
   const tokenResponse = await fetch(`${base}/v1/oauth2/token`, { method: 'POST', headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials' });
   const tokenData = await tokenResponse.json();
+  if (!tokenResponse.ok || !tokenData.access_token) return res.status(502).json({ success: false, message: 'PayPal authentication failed.' });
   const captureResponse = await fetch(`${base}/v2/checkout/orders/${encodeURIComponent(payment.providerReference)}/capture`, { method: 'POST', headers: { Authorization: `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' } });
   const capture = await captureResponse.json();
   if (!captureResponse.ok) return res.status(502).json({ success: false, message: capture.message || 'PayPal capture failed.' });
+  if (!isPayPalCaptureConfirmed(capture, payment.providerReference, payment.amount, payment.currency)) return res.status(409).json({ success: false, message: 'PayPal has not confirmed the expected milestone amount yet.' });
   await pool.execute('UPDATE payments SET status = \'paid\', paid_at = NOW() WHERE id = ?', [payment.id]);
   await pool.execute('UPDATE project_milestones SET status = \'paid\', payment_reference = ?, paid_at = NOW() WHERE id = ?', [payment.providerReference, req.params.milestoneId]);
   return res.json({ success: true, status: 'paid' });
@@ -808,9 +910,17 @@ app.post('/api/projects/:id/updates', requireAuth, requireStaff, async (req, res
   return res.status(201).json({ success: true, updateId: id });
 });
 
-app.post('/api/uploads/portfolio', requireAuth, imageUpload.single('image'), (req, res) => {
+app.post('/api/uploads/portfolio', requireAuth, requireStaff, imageUpload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'Please select a valid image (JPG, PNG, WebP, or AVIF).' });
-  return res.status(201).json({ success: true, imageUrl: `/uploads/portfolio/${req.file.filename}` });
+  const format = detectImageFormat(await readFile(req.file.path));
+  if (!format || format.mimeType !== req.file.mimetype) {
+    await unlink(req.file.path);
+    return res.status(400).json({ success: false, message: 'The uploaded file content does not match a supported image format.' });
+  }
+  const safeFilename = `${path.basename(req.file.filename, path.extname(req.file.filename))}${format.extension}`;
+  const safePath = path.join(uploadDirectory, safeFilename);
+  if (safePath !== req.file.path) await rename(req.file.path, safePath);
+  return res.status(201).json({ success: true, imageUrl: `/uploads/portfolio/${safeFilename}` });
 });
 
 app.get('/api/content', async (_req, res) => {
@@ -830,18 +940,66 @@ app.get('/api/content', async (_req, res) => {
   return res.json({ success: true, content, updatedAt: rows[0]?.updatedAt || null });
 });
 
-app.put('/api/content/:key', requireAuth, async (req, res) => {
+app.patch('/api/content/site/translations/:language/:section', requireAuth, requireStaff, async (req, res, next) => {
+  const { language, section } = req.params;
+  if (!['de', 'es'].includes(language) || !['hero', 'services', 'portfolio', 'process', 'maintenance', 'techStack', 'faqs', 'settings'].includes(section)) return res.status(400).json({ success: false, message: 'Invalid language or content section.' });
+  const value = req.body;
+  if (!value || Array.isArray(value) || typeof value !== 'object' || JSON.stringify(value).length > 250000) return res.status(400).json({ success: false, message: 'Invalid translation content.' });
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const [rows] = await connection.execute('SELECT content_json FROM site_content WHERE content_key = ? FOR UPDATE', ['site']);
+    if (!rows.length) { await connection.rollback(); return res.status(409).json({ success: false, message: 'Publish the site content before saving translations.' }); }
+    const site = JSON.parse(rows[0].content_json);
+    site.translations ||= {};
+    site.translations[language] ||= {};
+    site.translations[language][section] = value;
+    const serialized = JSON.stringify(site);
+    if (serialized.length > 500000) { await connection.rollback(); return res.status(413).json({ success: false, message: 'Content payload is too large.' }); }
+    await connection.execute('UPDATE site_content SET content_json = ?, updated_by = ? WHERE content_key = ?', [serialized, req.user.sub, 'site']);
+    await connection.commit();
+    return res.json({ success: true });
+  } catch (error) {
+    if (connection) await connection.rollback().catch(() => {});
+    return next(error);
+  } finally { if (connection) connection.release(); }
+});
+
+app.put('/api/content/:key', requireAuth, requireStaff, async (req, res, next) => {
   const key = cleanString(req.params.key, 100);
   if (!/^[a-zA-Z0-9_-]+$/.test(key)) return res.status(400).json({ success: false, message: 'Invalid content key.' });
   if (req.body === undefined) return res.status(400).json({ success: false, message: 'Content payload is required.' });
   const serialized = JSON.stringify(req.body);
   if (serialized.length > 500000) return res.status(413).json({ success: false, message: 'Content payload is too large.' });
-  await pool.execute(
-    `INSERT INTO site_content (content_key, content_json, updated_by) VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE content_json = VALUES(content_json), updated_by = VALUES(updated_by)`,
-    [key, serialized, req.user.sub]
-  );
-  return res.json({ success: true, contentKey: key });
+  if (key === 'site') {
+    if (!req.body || Array.isArray(req.body) || typeof req.body !== 'object') return res.status(400).json({ success: false, message: 'Site content must be an object.' });
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+      await connection.execute('INSERT IGNORE INTO site_content (content_key, content_json, updated_by) VALUES (?, ?, ?)', [key, '{}', req.user.sub]);
+      const [rows] = await connection.execute('SELECT content_json FROM site_content WHERE content_key = ? FOR UPDATE', [key]);
+      const current = JSON.parse(rows[0].content_json);
+      const nextSite = { ...req.body, translations: current.translations || req.body.translations || {} };
+      const merged = JSON.stringify(nextSite);
+      if (merged.length > 500000) { await connection.rollback(); return res.status(413).json({ success: false, message: 'Content payload is too large.' }); }
+      await connection.execute('UPDATE site_content SET content_json = ?, updated_by = ? WHERE content_key = ?', [merged, req.user.sub, key]);
+      await connection.commit();
+      return res.json({ success: true, contentKey: key });
+    } catch (error) {
+      if (connection) await connection.rollback().catch(() => {});
+      return next(error);
+    } finally { if (connection) connection.release(); }
+  }
+  try {
+    await pool.execute(
+      `INSERT INTO site_content (content_key, content_json, updated_by) VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE content_json = VALUES(content_json), updated_by = VALUES(updated_by)`,
+      [key, serialized, req.user.sub]
+    );
+    return res.json({ success: true, contentKey: key });
+  } catch (error) { return next(error); }
 });
 
 app.use((error, _req, res, _next) => {
@@ -851,6 +1009,7 @@ app.use((error, _req, res, _next) => {
 
 async function start() {
   await initializeDatabase();
+  await checkDatabase();
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_INITIAL_PASSWORD) {
     const email = process.env.ADMIN_EMAIL.toLowerCase();
     const hash = await bcrypt.hash(process.env.ADMIN_INITIAL_PASSWORD, 12);
@@ -860,7 +1019,14 @@ async function start() {
       [randomUUID(), email, hash]
     );
   }
-  app.listen(port, () => console.log(`RSTechwerk API listening on http://localhost:${port}`));
+  const server = app.listen(port, '0.0.0.0', () => console.log(`RSTechwerk API listening on port ${port}`));
+  const shutdown = (signal) => {
+    console.log(`${signal} received; shutting down API`);
+    server.close(() => pool.end().finally(() => process.exit(0)));
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
 }
 
 start().catch((error) => {

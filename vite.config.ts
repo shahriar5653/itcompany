@@ -1,13 +1,37 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
 import path from 'path';
 import {defineConfig} from 'vite';
+
+const classicRuntimeScripts = [
+  'script.js',
+  'admin.js',
+  'admin-client.js',
+  'portal.js',
+  'login.js',
+  'register.js',
+  'reset-password.js',
+];
 
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
+      {
+        name: 'copy-classic-runtime-scripts',
+        apply: 'build',
+        generateBundle() {
+          for (const fileName of classicRuntimeScripts) {
+            this.emitFile({
+              type: 'asset',
+              fileName,
+              source: fs.readFileSync(path.resolve(__dirname, fileName)),
+            });
+          }
+        },
+      },
       {
         name: 'admin-route-rewrite',
         configureServer(server) {

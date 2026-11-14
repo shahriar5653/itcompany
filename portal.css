@@ -442,6 +442,9 @@ html, body {
   flex-shrink: 0;
 }
 
+.portal-language-control { display:inline-flex; align-items:center; gap:.3rem; color:var(--portal-accent); font:600 .72rem/1 var(--font-mono); }
+.portal-language-control select { border:1px solid var(--portal-border); border-radius:7px; background:var(--portal-surface); color:var(--portal-ink-secondary); padding:.45rem .35rem; font:600 .72rem/1 var(--font-mono); }
+
 .portal-icon-btn {
   display: inline-flex;
   align-items: center;

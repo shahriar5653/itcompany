@@ -43,6 +43,11 @@
   --transition-normal: 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.multilingual-editor-box { margin-top: 1rem; }
+.multilingual-help { margin-bottom: 1rem; padding: .85rem 1rem; border: 1px solid var(--admin-border); border-radius: .75rem; color: var(--admin-text-muted); background: rgba(16,185,129,.05); }
+.multilingual-grid { align-items: start; }
+.multilingual-json { min-height: 330px; font-family: var(--font-mono, monospace); font-size: .82rem; line-height: 1.5; }
+
 html[data-theme="light"] {
   --admin-canvas: #f8fafc;
   --admin-canvas-subtle: #f1f5f9;

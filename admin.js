@@ -504,6 +504,7 @@ function saveAdminState() {
       maintenance: adminState.maintenance,
       faqs: adminState.faqs,
       settings: adminState.settings
+      , translations: adminState.translations || {}
     }));
     // Persist editable public content to the API when an authenticated backend
     // session is available. Local storage remains a draft/cache fallback.
@@ -520,6 +521,7 @@ function saveAdminState() {
           maintenance: adminState.maintenance,
           faqs: adminState.faqs,
           settings: adminState.settings
+          , translations: adminState.translations || {}
         })
       }).catch((error) => console.warn('Could not publish content to API:', error.message));
     }
@@ -625,6 +627,7 @@ function publishAdminContentToApi() {
       maintenance: adminState.maintenance,
       faqs: adminState.faqs,
       settings: adminState.settings
+      , translations: adminState.translations || {}
     })
   });
 }
@@ -740,6 +743,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTechStackModule();
   initFaqModule();
   initSeoLiveModule();
+  initMultilingualModule();
+  initSectionTranslations();
   initSettingsModule();
   initApiModule();
   initResetDataHandler();
@@ -747,6 +752,116 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if an inquiry was recently submitted from index.html
   checkForNewPublicInquiry();
 });
+
+function initSectionTranslations() {
+  const sections = { hero: 'hero', services: 'services', portfolio: 'portfolio', process: 'process', maintenance: 'maintenance', tech: 'techStack', faq: 'faqs', settings: 'settings' };
+  const excluded = new Set(['id', 'key', 'image', 'categories', 'icon', 'tech', 'url', 'canonicalUrl', 'ogImage', 'inquiryEmail', 'backendBaseUrl', 'webhookUrl']);
+  for (const [tab, section] of Object.entries(sections)) {
+    const panel = document.getElementById(`tab-${tab}`);
+    if (!panel) continue;
+    const box = document.createElement('div');
+    box.className = 'content-box';
+    box.style.marginBottom = '1.25rem';
+    box.innerHTML = '<div class="box-header"><div><h2 class="box-title">Section translations</h2><p class="box-subtitle">Edit German or Spanish for this section. Empty fields use the English content.</p></div></div><label class="form-label">Language <select class="form-select translation-language"><option value="de">Deutsch</option><option value="es">Español</option></select></label><div class="translation-fields" style="display:grid;gap:1rem;margin:1rem 0"></div><button type="button" class="btn btn-primary translation-save">Save section translations</button><p class="form-help-text translation-feedback" role="status"></p>';
+    panel.querySelector('.panel-header')?.after(box);
+    const select = box.querySelector('.translation-language');
+    const container = box.querySelector('.translation-fields');
+    const feedback = box.querySelector('.translation-feedback');
+    let entries = [];
+    const drafts = new Map();
+    let renderedLanguage = select.value;
+    function rememberDraft() {
+      if (!entries.length) return;
+      const draft = {};
+      container.querySelectorAll('[data-translation-index]').forEach((input) => {
+        const entry = entries[Number(input.dataset.translationIndex)];
+        if (entry) draft[JSON.stringify(entry.path)] = input.value;
+      });
+      drafts.set(renderedLanguage, draft);
+    }
+    function render() {
+      rememberDraft();
+      entries = [];
+      renderedLanguage = select.value;
+      const translations = adminState.translations?.[select.value]?.[section] || {};
+      function walk(value, path, label) {
+        if (Array.isArray(value)) return value.forEach((item, index) => walk(item, [...path, (item && typeof item === 'object' && (item.id || item.key)) || String(index)], `${label} / ${item?.title || item?.question || item?.name || index + 1}`));
+        if (value && typeof value === 'object') return Object.entries(value).forEach(([key, item]) => { if (!excluded.has(key)) walk(item, [...path, key], `${label} / ${key}`); });
+        if (typeof value !== 'string' || !value.trim()) return;
+        let current = translations;
+        for (const part of path) current = current?.[part];
+        const draft = drafts.get(select.value);
+        const draftKey = JSON.stringify(path);
+        entries.push({ path, label, english: value, translated: draft && Object.hasOwn(draft, draftKey) ? draft[draftKey] : (typeof current === 'string' ? current : (window.RSTechwerkLanguageCopy?.[select.value]?.[value] || '')) });
+      }
+      walk(adminState[section], [], section);
+      container.innerHTML = entries.map((entry, index) => `<label class="form-group"><span class="form-label">${escapeHtml(entry.label)}</span><small class="form-help-text">English: ${escapeHtml(entry.english)}</small><textarea class="form-textarea" rows="2" data-translation-index="${index}" placeholder="Leave empty to use English">${escapeHtml(entry.translated)}</textarea></label>`).join('') || '<p class="form-help-text">No translatable content in this section.</p>';
+      feedback.textContent = '';
+    }
+    select.addEventListener('change', render);
+    panel.querySelector(`.translation-save`).addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      const next = {};
+      container.querySelectorAll('[data-translation-index]').forEach((input) => {
+        const entry = entries[Number(input.dataset.translationIndex)];
+        const value = input.value.trim();
+        if (!value) return;
+        let target = next;
+        entry.path.forEach((part, index) => { if (index === entry.path.length - 1) target[part] = value; else target = target[part] ||= {}; });
+      });
+      const language = select.value;
+      button.disabled = true;
+      select.disabled = true;
+      try {
+        await adminApiFetch(`/api/content/site/translations/${language}/${section}`, { method: 'PATCH', body: JSON.stringify(next) });
+        const previous = adminState.translations;
+        adminState.translations = { ...(previous || {}), [language]: { ...(previous?.[language] || {}), [section]: next } };
+        drafts.delete(language);
+        localStorage.setItem(STORAGE_KEY_ADMIN, JSON.stringify(adminState));
+        feedback.textContent = 'Translations saved successfully.';
+      } catch (error) {
+        feedback.textContent = `Could not save translations: ${error.message}`;
+      } finally { button.disabled = false; select.disabled = false; }
+    });
+    document.querySelector(`.nav-tab-btn[data-tab="tab-${tab}"]`)?.addEventListener('click', render);
+    render();
+  }
+}
+
+function initMultilingualModule() {
+  const fields = { en: document.getElementById('multilingualEn'), de: document.getElementById('multilingualDe'), es: document.getElementById('multilingualEs') };
+  const saveButton = document.getElementById('saveMultilingualBtn');
+  const feedback = document.getElementById('multilingualFeedback');
+  if (!saveButton || !fields.en || !fields.de || !fields.es) return;
+  adminApiFetch('/api/content').then((result) => {
+    const seeded = window.RSTechwerkLanguageCopy || {};
+    const seededKeys = [...new Set([...Object.keys(seeded.de || {}), ...Object.keys(seeded.es || {})])];
+    const savedTranslations = result.content?.i18n || {};
+    const translations = {
+      en: { ...Object.fromEntries(seededKeys.map((key) => [key, key])), ...(savedTranslations.en || {}) },
+      de: { ...(seeded.de || {}), ...(savedTranslations.de || {}) },
+      es: { ...(seeded.es || {}), ...(savedTranslations.es || {}) }
+    };
+    Object.entries(fields).forEach(([language, field]) => { field.value = JSON.stringify(translations[language] || {}, null, 2); });
+  }).catch((error) => { feedback.textContent = error.message; feedback.style.color = '#ef4444'; });
+  saveButton.addEventListener('click', async () => {
+    try {
+      const translations = {};
+      Object.entries(fields).forEach(([language, field]) => {
+        const parsed = JSON.parse(field.value || '{}');
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error(`${language.toUpperCase()} translation must be a JSON object.`);
+        translations[language] = parsed;
+      });
+      saveButton.disabled = true;
+      await adminApiFetch('/api/content/i18n', { method: 'PUT', body: JSON.stringify(translations) });
+      feedback.textContent = 'Translations saved successfully.';
+      feedback.style.color = '';
+    } catch (error) {
+      feedback.textContent = error.message.includes('JSON') ? `Invalid JSON: ${error.message}` : error.message;
+      feedback.style.color = '#ef4444';
+    } finally { saveButton.disabled = false; }
+  });
+}
 
 async function initDeliveryWorkspace() {
   const clientForm = document.getElementById('clientCreateForm');

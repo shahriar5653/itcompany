@@ -259,14 +259,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initClientProfileLink() {
   const link = document.getElementById('clientProfileLink');
-  if (!link) return;
+  const mobilePortalBtn = document.getElementById('mobilePortalBtn');
   try {
     const raw = localStorage.getItem('rstechwerk_admin_session') || sessionStorage.getItem('rstechwerk_admin_session');
     const session = raw ? JSON.parse(raw) : null;
     if (session?.token && session?.role === 'client') {
-      link.style.display = 'inline-flex';
-      link.textContent = (session.email || 'C').slice(0, 1).toUpperCase();
-      link.title = 'Open client profile';
+      if (link) {
+        link.href = '/portal.html';
+        link.style.display = 'inline-flex';
+        link.textContent = (session.email || 'C').slice(0, 1).toUpperCase();
+        link.title = 'Open client profile';
+      }
+      if (mobilePortalBtn) {
+        mobilePortalBtn.href = '/portal.html';
+        mobilePortalBtn.classList.add('is-authenticated');
+      }
     }
   } catch { /* Ignore malformed local session data. */ }
 }

@@ -19,7 +19,13 @@ export default defineConfig(() => {
               res.end();
               return;
             }
-            if (pathname === '/login' || pathname === '/login/' || pathname === '/admin/login') {
+            if (pathname === '/admin/login' || pathname === '/admin/login/') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/login.html?redirect=admin');
+              res.end();
+              return;
+            }
+            if (pathname === '/login' || pathname === '/login/') {
               res.statusCode = 302;
               res.setHeader('Location', '/login.html');
               res.end();

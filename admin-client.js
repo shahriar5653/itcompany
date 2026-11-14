@@ -277,7 +277,7 @@ async function resetPassword(event) {
 document.getElementById('clientEditLogout')?.addEventListener('click', () => {
   localStorage.removeItem(ADMIN_SESSION_KEY);
   sessionStorage.removeItem(ADMIN_SESSION_KEY);
-  location.href = '/login.html';
+  location.href = '/login.html?redirect=admin';
 });
 
 load();

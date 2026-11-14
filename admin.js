@@ -629,6 +629,32 @@ function publishAdminContentToApi() {
   });
 }
 
+function formatStaffRoleLabel(role) {
+  const map = {
+    Administrator: 'Primary Admin',
+    admin: 'Admin',
+    sub_admin: 'Sub-Admin',
+    developer: 'Developer',
+    manager: 'Manager'
+  };
+  return map[role] || role || 'Staff';
+}
+
+function updateTopbarUserBadge(user) {
+  if (!user) return;
+  const displayName = user.fullName || user.name || user.email || 'Admin Lead';
+  const nameEl = document.getElementById('adminUserName');
+  const avatarEl = document.getElementById('adminUserAvatar');
+  const roleEl = document.getElementById('adminUserRole');
+  if (nameEl) nameEl.textContent = displayName;
+  if (roleEl && user.role) roleEl.textContent = formatStaffRoleLabel(user.role);
+  if (avatarEl) {
+    const parts = displayName.trim().split(/\s+/);
+    const initials = parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : displayName.slice(0, 2);
+    avatarEl.textContent = initials.toUpperCase();
+  }
+}
+
 function checkAdminAuth() {
   try {
     const raw = localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY);
@@ -641,11 +667,7 @@ function checkAdminAuth() {
       window.location.href = '/login.html?redirect=admin';
       return false;
     }
-    // Update user profile in topbar if present
-    const nameEl = document.getElementById('adminUserName');
-    const avatarEl = document.getElementById('adminUserAvatar');
-    if (nameEl && session.name) nameEl.textContent = session.name;
-    if (avatarEl && session.name) avatarEl.textContent = session.name.substring(0, 2).toUpperCase();
+    updateTopbarUserBadge(session);
     return true;
   } catch (e) {
     window.location.href = '/login.html?redirect=admin';
@@ -656,7 +678,10 @@ function checkAdminAuth() {
 async function verifyAdminSession() {
   try {
     const result = await adminApiFetch('/api/auth/me');
-    if (!['Administrator', 'admin', 'manager'].includes(result.user?.role)) throw new Error('Staff access required.');
+    if (!['Administrator', 'admin', 'sub_admin', 'manager', 'developer'].includes(result.user?.role)) {
+      throw new Error('Staff access required.');
+    }
+    updateTopbarUserBadge(result.user);
     return true;
   } catch (error) {
     localStorage.removeItem(ADMIN_SESSION_KEY);
@@ -672,28 +697,35 @@ function initAdminLogout() {
 
   const handleLogout = (e) => {
     e.preventDefault();
-    if (confirm('Sign out of RSTechwerk Control Engine?')) {
+    e.stopPropagation();
+    try {
       localStorage.removeItem(ADMIN_SESSION_KEY);
       sessionStorage.removeItem(ADMIN_SESSION_KEY);
-      showToast('Signed out successfully. Redirecting to login...', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 400);
+    } catch {
+      // Ignore storage errors
     }
+    showToast('Signed out successfully. Redirecting to console login...', 'success');
+    window.location.href = '/login.html?redirect=admin';
   };
 
-  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-  if (sidebarLogout) sidebarLogout.addEventListener('click', handleLogout);
+  if (logoutBtn && !logoutBtn.dataset.logoutBound) {
+    logoutBtn.dataset.logoutBound = 'true';
+    logoutBtn.addEventListener('click', handleLogout);
+  }
+  if (sidebarLogout && !sidebarLogout.dataset.logoutBound) {
+    sidebarLogout.dataset.logoutBound = 'true';
+    sidebarLogout.addEventListener('click', handleLogout);
+  }
 }
 
 // DOM Ready
 document.addEventListener('DOMContentLoaded', async () => {
+  initAdminLogout();
   if (!checkAdminAuth()) return;
   if (!(await verifyAdminSession())) return;
 
   await loadRemoteAdminContent();
 
-  initAdminLogout();
   initThemeToggle();
   initSidebarAndTabs();
   initGlobalSearch();
@@ -729,10 +761,14 @@ async function initDeliveryWorkspace() {
 
   const deliveryState = {
     clients: [],
+    staff: [],
+    canManageTeam: false,
+    canAssignAdmin: false,
     projects: [],
     proposals: [],
     maintenance: [],
     activeSubtab: 'projects',
+    usersSubtab: 'clients',
     projectQuery: '',
     projectStatus: 'all',
     proposalQuery: '',
@@ -740,6 +776,8 @@ async function initDeliveryWorkspace() {
     maintenanceQuery: '',
     userQuery: '',
     userStatus: 'all',
+    staffQuery: '',
+    staffRole: 'all',
     expandedProjects: new Set()
   };
 
@@ -883,14 +921,91 @@ async function initDeliveryWorkspace() {
     event.currentTarget.title = visible ? 'Show password' : 'Hide password';
   });
 
+  function switchUsersSubtab(subtab) {
+    deliveryState.usersSubtab = subtab;
+    document.querySelectorAll('[data-users-subtab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.usersSubtab === subtab);
+    });
+    document.getElementById('usersSubpanelClients')?.classList.toggle('active', subtab === 'clients');
+    document.getElementById('usersSubpanelStaff')?.classList.toggle('active', subtab === 'staff');
+  }
+
+  document.querySelectorAll('[data-users-subtab]').forEach((btn) => {
+    btn.addEventListener('click', () => switchUsersSubtab(btn.dataset.usersSubtab));
+  });
+
+  function openAddStaffModal() {
+    if (!deliveryState.canManageTeam) {
+      showToast('Only administrators or sub-admins can create internal accounts.', 'error');
+      return;
+    }
+    const adminOption = deliveryState.canAssignAdmin ? '<option value="admin">Admin (Full Console)</option>' : '';
+    openDeliveryActionModal({
+      kicker: 'Internal Team Access',
+      title: 'Add Sub-Admin or Developer',
+      submitLabel: 'Create Team Account',
+      bodyHtml: `
+        <div class="form-group">
+          <label class="form-label" for="modalStaffFullName">Full Name</label>
+          <input type="text" id="modalStaffFullName" name="fullName" class="form-input" required placeholder="e.g. Tariq Hasan" />
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label class="form-label" for="modalStaffEmail">Work Email</label>
+            <input type="email" id="modalStaffEmail" name="email" class="form-input" required placeholder="dev@rstechwerk.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modalStaffRole">Console Role</label>
+            <select id="modalStaffRole" name="role" class="form-select">
+              <option value="developer">Developer</option>
+              <option value="sub_admin">Sub-Admin</option>
+              <option value="manager">Delivery Manager</option>
+              ${adminOption}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modalStaffPassword">Temporary Password (min. 10 characters)</label>
+          <div class="password-field">
+            <input type="text" id="modalStaffPassword" name="password" class="form-input" minlength="10" required placeholder="Enter or generate password" />
+            <button type="button" class="password-action" id="modalGenStaffPwdBtn" style="right:0.75rem;">Generate</button>
+          </div>
+          <span class="form-help-text">Share these credentials securely. They sign in via the Admin &amp; Team Console login page.</span>
+        </div>
+      `,
+      onSubmit: async (formData) => {
+        await adminApiFetch('/api/staff', {
+          method: 'POST',
+          body: JSON.stringify({
+            fullName: String(formData.get('fullName') || '').trim(),
+            email: String(formData.get('email') || '').trim(),
+            role: String(formData.get('role') || 'developer'),
+            password: String(formData.get('password') || '')
+          })
+        });
+        showToast('Team account created successfully.');
+        await loadDeliveryData();
+        switchUsersSubtab('staff');
+      }
+    });
+    document.getElementById('modalGenStaffPwdBtn')?.addEventListener('click', () => {
+      const inp = document.getElementById('modalStaffPassword');
+      if (inp) inp.value = generateSecurePassword();
+    });
+  }
+
+  document.getElementById('usersAddStaffBtn')?.addEventListener('click', openAddStaffModal);
+  document.getElementById('staffPanelAddBtn')?.addEventListener('click', openAddStaffModal);
+
   // KPI & Segmented Counts Renderer
   function updateWorkspaceKpis() {
-    const { clients, projects, proposals, maintenance } = deliveryState;
+    const { clients, staff, projects, proposals, maintenance } = deliveryState;
     const activeProjects = projects.filter((p) => !['completed', 'cancelled'].includes(p.status));
     const openOffers = proposals.filter((p) => ['draft', 'sent'].includes(p.status));
     const activeMaint = maintenance.filter((m) => m.status === 'active');
     const activeClients = clients.filter((c) => c.status === 'active');
     const suspendedClients = clients.filter((c) => c.status !== 'active');
+    const activeStaff = staff.filter((member) => (member.status || 'active') === 'active');
     const totalRunningEngagements = clients.reduce((sum, c) => sum + Number(c.activeProjectCount || 0), 0);
 
     const setEl = (id, text) => {
@@ -912,13 +1027,123 @@ async function initDeliveryWorkspace() {
     setEl('deliveryCountMaintenance', String(maintenance.length));
 
     setEl('kpiUsersTotal', String(clients.length));
+    setEl('kpiUsersSuspendedMeta', `${suspendedClients.length} suspended / inactive`);
     setEl('kpiUsersActive', String(activeClients.length));
-    setEl('kpiUsersSuspended', String(suspendedClients.length));
+    setEl('kpiUsersStaffTotal', String(staff.length));
+    setEl('kpiUsersStaffMeta', `${activeStaff.length} active internal user${activeStaff.length === 1 ? '' : 's'}`);
     setEl('kpiUsersProjects', String(totalRunningEngagements));
     setEl('kpiUsersProjectsMeta', `${projects.length} total client project${projects.length === 1 ? '' : 's'}`);
+    setEl('usersCountClients', String(clients.length));
+    setEl('usersCountStaff', String(staff.length));
+
+    const addButtons = [document.getElementById('usersAddStaffBtn'), document.getElementById('staffPanelAddBtn')];
+    addButtons.forEach((btn) => {
+      if (btn) btn.style.display = deliveryState.canManageTeam ? '' : 'none';
+    });
   }
 
   // Renderers
+  function getStaffRoleTagClass(role) {
+    if (role === 'Administrator' || role === 'admin') return 'success';
+    if (role === 'sub_admin') return 'info';
+    if (role === 'developer') return '';
+    return 'warn';
+  }
+
+  function renderStaffAccountsTable() {
+    const container = document.getElementById('staffAccountsContainer');
+    if (!container) return;
+    const session = getAdminSession();
+    const q = deliveryState.staffQuery.trim().toLowerCase();
+    const filtered = deliveryState.staff.filter((member) => {
+      const matchesRole = deliveryState.staffRole === 'all' || member.role === deliveryState.staffRole;
+      const matchesQuery =
+        !q ||
+        (member.fullName || '').toLowerCase().includes(q) ||
+        (member.email || '').toLowerCase().includes(q) ||
+        formatStaffRoleLabel(member.role).toLowerCase().includes(q);
+      return matchesRole && matchesQuery;
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="ops-empty-box"><strong>${
+        deliveryState.staff.length ? 'No matching team members' : 'No sub-admins or developers added yet'
+      }</strong><p>${
+        deliveryState.staff.length
+          ? 'Try adjusting your search query or role filter.'
+          : 'Click + Add Sub-Admin / Dev to create dedicated console accounts for developers and managers.'
+      }</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="admin-table ops-responsive-table">
+        <thead>
+          <tr>
+            <th>Team Member</th>
+            <th>Console Role</th>
+            <th>Access Status</th>
+            <th>Added On</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered
+            .map((member) => {
+              const memberStatus = member.status || 'active';
+              const isSelf = session?.id && member.id === session.id;
+              const isPrimaryAdmin = member.role === 'Administrator' || member.role === 'admin';
+              const canEditRow = deliveryState.canManageTeam && (!isPrimaryAdmin || deliveryState.canAssignAdmin);
+              const displayName = member.fullName || member.email.split('@')[0];
+              return `
+                <tr>
+                  <td data-label="Team Member">
+                    <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(displayName)}${
+                      isSelf ? ' <span style="font-size:0.72rem;color:var(--admin-accent);font-weight:600;">(You)</span>' : ''
+                    }</strong>
+                    <span class="ops-tabular" style="font-size:0.78rem;color:var(--admin-text-muted);overflow-wrap:anywhere;">${escapeHtml(member.email)}</span>
+                  </td>
+                  <td data-label="Role">
+                    <span class="ops-status-tag ${getStaffRoleTagClass(member.role)}">${escapeHtml(formatStaffRoleLabel(member.role))}</span>
+                  </td>
+                  <td data-label="Status">${renderOpsTag(memberStatus)}</td>
+                  <td data-label="Added On" class="ops-tabular">${formatOpsDate(member.createdAt)}</td>
+                  <td data-label="Actions" style="text-align:right;">
+                    <div class="ops-table-actions">
+                      ${
+                        canEditRow
+                          ? `
+                        <button type="button" class="btn btn-secondary btn-sm staff-edit-btn" data-staff="${escapeHtml(member.id)}">Edit Role</button>
+                        ${
+                          !isSelf
+                            ? `<button type="button" class="btn btn-secondary btn-sm staff-status-btn" data-staff="${escapeHtml(member.id)}" data-status="${
+                                memberStatus === 'active' ? 'suspended' : 'active'
+                              }">${memberStatus === 'active' ? 'Suspend' : 'Activate'}</button>`
+                            : ''
+                        }
+                        <button type="button" class="btn btn-secondary btn-sm staff-password-btn" data-staff="${escapeHtml(member.id)}" data-name="${escapeHtml(
+                              displayName
+                            )}">Reset Password</button>
+                        ${
+                          !isSelf
+                            ? `<button type="button" class="btn btn-secondary btn-sm staff-delete-btn" data-staff="${escapeHtml(
+                                member.id
+                              )}" data-name="${escapeHtml(displayName)}" style="color:#ef4444;">Remove</button>`
+                            : ''
+                        }
+                      `
+                          : '<span style="font-size:0.76rem;color:var(--admin-text-subtle);">Protected / View Only</span>'
+                      }
+                    </div>
+                  </td>
+                </tr>
+              `;
+            })
+            .join('')}
+        </tbody>
+      </table>
+    `;
+  }
   function renderClientAccountsTable() {
     const container = document.getElementById('clientAccountsContainer');
     if (!container) return;
@@ -948,7 +1173,7 @@ async function initDeliveryWorkspace() {
     }
 
     container.innerHTML = `
-      <table class="admin-table">
+      <table class="admin-table ops-responsive-table">
         <thead>
           <tr>
             <th>Organization &amp; Contact</th>
@@ -963,22 +1188,22 @@ async function initDeliveryWorkspace() {
             .map(
               (client) => `
             <tr>
-              <td>
+              <td data-label="Organization">
                 <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(client.companyName)}</strong>
                 <span style="font-size:0.78rem;color:var(--admin-text-muted);">${escapeHtml(client.contactName)}${
                 client.country ? ` · ${escapeHtml(client.country)}` : ''
               }</span>
               </td>
-              <td>
-                <span class="ops-tabular" style="font-size:0.8rem;color:var(--admin-text-primary);display:block;">${escapeHtml(client.email)}</span>
+              <td data-label="Contact">
+                <span class="ops-tabular" style="font-size:0.8rem;color:var(--admin-text-primary);display:block;overflow-wrap:anywhere;">${escapeHtml(client.email)}</span>
                 <span style="font-size:0.76rem;color:var(--admin-text-muted);">${escapeHtml(client.phone || 'No phone on file')}</span>
               </td>
-              <td class="ops-tabular">
+              <td data-label="Engagements" class="ops-tabular">
                 <strong style="color:var(--admin-accent);">${Number(client.activeProjectCount || 0)}</strong>
                 <span style="color:var(--admin-text-muted);"> running · ${Number(client.projectCount || 0)} total</span>
               </td>
-              <td>${renderOpsTag(client.status)}</td>
-              <td style="text-align:right;">
+              <td data-label="Status">${renderOpsTag(client.status)}</td>
+              <td data-label="Actions" style="text-align:right;">
                 <div class="ops-table-actions">
                   <button type="button" class="btn btn-secondary btn-sm client-edit-btn" data-client="${escapeHtml(client.id)}">Edit Profile</button>
                   <button type="button" class="btn btn-secondary btn-sm client-status-btn" data-client="${escapeHtml(client.id)}" data-status="${
@@ -1020,7 +1245,7 @@ async function initDeliveryWorkspace() {
     }
 
     container.innerHTML = `
-      <table class="admin-table">
+      <table class="admin-table ops-responsive-table">
         <thead>
           <tr>
             <th>Client</th>
@@ -1035,19 +1260,19 @@ async function initDeliveryWorkspace() {
             .map(
               (proposal) => `
             <tr>
-              <td style="font-weight:600;color:var(--admin-text-primary);white-space:nowrap;">${escapeHtml(proposal.companyName)}</td>
-              <td>
+              <td data-label="Client" style="font-weight:600;color:var(--admin-text-primary);white-space:nowrap;">${escapeHtml(proposal.companyName)}</td>
+              <td data-label="Proposal">
                 <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(proposal.title)}</strong>
                 <span style="font-size:0.78rem;color:var(--admin-text-muted);display:block;max-width:52ch;">${escapeHtml(
                   proposal.scope.length > 130 ? proposal.scope.slice(0, 130) + '…' : proposal.scope
                 )}</span>
               </td>
-              <td class="ops-tabular" style="font-weight:700;color:var(--admin-text-primary);white-space:nowrap;">${formatOpsMoney(
+              <td data-label="Amount" class="ops-tabular" style="font-weight:700;color:var(--admin-text-primary);white-space:nowrap;">${formatOpsMoney(
                 proposal.totalAmount,
                 proposal.currency
               )}</td>
-              <td>${renderOpsTag(proposal.status)}</td>
-              <td style="text-align:right;">
+              <td data-label="Status">${renderOpsTag(proposal.status)}</td>
+              <td data-label="Actions" style="text-align:right;">
                 <div class="ops-table-actions">
                   ${
                     proposal.status === 'draft'
@@ -1100,7 +1325,7 @@ async function initDeliveryWorkspace() {
     }
 
     container.innerHTML = `
-      <table class="admin-table">
+      <table class="admin-table ops-responsive-table">
         <thead>
           <tr>
             <th>Contract &amp; Scope</th>
@@ -1117,24 +1342,26 @@ async function initDeliveryWorkspace() {
             .map(
               (item) => `
             <tr>
-              <td>
+              <td data-label="Contract">
                 <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(item.title)}</strong>
                 <span style="font-size:0.78rem;color:var(--admin-text-muted);">${escapeHtml(
                   item.description || 'Ongoing software maintenance and SLA coverage'
                 )}</span>
               </td>
-              <td>${escapeHtml(item.projectName || 'Account-level service')}</td>
-              <td>${escapeHtml(formatOpsStatus(item.billingType))}</td>
-              <td class="ops-tabular" style="font-weight:700;color:var(--admin-text-primary);white-space:nowrap;">${formatOpsMoney(
+              <td data-label="Project">${escapeHtml(item.projectName || 'Account-level service')}</td>
+              <td data-label="Billing">${escapeHtml(formatOpsStatus(item.billingType))}</td>
+              <td data-label="Rate" class="ops-tabular" style="font-weight:700;color:var(--admin-text-primary);white-space:nowrap;">${formatOpsMoney(
                 item.amount,
                 item.currency
               )}</td>
-              <td class="ops-tabular">${formatOpsDate(item.nextBillingDate)}</td>
-              <td>${renderOpsTag(item.status)}</td>
-              <td style="text-align:right;">
-                <button type="button" class="btn btn-secondary btn-sm maintenance-invoice-btn" data-maintenance="${escapeHtml(
-                  item.id
-                )}" data-title="${escapeHtml(item.title)}">Generate Invoice</button>
+              <td data-label="Next Billing" class="ops-tabular">${formatOpsDate(item.nextBillingDate)}</td>
+              <td data-label="Status">${renderOpsTag(item.status)}</td>
+              <td data-label="Action" style="text-align:right;">
+                <div class="ops-table-actions">
+                  <button type="button" class="btn btn-secondary btn-sm maintenance-invoice-btn" data-maintenance="${escapeHtml(
+                    item.id
+                  )}" data-title="${escapeHtml(item.title)}">Generate Invoice</button>
+                </div>
               </td>
             </tr>
           `
@@ -1347,14 +1574,18 @@ async function initDeliveryWorkspace() {
 
   async function loadDeliveryData() {
     try {
-      const [clientResult, projectResult, maintenanceResult, proposalResult] = await Promise.all([
+      const [clientResult, staffResult, projectResult, maintenanceResult, proposalResult] = await Promise.all([
         adminApiFetch('/api/clients'),
+        adminApiFetch('/api/staff').catch(() => ({ staff: [], canManageTeam: false, canAssignAdmin: false })),
         adminApiFetch('/api/projects'),
         adminApiFetch('/api/maintenance'),
         adminApiFetch('/api/proposals')
       ]);
 
       deliveryState.clients = clientResult.clients || [];
+      deliveryState.staff = staffResult.staff || [];
+      deliveryState.canManageTeam = Boolean(staffResult.canManageTeam);
+      deliveryState.canAssignAdmin = Boolean(staffResult.canAssignAdmin);
       deliveryState.projects = projectResult.projects || [];
       deliveryState.maintenance = maintenanceResult.maintenance || [];
       deliveryState.proposals = proposalResult.proposals || [];
@@ -1377,6 +1608,7 @@ async function initDeliveryWorkspace() {
 
       updateWorkspaceKpis();
       renderClientAccountsTable();
+      renderStaffAccountsTable();
       renderProposalsTable();
       renderMaintenanceTable();
       renderProjectsList();
@@ -1413,6 +1645,14 @@ async function initDeliveryWorkspace() {
   document.getElementById('usersSearchInput')?.addEventListener('input', (e) => {
     deliveryState.userQuery = e.target.value;
     renderClientAccountsTable();
+  });
+  document.getElementById('staffSearchInput')?.addEventListener('input', (e) => {
+    deliveryState.staffQuery = e.target.value;
+    renderStaffAccountsTable();
+  });
+  document.getElementById('staffRoleFilter')?.addEventListener('change', (e) => {
+    deliveryState.staffRole = e.target.value;
+    renderStaffAccountsTable();
   });
   document.querySelectorAll('[data-user-status-filter]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1727,6 +1967,129 @@ async function initDeliveryWorkspace() {
     }
   });
 
+  document.getElementById('staffAccountsContainer')?.addEventListener('click', async (event) => {
+    const editBtn = event.target.closest('.staff-edit-btn');
+    if (editBtn) {
+      const member = deliveryState.staff.find((s) => s.id === editBtn.dataset.staff);
+      if (!member) return;
+      const adminOpt = deliveryState.canAssignAdmin
+        ? `<option value="admin" ${member.role === 'admin' || member.role === 'Administrator' ? 'selected' : ''}>Admin</option>`
+        : '';
+      openDeliveryActionModal({
+        kicker: 'Team Role & Profile',
+        title: `Edit Team Member — ${member.fullName || member.email}`,
+        submitLabel: 'Save Changes',
+        bodyHtml: `
+          <div class="form-group">
+            <label class="form-label" for="modalEditStaffName">Full Name</label>
+            <input type="text" id="modalEditStaffName" name="fullName" class="form-input" required value="${escapeHtml(member.fullName || '')}" />
+          </div>
+          <div class="form-grid two-col">
+            <div class="form-group">
+              <label class="form-label" for="modalEditStaffRole">Console Role</label>
+              <select id="modalEditStaffRole" name="role" class="form-select">
+                <option value="developer" ${member.role === 'developer' ? 'selected' : ''}>Developer</option>
+                <option value="sub_admin" ${member.role === 'sub_admin' ? 'selected' : ''}>Sub-Admin</option>
+                <option value="manager" ${member.role === 'manager' ? 'selected' : ''}>Delivery Manager</option>
+                ${adminOpt}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modalEditStaffStatus">Access Status</label>
+              <select id="modalEditStaffStatus" name="status" class="form-select">
+                <option value="active" ${(member.status || 'active') === 'active' ? 'selected' : ''}>Active</option>
+                <option value="suspended" ${member.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+              </select>
+            </div>
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          await adminApiFetch(`/api/staff/${encodeURIComponent(member.id)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              fullName: String(formData.get('fullName') || '').trim(),
+              role: String(formData.get('role') || member.role),
+              status: String(formData.get('status') || member.status || 'active')
+            })
+          });
+          showToast('Team member updated.');
+          await loadDeliveryData();
+        }
+      });
+      return;
+    }
+
+    const statusBtn = event.target.closest('.staff-status-btn');
+    if (statusBtn) {
+      statusBtn.disabled = true;
+      try {
+        await adminApiFetch(`/api/staff/${encodeURIComponent(statusBtn.dataset.staff)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: statusBtn.dataset.status })
+        });
+        showToast(`Team access set to ${statusBtn.dataset.status}.`);
+        await loadDeliveryData();
+      } catch (error) {
+        statusBtn.disabled = false;
+        showToast(error.message, 'error');
+      }
+      return;
+    }
+
+    const pwdBtn = event.target.closest('.staff-password-btn');
+    if (pwdBtn) {
+      openDeliveryActionModal({
+        kicker: 'Team Account Recovery',
+        title: `Reset Password — ${pwdBtn.dataset.name || 'Team Member'}`,
+        submitLabel: 'Reset Password',
+        bodyHtml: `
+          <div class="form-group">
+            <label class="form-label" for="modalStaffResetPwd">New Temporary Password (min. 10 characters)</label>
+            <div class="password-field">
+              <input type="text" id="modalStaffResetPwd" name="password" class="form-input" minlength="10" required placeholder="Enter or generate password" />
+              <button type="button" class="password-action" id="modalGenStaffResetBtn" style="right:0.75rem;">Generate</button>
+            </div>
+            <span class="form-help-text">Share this temporary password securely with the team member.</span>
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          await adminApiFetch(`/api/staff/${encodeURIComponent(pwdBtn.dataset.staff)}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify({ password: String(formData.get('password') || '') })
+          });
+          showToast('Team member password reset successfully.');
+        }
+      });
+      document.getElementById('modalGenStaffResetBtn')?.addEventListener('click', () => {
+        const inp = document.getElementById('modalStaffResetPwd');
+        if (inp) inp.value = generateSecurePassword();
+      });
+      return;
+    }
+
+    const delBtn = event.target.closest('.staff-delete-btn');
+    if (delBtn) {
+      openDeliveryActionModal({
+        kicker: 'Revoke Access',
+        title: `Remove Team Member — ${delBtn.dataset.name || 'Account'}`,
+        submitLabel: 'Remove Account',
+        bodyHtml: `
+          <p style="margin:0;color:var(--admin-text-secondary);font-size:0.9rem;line-height:1.55;">
+            This will permanently revoke console access for <strong>${escapeHtml(delBtn.dataset.name || 'this user')}</strong>.
+            You can recreate their account at any time later.
+          </p>
+        `,
+        onSubmit: async () => {
+          await adminApiFetch(`/api/staff/${encodeURIComponent(delBtn.dataset.staff)}`, {
+            method: 'DELETE'
+          });
+          showToast('Team account removed.');
+          await loadDeliveryData();
+        }
+      });
+    }
+  });
+
   document.querySelectorAll('[data-close-client-modal]').forEach((element) =>
     element.addEventListener('click', () => {
       const modal = document.getElementById('clientEditModal');
@@ -2015,18 +2378,41 @@ function initSidebarAndTabs() {
   const tabBtns = document.querySelectorAll('.nav-tab-btn');
   const panels = document.querySelectorAll('.admin-tab-panel');
   const sidebar = document.getElementById('adminSidebar');
+  const backdrop = document.getElementById('adminSidebarBackdrop');
   const toggleBtn = document.getElementById('sidebarToggleBtn');
+
+  function setDrawerOpen(isOpen) {
+    if (!sidebar) return;
+    sidebar.classList.toggle('open', isOpen);
+    backdrop?.classList.toggle('open', isOpen);
+    toggleBtn?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    document.body.classList.toggle('drawer-open', isOpen && window.innerWidth <= 1024);
+  }
 
   if (toggleBtn && sidebar) {
     toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+      setDrawerOpen(!sidebar.classList.contains('open'));
     });
 
+    backdrop?.addEventListener('click', () => setDrawerOpen(false));
+
     document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 860 && sidebar.classList.contains('open')) {
+      if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
         if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
-          sidebar.classList.remove('open');
+          setDrawerOpen(false);
         }
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+        setDrawerOpen(false);
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1024 && sidebar.classList.contains('open')) {
+        setDrawerOpen(false);
       }
     });
   }
@@ -2044,8 +2430,8 @@ function initSidebarAndTabs() {
         targetPanel.classList.add('active');
       }
 
-      if (window.innerWidth <= 860 && sidebar) {
-        sidebar.classList.remove('open');
+      if (window.innerWidth <= 1024 && sidebar) {
+        setDrawerOpen(false);
       }
 
       // Update URL hash for easy bookmarking
@@ -2237,25 +2623,27 @@ function renderInquiriesTable() {
     filtered.forEach(item => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--admin-text-muted);">${item.date}</td>
-        <td>
+        <td data-label="Date" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--admin-text-muted);">${item.date}</td>
+        <td data-label="Client">
           <div style="font-weight: 700; color: var(--admin-text-primary);">${escapeHtml(item.name)}</div>
           <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${escapeHtml(item.company || 'Direct Inquiry')}</div>
         </td>
-        <td>
-          <a href="mailto:${escapeHtml(item.email)}" class="email-link">${escapeHtml(item.email)}</a>
+        <td data-label="Email">
+          <a href="mailto:${escapeHtml(item.email)}" class="email-link" style="overflow-wrap:anywhere;">${escapeHtml(item.email)}</a>
         </td>
-        <td>
+        <td data-label="Service">
           <span style="font-size: 0.8rem; font-weight: 600;">${escapeHtml(item.serviceName || item.service)}</span>
         </td>
-        <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--admin-accent); font-weight: 700;">
+        <td data-label="Est. Budget" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--admin-accent); font-weight: 700;">
           ${escapeHtml(item.budget || 'Custom Discovery')}
         </td>
-        <td>
+        <td data-label="Status">
           <span class="status-chip ${item.status}">${item.status.replace('_', ' ')}</span>
         </td>
-        <td style="text-align: right;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="openInquiryDetail('${item.id}')">Review &amp; Edit</button>
+        <td data-label="Actions" style="text-align: right;">
+          <div class="ops-table-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openInquiryDetail('${item.id}')">Review &amp; Edit</button>
+          </div>
         </td>
       `;
       tbody.appendChild(tr);
@@ -2268,14 +2656,18 @@ function renderInquiriesTable() {
     adminState.inquiries.slice(0, 4).forEach(item => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>
+        <td data-label="Client">
           <div style="font-weight: 700; color: var(--admin-text-primary); font-size: 0.85rem;">${escapeHtml(item.name)}</div>
           <div style="font-size: 0.72rem; color: var(--admin-text-muted);">${escapeHtml(item.company || 'Individual')}</div>
         </td>
-        <td style="font-size: 0.8rem;">${escapeHtml(item.serviceName || item.service)}</td>
-        <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--admin-accent); font-weight: 700;">${escapeHtml(item.budget || 'Discovery')}</td>
-        <td><span class="status-chip ${item.status}">${item.status}</span></td>
-        <td><button type="button" class="btn-action-icon" onclick="openInquiryDetail('${item.id}')">View</button></td>
+        <td data-label="Service" style="font-size: 0.8rem;">${escapeHtml(item.serviceName || item.service)}</td>
+        <td data-label="Budget" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--admin-accent); font-weight: 700;">${escapeHtml(item.budget || 'Discovery')}</td>
+        <td data-label="Status"><span class="status-chip ${item.status}">${item.status}</span></td>
+        <td data-label="Action">
+          <div class="ops-table-actions">
+            <button type="button" class="btn-action-icon" onclick="openInquiryDetail('${item.id}')">View</button>
+          </div>
+        </td>
       `;
       dashTbody.appendChild(tr);
     });

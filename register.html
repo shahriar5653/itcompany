@@ -1,1 +1,243 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create Client Portal Account | RSTechwerk</title><link rel="stylesheet" href="/styles.css"><style>body{background:#f8fafc;color:#0f172a}.register-shell{min-height:100vh;display:grid;place-items:center;padding:2rem}.register-card{width:min(620px,100%);background:#fff;border:1px solid #dbe4ee;border-radius:1.5rem;padding:clamp(1.5rem,5vw,3rem);box-shadow:0 20px 60px #0f172a12}.register-card h1{font-size:clamp(2rem,5vw,3.5rem);margin:.5rem 0}.register-form{display:grid;gap:1rem}.register-form label{display:grid;gap:.4rem;color:#475569}.register-form input,.register-form select{padding:.9rem;border:1px solid #dbe4ee;border-radius:.75rem;font:inherit}.register-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}.register-message{color:#b91c1c}</style></head><body><main class="register-shell"><section class="register-card"><a href="/">← RSTechwerk</a><span class="section-kicker" style="display:block;margin-top:2rem">CLIENT PORTAL</span><h1>Start your client workspace.</h1><p class="portal-muted">Create one secure account to review proposals, projects, milestones, invoices, updates, and shared files.</p><form id="registerForm" class="register-form"><label>Company name *<input name="companyName" required autocomplete="organization"></label><label>Contact name *<input name="contactName" required autocomplete="name"></label><label>Work email *<input name="email" type="email" required autocomplete="email"></label><label>Phone<input name="phone" type="tel" autocomplete="tel"></label><label>Country<select name="country"><option value="Germany">Germany</option><option value="Bangladesh">Bangladesh</option><option value="United Kingdom">United Kingdom</option><option value="United States">United States</option><option value="Other">Other</option></select></label><label>Password *<input name="password" type="password" minlength="10" required autocomplete="new-password"></label><label>Confirm password *<input name="confirmPassword" type="password" minlength="10" required autocomplete="new-password"></label><label style="display:flex;gap:.6rem;align-items:flex-start"><input name="terms" type="checkbox" required style="width:auto;margin-top:.3rem">I agree to use this portal for project communication and delivery.</label><div class="register-actions"><button class="btn btn-primary" type="submit">Create account</button><a href="/login.html">Already have an account?</a></div><p id="registerMessage" class="register-message" role="alert"></p></form></section></main><script src="/register.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-auth-mode="client">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Client Account – RSTechwerk Workspace | rstechwerk.com</title>
+    <meta name="description" content="Create your secure RSTechwerk client workspace account to review proposals, milestones, invoices, and deliverables." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      (function () {
+        var theme = localStorage.getItem('rstechwerk_client_theme') || 'light';
+        document.documentElement.setAttribute('data-auth-mode', 'client');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/admin.css" />
+    <link rel="stylesheet" href="/login.css" />
+  </head>
+  <body class="login-page-body">
+    <div class="login-bg-grid" aria-hidden="true"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="login-topbar">
+      <a href="/" class="login-brand-link" title="Return to RSTechwerk homepage">
+        <svg class="login-brand-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="1" y="1" width="34" height="34" rx="9" fill="#0b1320" stroke="#10b981" stroke-width="1.5" />
+          <circle cx="28" cy="8" r="1.75" fill="#38bdf8" />
+          <path d="M9 26V10H16C18.4853 10 20.5 12.0147 20.5 14.5C20.5 16.9853 18.4853 19 16 19H9M14.5 19L21 26" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M23 13C23 13 26 13 27 14.2C28 15.4 26.8 17 24.8 17.6C22.8 18.2 21.8 19.8 22.8 21.2C23.8 22.6 26.5 22.5 27.5 22" stroke="#34d399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div class="login-brand-logo">
+          <span>RS</span><span class="accent">Techwerk</span>
+        </div>
+      </a>
+
+      <div class="login-topbar-actions">
+        <a href="/" class="login-back-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Back to Website</span>
+        </a>
+
+        <button type="button" class="btn-icon-topbar" id="registerThemeToggle" title="Toggle Light / Dark mode" aria-label="Toggle theme">
+          <span id="registerThemeIcon">☾</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Registration View -->
+    <main class="login-main">
+      <div class="login-card-wrapper register-card-wrapper">
+        <div class="login-card" id="registerCard">
+          <!-- Client Auth Switcher -->
+          <div class="auth-mode-switch" role="navigation" aria-label="Client portal authentication">
+            <a href="/login.html?redirect=portal" class="auth-mode-tab">Sign In</a>
+            <a href="/register.html" class="auth-mode-tab active" aria-current="page">Create Account</a>
+          </div>
+
+          <div class="login-card-header">
+            <div class="auth-context-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              <span>Client Onboarding</span>
+            </div>
+            <h1 class="login-title">Start your client workspace</h1>
+            <p class="login-subtitle">Create one secure account to review proposals, projects, milestones, invoices, and shared delivery files.</p>
+          </div>
+
+          <!-- Error Banner -->
+          <div class="login-alert" id="registerAlert" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="registerMessage">Please check the required fields below.</span>
+          </div>
+
+          <form id="registerForm" class="login-form" novalidate>
+            <div class="auth-form-grid">
+              <div class="login-form-group">
+                <label class="form-label" for="regCompanyName">Company Name *</label>
+                <input
+                  id="regCompanyName"
+                  name="companyName"
+                  type="text"
+                  class="login-input"
+                  placeholder="Acme Logistics GmbH"
+                  required
+                  autocomplete="organization"
+                />
+              </div>
+
+              <div class="login-form-group">
+                <label class="form-label" for="regContactName">Full Name *</label>
+                <input
+                  id="regContactName"
+                  name="contactName"
+                  type="text"
+                  class="login-input"
+                  placeholder="Johannes Weber"
+                  required
+                  autocomplete="name"
+                />
+              </div>
+            </div>
+
+            <div class="login-form-group">
+              <label class="form-label" for="regEmail">Work Email *</label>
+              <input
+                id="regEmail"
+                name="email"
+                type="email"
+                class="login-input"
+                placeholder="name@company.com"
+                required
+                autocomplete="email"
+              />
+            </div>
+
+            <div class="auth-form-grid">
+              <div class="login-form-group">
+                <label class="form-label" for="regPhone">Phone (optional)</label>
+                <input
+                  id="regPhone"
+                  name="phone"
+                  type="tel"
+                  class="login-input"
+                  placeholder="+49 30 123456"
+                  autocomplete="tel"
+                />
+              </div>
+
+              <div class="login-form-group">
+                <label class="form-label" for="regCountry">Country / Region</label>
+                <select id="regCountry" name="country" class="auth-select">
+                  <option value="Germany">Germany</option>
+                  <option value="Bangladesh">Bangladesh</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="United States">United States</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="Austria">Austria</option>
+                  <option value="Netherlands">Netherlands</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="auth-form-grid">
+              <div class="login-form-group">
+                <label class="form-label" for="regPassword">Password * (min. 10 chars)</label>
+                <div class="login-input-wrapper">
+                  <input
+                    id="regPassword"
+                    name="password"
+                    type="password"
+                    class="login-input has-toggle"
+                    minlength="10"
+                    placeholder="••••••••••••"
+                    required
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="btn-toggle-password" data-toggle-target="regPassword" aria-label="Toggle password visibility">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="login-form-group">
+                <label class="form-label" for="regConfirmPassword">Confirm Password *</label>
+                <div class="login-input-wrapper">
+                  <input
+                    id="regConfirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    class="login-input has-toggle"
+                    minlength="10"
+                    placeholder="••••••••••••"
+                    required
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="btn-toggle-password" data-toggle-target="regConfirmPassword" aria-label="Toggle confirm password visibility">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <label class="login-checkbox-label">
+              <input name="terms" type="checkbox" required />
+              <span>I agree to use this workspace for project delivery, milestones, and client communication.</span>
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-login-submit" id="registerSubmitBtn">
+              <span id="registerBtnText">Create Client Workspace &rarr;</span>
+              <span id="registerBtnSpinner" class="login-spinner" style="display: none;"></span>
+            </button>
+          </form>
+
+          <div class="login-card-footer">
+            <p class="auth-switch-prompt">
+              Already have a client account? <a href="/login.html?redirect=portal">Sign in here</a>
+            </p>
+            <div class="login-security-tag">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--admin-accent);">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>TLS Encrypted · Instant Portal Provisioning</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="login-footer">
+      <span>RSTechwerk Client Workspace &copy; 2026 · European Product Engineering</span>
+    </footer>
+
+    <script src="/register.js"></script>
+  </body>
+</html>

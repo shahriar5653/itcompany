@@ -36,12 +36,25 @@ export async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS admin_users (
       id CHAR(36) PRIMARY KEY,
       email VARCHAR(255) NOT NULL UNIQUE,
+      full_name VARCHAR(180) NULL,
       password_hash VARCHAR(255) NOT NULL,
       role VARCHAR(50) NOT NULL DEFAULT 'Administrator',
+      status VARCHAR(30) NOT NULL DEFAULT 'active',
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [adminUserColumns] = await pool.query(
+    `SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin_users' AND COLUMN_NAME IN ('full_name', 'status')`
+  );
+  const existingAdminColumns = new Set(adminUserColumns.map((row) => row.COLUMN_NAME));
+  if (!existingAdminColumns.has('full_name')) {
+    await pool.query('ALTER TABLE admin_users ADD COLUMN full_name VARCHAR(180) NULL AFTER email');
+  }
+  if (!existingAdminColumns.has('status')) {
+    await pool.query("ALTER TABLE admin_users ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT 'active' AFTER role");
+  }
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS password_reset_tokens (

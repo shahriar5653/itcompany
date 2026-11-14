@@ -117,9 +117,26 @@ function requireAuth(req, res, next) {
   }
 }
 
+const STAFF_ROLES = ['Administrator', 'admin', 'sub_admin', 'manager', 'developer'];
+const STAFF_ROLE_SET = new Set(STAFF_ROLES);
+const ADMIN_MANAGER_ROLE_SET = new Set(['Administrator', 'admin', 'sub_admin']);
+const TOP_ADMIN_ROLE_SET = new Set(['Administrator', 'admin']);
+const ASSIGNABLE_STAFF_ROLES = new Set(['sub_admin', 'developer', 'manager', 'admin']);
+
+function isStaffRole(role) {
+  return STAFF_ROLE_SET.has(role);
+}
+
 function requireStaff(req, res, next) {
-  if (!['Administrator', 'admin', 'manager'].includes(req.user?.role)) {
+  if (!isStaffRole(req.user?.role)) {
     return res.status(403).json({ success: false, message: 'Staff access required.' });
+  }
+  return next();
+}
+
+function requireAdminManager(req, res, next) {
+  if (!ADMIN_MANAGER_ROLE_SET.has(req.user?.role)) {
+    return res.status(403).json({ success: false, message: 'Administrator or sub-admin access required.' });
   }
   return next();
 }
@@ -147,13 +164,33 @@ app.post('/api/auth/login', async (req, res) => {
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
   if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password are required.' });
 
-  const [rows] = await pool.execute('SELECT id, email, password_hash, role FROM admin_users WHERE email = ? LIMIT 1', [email]);
+  const [rows] = await pool.execute('SELECT id, email, full_name AS fullName, password_hash, role, status FROM admin_users WHERE email = ? LIMIT 1', [email]);
   const user = rows[0];
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
+  if (user.status === 'suspended') {
+    return res.status(403).json({ success: false, message: 'Your account access has been suspended. Please contact an administrator.' });
+  }
+  if (user.role === 'client') {
+    const [clientRows] = await pool.execute('SELECT status FROM clients WHERE user_id = ? LIMIT 1', [user.id]);
+    if (clientRows[0]?.status === 'suspended') {
+      return res.status(403).json({ success: false, message: 'Your client portal access is currently suspended.' });
+    }
+  }
 
-  return res.json({ success: true, token: issueToken(user), user: { id: user.id, email: user.email, role: user.role } });
+  return res.json({
+    success: true,
+    token: issueToken(user),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.fullName || user.email,
+      fullName: user.fullName || null,
+      role: user.role,
+      status: user.status || 'active'
+    }
+  });
 });
 
 app.post('/api/auth/forgot-password', async (req, res) => {
@@ -212,9 +249,21 @@ app.post('/api/auth/register', async (req, res) => {
 app.get('/api/notifications/status', requireAuth, requireStaff, (_req, res) => res.json({ success: true, emailEnabled: emailEnabled() }));
 
 app.get('/api/auth/me', requireAuth, async (req, res) => {
-  const [rows] = await pool.execute('SELECT id, email, role FROM admin_users WHERE id = ? LIMIT 1', [req.user.sub]);
-  if (!rows[0]) return res.status(401).json({ success: false, message: 'User account not found.' });
-  return res.json({ success: true, user: rows[0] });
+  const [rows] = await pool.execute('SELECT id, email, full_name AS fullName, role, status FROM admin_users WHERE id = ? LIMIT 1', [req.user.sub]);
+  const user = rows[0];
+  if (!user) return res.status(401).json({ success: false, message: 'User account not found.' });
+  if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account access is suspended.' });
+  return res.json({
+    success: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.fullName || user.email,
+      fullName: user.fullName || null,
+      role: user.role,
+      status: user.status || 'active'
+    }
+  });
 });
 
 app.get('/api/client/profile', requireAuth, async (req, res) => {
@@ -339,15 +388,19 @@ app.post('/api/clients', requireAuth, requireStaff, async (req, res) => {
 });
 
 app.patch('/api/clients/:id', requireAuth, requireStaff, async (req, res) => {
-  const companyName = cleanString(req.body?.companyName, 255);
-  const contactName = cleanString(req.body?.contactName, 180);
-  const phone = cleanString(req.body?.phone, 30) || null;
-  const country = cleanString(req.body?.country, 100) || null;
+  const [existingRows] = await pool.execute('SELECT id, user_id AS userId, company_name AS companyName, contact_name AS contactName, phone, country FROM clients WHERE id = ? LIMIT 1', [req.params.id]);
+  const existing = existingRows[0];
+  if (!existing) return res.status(404).json({ success: false, message: 'Client not found.' });
+  const companyName = cleanString(req.body?.companyName, 255) || existing.companyName;
+  const contactName = cleanString(req.body?.contactName, 180) || existing.contactName;
+  const phone = req.body?.phone !== undefined ? (cleanString(req.body.phone, 30) || null) : existing.phone;
+  const country = req.body?.country !== undefined ? (cleanString(req.body.country, 100) || null) : existing.country;
   const status = ['active', 'inactive', 'suspended'].includes(req.body?.status) ? req.body.status : 'active';
-  if (!companyName || !contactName) return res.status(400).json({ success:false, message:'Company name and contact name are required.' });
-  const [result] = await pool.execute('UPDATE clients SET company_name = ?, contact_name = ?, phone = ?, country = ?, status = ? WHERE id = ?', [companyName, contactName, phone, country, status, req.params.id]);
-  if (!result.affectedRows) return res.status(404).json({ success:false, message:'Client not found.' });
-  return res.json({ success:true });
+  await pool.execute('UPDATE clients SET company_name = ?, contact_name = ?, phone = ?, country = ?, status = ? WHERE id = ?', [companyName, contactName, phone, country, status, req.params.id]);
+  if (existing.userId) {
+    await pool.execute('UPDATE admin_users SET status = ? WHERE id = ?', [status === 'suspended' ? 'suspended' : 'active', existing.userId]);
+  }
+  return res.json({ success: true });
 });
 
 app.post('/api/clients/:id/reset-password', requireAuth, requireStaff, async (req, res) => {
@@ -359,14 +412,114 @@ app.post('/api/clients/:id/reset-password', requireAuth, requireStaff, async (re
   return res.json({ success:true, message:'Client password reset.' });
 });
 
+app.get('/api/staff', requireAuth, requireStaff, async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT id, email, full_name AS fullName, role, status, created_at AS createdAt
+    FROM admin_users
+    WHERE role <> 'client'
+    ORDER BY created_at DESC
+  `);
+  return res.json({
+    success: true,
+    canManageTeam: ADMIN_MANAGER_ROLE_SET.has(req.user.role),
+    canAssignAdmin: TOP_ADMIN_ROLE_SET.has(req.user.role),
+    staff: rows
+  });
+});
+
+app.post('/api/staff', requireAuth, requireAdminManager, async (req, res) => {
+  const fullName = cleanString(req.body?.fullName, 180);
+  const email = cleanString(req.body?.email, 255).toLowerCase();
+  const role = cleanString(req.body?.role, 50) || 'developer';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  if (!fullName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 10) {
+    return res.status(400).json({ success: false, message: 'Full name, valid email, and a 10+ character password are required.' });
+  }
+  if (!ASSIGNABLE_STAFF_ROLES.has(role)) {
+    return res.status(400).json({ success: false, message: 'Invalid team role.' });
+  }
+  if (role === 'admin' && !TOP_ADMIN_ROLE_SET.has(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Only primary administrators can create full admin accounts.' });
+  }
+  const staffId = randomUUID();
+  const hash = await bcrypt.hash(password, 12);
+  try {
+    await pool.execute(
+      'INSERT INTO admin_users (id, email, full_name, password_hash, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [staffId, email, fullName, hash, role, 'active']
+    );
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+    }
+    throw error;
+  }
+  const consoleUrl = `${process.env.APP_URL || 'http://localhost:3000'}/login.html?redirect=admin`;
+  await sendNotification({
+    to: email,
+    subject: 'Your RSTechwerk team console access',
+    text: `Hello ${fullName},\n\nYour RSTechwerk internal console account (${role}) has been created. Sign in at ${consoleUrl}.`,
+    html: `<p>Hello ${fullName},</p><p>Your RSTechwerk internal console account (<strong>${role}</strong>) has been created.</p><p>Sign in at <a href="${consoleUrl}">${consoleUrl}</a>.</p>`
+  });
+  return res.status(201).json({ success: true, staffId });
+});
+
+app.patch('/api/staff/:id', requireAuth, requireAdminManager, async (req, res) => {
+  const [rows] = await pool.execute('SELECT id, email, full_name AS fullName, role, status FROM admin_users WHERE id = ? AND role <> ? LIMIT 1', [req.params.id, 'client']);
+  const target = rows[0];
+  if (!target) return res.status(404).json({ success: false, message: 'Team member not found.' });
+  if (TOP_ADMIN_ROLE_SET.has(target.role) && !TOP_ADMIN_ROLE_SET.has(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'You cannot modify a primary administrator account.' });
+  }
+  const fullName = req.body?.fullName !== undefined ? (cleanString(req.body.fullName, 180) || target.fullName) : target.fullName;
+  const nextRole = req.body?.role ? cleanString(req.body.role, 50) : target.role;
+  const nextStatus = ['active', 'suspended'].includes(req.body?.status) ? req.body.status : (target.status || 'active');
+  if (nextRole !== target.role && !ASSIGNABLE_STAFF_ROLES.has(nextRole)) {
+    return res.status(400).json({ success: false, message: 'Invalid team role.' });
+  }
+  if (nextRole === 'admin' && !TOP_ADMIN_ROLE_SET.has(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Only primary administrators can assign full admin role.' });
+  }
+  if (target.id === req.user.sub && (nextStatus !== 'active' || nextRole !== target.role)) {
+    return res.status(400).json({ success: false, message: 'You cannot suspend or demote your own active account.' });
+  }
+  await pool.execute('UPDATE admin_users SET full_name = ?, role = ?, status = ? WHERE id = ?', [fullName || null, nextRole, nextStatus, target.id]);
+  return res.json({ success: true });
+});
+
+app.post('/api/staff/:id/reset-password', requireAuth, requireAdminManager, async (req, res) => {
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  if (password.length < 10) return res.status(400).json({ success: false, message: 'Password must be at least 10 characters.' });
+  const [rows] = await pool.execute('SELECT id, role FROM admin_users WHERE id = ? AND role <> ? LIMIT 1', [req.params.id, 'client']);
+  const target = rows[0];
+  if (!target) return res.status(404).json({ success: false, message: 'Team member not found.' });
+  if (TOP_ADMIN_ROLE_SET.has(target.role) && !TOP_ADMIN_ROLE_SET.has(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'You cannot reset a primary administrator password.' });
+  }
+  await pool.execute('UPDATE admin_users SET password_hash = ? WHERE id = ?', [await bcrypt.hash(password, 12), target.id]);
+  return res.json({ success: true, message: 'Team member password reset.' });
+});
+
+app.delete('/api/staff/:id', requireAuth, requireAdminManager, async (req, res) => {
+  const [rows] = await pool.execute('SELECT id, role FROM admin_users WHERE id = ? AND role <> ? LIMIT 1', [req.params.id, 'client']);
+  const target = rows[0];
+  if (!target) return res.status(404).json({ success: false, message: 'Team member not found.' });
+  if (target.id === req.user.sub) return res.status(400).json({ success: false, message: 'You cannot remove your own account.' });
+  if (TOP_ADMIN_ROLE_SET.has(target.role) && !TOP_ADMIN_ROLE_SET.has(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'You cannot remove a primary administrator account.' });
+  }
+  await pool.execute('DELETE FROM admin_users WHERE id = ?', [target.id]);
+  return res.json({ success: true });
+});
+
 app.get('/api/proposals', requireAuth, async (req, res) => {
-  const staff = ['Administrator', 'admin', 'manager'].includes(req.user.role);
+  const staff = isStaffRole(req.user.role);
   const [rows] = await pool.query(`SELECT p.id, p.client_id AS clientId, c.company_name AS companyName, p.title, p.scope, p.terms, p.currency, p.total_amount AS totalAmount, p.status, p.expires_at AS expiresAt, p.sent_at AS sentAt, p.accepted_at AS acceptedAt, p.created_at AS createdAt FROM proposals p JOIN clients c ON c.id = p.client_id ${staff ? '' : 'WHERE c.user_id = ?'} ORDER BY p.created_at DESC`, staff ? [] : [req.user.sub]);
   return res.json({ success: true, proposals: rows });
 });
 
 app.get('/api/maintenance', requireAuth, async (req, res) => {
-  const staff = ['Administrator', 'admin', 'manager'].includes(req.user.role);
+  const staff = isStaffRole(req.user.role);
   const [rows] = await pool.query(`SELECT m.id, m.client_id AS clientId, m.project_id AS projectId, m.title, m.description, m.billing_type AS billingType, m.amount, m.currency, m.status, m.started_at AS startedAt, m.next_billing_date AS nextBillingDate, m.renewal_date AS renewalDate, p.name AS projectName FROM maintenance_contracts m LEFT JOIN projects p ON p.id = m.project_id ${staff ? '' : 'WHERE m.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)'} ORDER BY m.status = 'active' DESC, m.created_at DESC`, staff ? [] : [req.user.sub]);
   return res.json({ success: true, maintenance: rows });
 });
@@ -386,7 +539,7 @@ app.patch('/api/maintenance/:id', requireAuth, requireStaff, async (req, res) =>
 });
 
 app.get('/api/maintenance/invoices', requireAuth, async (req, res) => {
-  const staff = ['Administrator', 'admin', 'manager'].includes(req.user.role);
+  const staff = isStaffRole(req.user.role);
   const [rows] = await pool.query(`SELECT i.id, i.contract_id AS contractId, i.client_id AS clientId, i.invoice_number AS invoiceNumber, i.period_start AS periodStart, i.period_end AS periodEnd, i.amount, i.currency, i.status, i.due_date AS dueDate, i.paid_at AS paidAt, m.title FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id ${staff ? '' : 'WHERE i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)'} ORDER BY i.created_at DESC`, staff ? [] : [req.user.sub]);
   return res.json({ success: true, invoices: rows });
 });
@@ -415,7 +568,7 @@ app.post('/api/maintenance/generate-due-invoices', requireAuth, requireStaff, as
 });
 
 app.post('/api/maintenance/invoices/:id/checkout', requireAuth, async (req, res) => {
-  const [rows] = await pool.execute(`SELECT i.id, i.invoice_number AS invoiceNumber, i.amount, i.currency, i.status, i.client_id AS clientId, m.title FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id WHERE i.id = ? AND (? IN ('Administrator','admin','manager') OR i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)) LIMIT 1`, [req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.execute(`SELECT i.id, i.invoice_number AS invoiceNumber, i.amount, i.currency, i.status, i.client_id AS clientId, m.title FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id WHERE i.id = ? AND (? IN ('Administrator','admin','sub_admin','manager','developer') OR i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)) LIMIT 1`, [req.params.id, req.user.role, req.user.sub]);
   const invoice = rows[0];
   if (!invoice) return res.status(404).json({ success: false, message: 'Maintenance invoice not found.' });
   if (invoice.status === 'paid') return res.status(400).json({ success: false, message: 'This invoice is already paid.' });
@@ -442,7 +595,7 @@ app.post('/api/maintenance/invoices/:id/checkout', requireAuth, async (req, res)
 
 app.post('/api/maintenance/invoices/:id/paypal/capture', requireAuth, async (req, res) => {
   const [rows] = await pool.execute('SELECT id, client_id AS clientId, provider_reference AS providerReference, status FROM maintenance_invoices WHERE id = ? LIMIT 1', [req.params.id]);
-  const invoice = rows[0]; if (!invoice || (!['Administrator','admin','manager'].includes(req.user.role) && invoice.clientId !== (await pool.query('SELECT id FROM clients WHERE user_id = ? LIMIT 1', [req.user.sub]))[0][0]?.id)) return res.status(404).json({ success:false, message:'Maintenance invoice not found.' });
+  const invoice = rows[0]; if (!invoice || (!isStaffRole(req.user.role) && invoice.clientId !== (await pool.query('SELECT id FROM clients WHERE user_id = ? LIMIT 1', [req.user.sub]))[0][0]?.id)) return res.status(404).json({ success:false, message:'Maintenance invoice not found.' });
   if (!invoice.providerReference || invoice.status === 'paid') return res.status(400).json({ success:false, message:'PayPal order is unavailable.' });
   const base = process.env.PAYPAL_ENV === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'; const basic = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
   const tokenResponse = await fetch(`${base}/v1/oauth2/token`, { method:'POST', headers:{ Authorization:`Basic ${basic}`, 'Content-Type':'application/x-www-form-urlencoded' }, body:'grant_type=client_credentials' }); const tokenData = await tokenResponse.json();
@@ -466,7 +619,7 @@ app.post('/api/proposals', requireAuth, requireStaff, async (req, res) => {
 app.patch('/api/proposals/:id/status', requireAuth, async (req, res) => {
   const status = cleanString(req.body?.status, 30);
   if (!['draft', 'sent', 'accepted', 'rejected', 'expired'].includes(status)) return res.status(400).json({ success: false, message: 'Invalid proposal status.' });
-  const staff = ['Administrator', 'admin', 'manager'].includes(req.user.role);
+  const staff = isStaffRole(req.user.role);
   const [rows] = await pool.query(`SELECT p.id, p.client_id AS clientId, c.user_id AS clientUserId FROM proposals p JOIN clients c ON c.id = p.client_id WHERE p.id = ? LIMIT 1`, [req.params.id]);
   const proposal = rows[0];
   if (!proposal || (!staff && proposal.clientUserId !== req.user.sub) || (!staff && !['accepted', 'rejected'].includes(status))) return res.status(403).json({ success: false, message: 'You cannot update this proposal.' });
@@ -485,8 +638,8 @@ app.get('/api/projects', requireAuth, async (req, res) => {
   const [rows] = await pool.query(`
     SELECT p.id, p.client_id AS clientId, c.company_name AS companyName, p.name, p.description, p.status, p.start_date AS startDate, p.due_date AS dueDate, p.progress, p.created_at AS createdAt
     FROM projects p JOIN clients c ON c.id = p.client_id
-    ${['Administrator', 'admin', 'manager'].includes(req.user.role) ? '' : 'WHERE c.user_id = ?'}
-    ORDER BY p.created_at DESC`, ['Administrator', 'admin', 'manager'].includes(req.user.role) ? [] : [req.user.sub]);
+    ${isStaffRole(req.user.role) ? '' : 'WHERE c.user_id = ?'}
+    ORDER BY p.created_at DESC`, isStaffRole(req.user.role) ? [] : [req.user.sub]);
   return res.json({ success: true, projects: rows });
 });
 
@@ -510,7 +663,7 @@ app.patch('/api/projects/:id', requireAuth, requireStaff, async (req, res) => {
 });
 
 app.get('/api/projects/:id/milestones', requireAuth, async (req, res) => {
-  const [rows] = await pool.query('SELECT m.id, m.project_id AS projectId, m.title, m.description, m.amount, m.currency, m.due_date AS dueDate, m.status, m.paid_at AS paidAt, m.sort_order AS sortOrder FROM project_milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id WHERE m.project_id = ? AND (? IN (\'Administrator\', \'admin\', \'manager\') OR c.user_id = ?) ORDER BY m.sort_order, m.created_at', [req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.query('SELECT m.id, m.project_id AS projectId, m.title, m.description, m.amount, m.currency, m.due_date AS dueDate, m.status, m.paid_at AS paidAt, m.sort_order AS sortOrder FROM project_milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id WHERE m.project_id = ? AND (? IN (\'Administrator\', \'admin\', \'sub_admin\', \'manager\', \'developer\') OR c.user_id = ?) ORDER BY m.sort_order, m.created_at', [req.params.id, req.user.role, req.user.sub]);
   return res.json({ success: true, milestones: rows });
 });
 
@@ -524,7 +677,7 @@ app.post('/api/projects/:id/milestones', requireAuth, requireStaff, async (req, 
 
 app.patch('/api/projects/:id/milestones/:milestoneId/status', requireAuth, async (req, res) => {
   const status = cleanString(req.body?.status, 40);
-  const staff = ['Administrator', 'admin', 'manager'].includes(req.user.role);
+  const staff = isStaffRole(req.user.role);
   const allowedStatuses = new Set(['payment_pending', 'paid', 'in_progress', 'submitted', 'approved', 'revision_requested', 'completed']);
   if (!allowedStatuses.has(status)) return res.status(400).json({ success: false, message: 'Invalid milestone status.' });
   const milestone = await getMilestoneForUser(req.params.id, req.params.milestoneId, req.user);
@@ -534,12 +687,12 @@ app.patch('/api/projects/:id/milestones/:milestoneId/status', requireAuth, async
 });
 
 app.get('/api/projects/:id/files', requireAuth, async (req, res) => {
-  const [rows] = await pool.query(`SELECT f.id, f.project_id AS projectId, f.original_name AS originalName, f.mime_type AS mimeType, f.file_size AS fileSize, f.visible_to_client AS visibleToClient, f.created_at AS createdAt FROM project_files f JOIN projects p ON p.id = f.project_id JOIN clients c ON c.id = p.client_id WHERE f.project_id = ? AND (? IN ('Administrator', 'admin', 'manager') OR (c.user_id = ? AND f.visible_to_client = TRUE)) ORDER BY f.created_at DESC`, [req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.query(`SELECT f.id, f.project_id AS projectId, f.original_name AS originalName, f.mime_type AS mimeType, f.file_size AS fileSize, f.visible_to_client AS visibleToClient, f.created_at AS createdAt FROM project_files f JOIN projects p ON p.id = f.project_id JOIN clients c ON c.id = p.client_id WHERE f.project_id = ? AND (? IN ('Administrator', 'admin', 'sub_admin', 'manager', 'developer') OR (c.user_id = ? AND f.visible_to_client = TRUE)) ORDER BY f.created_at DESC`, [req.params.id, req.user.role, req.user.sub]);
   return res.json({ success: true, files: rows });
 });
 
 app.get('/api/projects/:id/invoices', requireAuth, async (req, res) => {
-  const [rows] = await pool.query(`SELECT i.id, i.project_id AS projectId, i.invoice_number AS invoiceNumber, i.description, i.amount, i.currency, i.status, i.due_date AS dueDate, i.paid_at AS paidAt, i.created_at AS createdAt FROM invoices i JOIN projects p ON p.id = i.project_id JOIN clients c ON c.id = i.client_id WHERE i.project_id = ? AND (? IN ('Administrator', 'admin', 'manager') OR c.user_id = ?) ORDER BY i.created_at DESC`, [req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.query(`SELECT i.id, i.project_id AS projectId, i.invoice_number AS invoiceNumber, i.description, i.amount, i.currency, i.status, i.due_date AS dueDate, i.paid_at AS paidAt, i.created_at AS createdAt FROM invoices i JOIN projects p ON p.id = i.project_id JOIN clients c ON c.id = p.client_id WHERE i.project_id = ? AND (? IN ('Administrator', 'admin', 'sub_admin', 'manager', 'developer') OR c.user_id = ?) ORDER BY i.created_at DESC`, [req.params.id, req.user.role, req.user.sub]);
   return res.json({ success: true, invoices: rows });
 });
 
@@ -572,7 +725,7 @@ app.post('/api/projects/:id/files', requireAuth, requireStaff, documentUpload.si
 });
 
 app.get('/api/projects/:id/files/:fileId/download', requireAuth, async (req, res) => {
-  const [rows] = await pool.query(`SELECT f.* FROM project_files f JOIN projects p ON p.id = f.project_id JOIN clients c ON c.id = p.client_id WHERE f.id = ? AND f.project_id = ? AND (? IN ('Administrator', 'admin', 'manager') OR (c.user_id = ? AND f.visible_to_client = TRUE)) LIMIT 1`, [req.params.fileId, req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.query(`SELECT f.* FROM project_files f JOIN projects p ON p.id = f.project_id JOIN clients c ON c.id = p.client_id WHERE f.id = ? AND f.project_id = ? AND (? IN ('Administrator', 'admin', 'sub_admin', 'manager', 'developer') OR (c.user_id = ? AND f.visible_to_client = TRUE)) LIMIT 1`, [req.params.fileId, req.params.id, req.user.role, req.user.sub]);
   const file = rows[0];
   if (!file) return res.status(404).json({ success: false, message: 'File not found.' });
   res.setHeader('Content-Disposition', `attachment; filename="${file.original_name.replace(/[^a-zA-Z0-9._-]/g, '_')}"`);
@@ -583,7 +736,7 @@ app.get('/api/projects/:id/files/:fileId/download', requireAuth, async (req, res
 async function getMilestoneForUser(projectId, milestoneId, user) {
   const [rows] = await pool.execute(`SELECT m.id, m.title, m.amount, m.currency, p.name AS projectName, c.company_name AS companyName, c.user_id AS clientUserId FROM project_milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id WHERE m.id = ? AND m.project_id = ? LIMIT 1`, [milestoneId, projectId]);
   const item = rows[0];
-  if (!item || (!['Administrator', 'admin', 'manager'].includes(user.role) && item.clientUserId !== user.sub)) return null;
+  if (!item || (!isStaffRole(user.role) && item.clientUserId !== user.sub)) return null;
   return item;
 }
 
@@ -640,7 +793,7 @@ app.post('/api/projects/:id/milestones/:milestoneId/paypal/capture', requireAuth
 });
 
 app.get('/api/projects/:id/updates', requireAuth, async (req, res) => {
-  const [rows] = await pool.query('SELECT u.id, u.project_id AS projectId, u.title, u.body, u.progress, u.created_at AS createdAt FROM project_updates u JOIN projects p ON p.id = u.project_id JOIN clients c ON c.id = p.client_id WHERE u.project_id = ? AND (? IN (\'Administrator\', \'admin\', \'manager\') OR (c.user_id = ? AND u.visible_to_client = TRUE)) ORDER BY u.created_at DESC', [req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.query('SELECT u.id, u.project_id AS projectId, u.title, u.body, u.progress, u.created_at AS createdAt FROM project_updates u JOIN projects p ON p.id = u.project_id JOIN clients c ON c.id = p.client_id WHERE u.project_id = ? AND (? IN (\'Administrator\', \'admin\', \'sub_admin\', \'manager\', \'developer\') OR (c.user_id = ? AND u.visible_to_client = TRUE)) ORDER BY u.created_at DESC', [req.params.id, req.user.role, req.user.sub]);
   return res.json({ success: true, updates: rows });
 });
 

@@ -20,7 +20,7 @@
     <!-- Top Global App Bar -->
     <header class="admin-topbar">
       <div class="admin-topbar-left">
-        <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation drawer">
+        <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation drawer" aria-expanded="false" aria-controls="adminSidebar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="12" x2="21" y2="12"></line>
             <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -86,7 +86,7 @@
           <div class="admin-avatar" id="adminUserAvatar">RS</div>
           <div class="admin-meta">
             <span class="admin-name" id="adminUserName">Admin Lead</span>
-            <span class="admin-role">Berlin / Dhaka</span>
+            <span class="admin-role" id="adminUserRole">Berlin / Dhaka</span>
           </div>
           <button type="button" class="btn-topbar-logout" id="adminLogoutBtn" title="Sign out of Admin Console" aria-label="Sign out">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -251,6 +251,7 @@
           </div>
         </div>
       </aside>
+      <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" aria-hidden="true"></div>
 
       <!-- Main Content Area -->
       <main class="admin-main" id="adminMainContent">
@@ -323,7 +324,7 @@
                 <button type="button" class="btn-text-link" id="viewAllInquiriesLink">View All &rarr;</button>
               </div>
               <div class="table-responsive">
-                <table class="admin-table">
+                <table class="admin-table ops-responsive-table">
                   <thead>
                     <tr>
                       <th>Client / Company</th>
@@ -693,31 +694,32 @@
         <section class="admin-tab-panel delivery-workspace-panel" id="tab-users" role="tabpanel">
           <div class="panel-header">
             <div>
-              <h1 class="panel-title">User Management</h1>
-              <p class="panel-subtitle">Control client portal access, organization profiles, and password recovery.</p>
+              <h1 class="panel-title">User &amp; Team Management</h1>
+              <p class="panel-subtitle">Manage internal sub-admins &amp; developers alongside client portal accounts.</p>
             </div>
             <div class="panel-actions">
               <button type="button" class="btn btn-secondary btn-sm" id="refreshUsersBtn">Refresh</button>
-              <button type="button" class="btn btn-primary btn-sm" id="usersCreateClientBtn">+ New Client Account</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="usersCreateClientBtn">+ New Client Account</button>
+              <button type="button" class="btn btn-primary btn-sm" id="usersAddStaffBtn">+ Add Sub-Admin / Dev</button>
             </div>
           </div>
 
           <!-- Live User KPI Strip -->
           <div class="ops-kpi-strip">
             <div class="ops-kpi-cell">
-              <span class="ops-kpi-label">Total Client Users</span>
+              <span class="ops-kpi-label">Client Accounts</span>
               <strong class="ops-kpi-value" id="kpiUsersTotal">0</strong>
-              <span class="ops-kpi-meta">Registered portal accounts</span>
+              <span class="ops-kpi-meta" id="kpiUsersSuspendedMeta">0 suspended accounts</span>
             </div>
             <div class="ops-kpi-cell">
-              <span class="ops-kpi-label">Active Access</span>
+              <span class="ops-kpi-label">Active Client Access</span>
               <strong class="ops-kpi-value accent" id="kpiUsersActive">0</strong>
-              <span class="ops-kpi-meta">Authorized to sign in</span>
+              <span class="ops-kpi-meta">Authorized portal clients</span>
             </div>
             <div class="ops-kpi-cell">
-              <span class="ops-kpi-label">Suspended / Inactive</span>
-              <strong class="ops-kpi-value warn" id="kpiUsersSuspended">0</strong>
-              <span class="ops-kpi-meta">Access paused or archived</span>
+              <span class="ops-kpi-label">Team &amp; Sub-Admins</span>
+              <strong class="ops-kpi-value" id="kpiUsersStaffTotal">0</strong>
+              <span class="ops-kpi-meta" id="kpiUsersStaffMeta">0 active internal accounts</span>
             </div>
             <div class="ops-kpi-cell">
               <span class="ops-kpi-label">Running Projects</span>
@@ -726,23 +728,64 @@
             </div>
           </div>
 
-          <div class="admin-box">
-            <div class="box-header ops-box-header">
-              <div>
-                <h2 class="box-title">Client Directory</h2>
-                <p class="box-subtitle">Edit company profiles, toggle portal access, or reset temporary passwords.</p>
-              </div>
-              <div class="ops-filter-controls">
-                <input type="search" id="usersSearchInput" class="form-input ops-search-input" placeholder="Search company, contact, or email…" />
-                <div class="ops-segmented" role="tablist" aria-label="Filter users by status">
-                  <button type="button" class="ops-seg-btn active" data-user-status-filter="all">All</button>
-                  <button type="button" class="ops-seg-btn" data-user-status-filter="active">Active</button>
-                  <button type="button" class="ops-seg-btn" data-user-status-filter="suspended">Suspended</button>
+          <!-- Segmented Directory Switcher -->
+          <div class="ops-toolbar">
+            <div class="ops-segmented" role="tablist" aria-label="User directory views">
+              <button type="button" class="ops-seg-btn active" data-users-subtab="clients">
+                Client Directory <span class="ops-seg-count" id="usersCountClients">0</span>
+              </button>
+              <button type="button" class="ops-seg-btn" data-users-subtab="staff">
+                Team &amp; Sub-Admins <span class="ops-seg-count" id="usersCountStaff">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sub-View A: Client Directory -->
+          <div class="ops-subpanel active" id="usersSubpanelClients">
+            <div class="admin-box">
+              <div class="box-header ops-box-header">
+                <div>
+                  <h2 class="box-title">Client Directory</h2>
+                  <p class="box-subtitle">Edit company profiles, toggle portal access, or reset temporary passwords.</p>
+                </div>
+                <div class="ops-filter-controls">
+                  <input type="search" id="usersSearchInput" class="form-input ops-search-input" placeholder="Search company, contact, or email…" />
+                  <div class="ops-segmented" role="tablist" aria-label="Filter users by status">
+                    <button type="button" class="ops-seg-btn active" data-user-status-filter="all">All</button>
+                    <button type="button" class="ops-seg-btn" data-user-status-filter="active">Active</button>
+                    <button type="button" class="ops-seg-btn" data-user-status-filter="suspended">Suspended</button>
+                  </div>
                 </div>
               </div>
+              <div id="clientAccountsContainer" class="table-responsive">
+                <p class="form-help-text">Loading clients…</p>
+              </div>
             </div>
-            <div id="clientAccountsContainer" class="table-responsive">
-              <p class="form-help-text">Loading clients…</p>
+          </div>
+
+          <!-- Sub-View B: Internal Team, Sub-Admins & Developers -->
+          <div class="ops-subpanel" id="usersSubpanelStaff">
+            <div class="admin-box">
+              <div class="box-header ops-box-header">
+                <div>
+                  <h2 class="box-title">Internal Team &amp; Sub-Admins</h2>
+                  <p class="box-subtitle">Create sub-admin, developer, and delivery manager accounts directly from the console.</p>
+                </div>
+                <div class="ops-filter-controls">
+                  <input type="search" id="staffSearchInput" class="form-input ops-search-input" placeholder="Search name or email…" />
+                  <select id="staffRoleFilter" class="form-select ops-filter-select" aria-label="Filter team by role">
+                    <option value="all">All Roles</option>
+                    <option value="sub_admin">Sub-Admin</option>
+                    <option value="developer">Developer</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <button type="button" class="btn btn-primary btn-sm" id="staffPanelAddBtn">+ Add Member</button>
+                </div>
+              </div>
+              <div id="staffAccountsContainer" class="table-responsive">
+                <p class="form-help-text">Loading team accounts…</p>
+              </div>
             </div>
           </div>
         </section>
@@ -792,7 +835,7 @@
           <!-- Main Leads Table -->
           <div class="content-box">
             <div class="table-responsive">
-              <table class="admin-table">
+              <table class="admin-table ops-responsive-table">
                 <thead>
                   <tr>
                     <th>Date</th>

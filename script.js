@@ -27,7 +27,7 @@ const PORTFOLIO_IMAGE_FALLBACKS = {
 
 const LANGUAGE_COPY = {
   de: {
-    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'FAQ': 'FAQ',
+    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'FAQ': 'FAQ', 'Client Portal': 'Kundenportal',
     'Discuss Your Project': 'Projekt besprechen', 'Start Your Project': 'Projekt starten', 'Explore Our Work': 'Unsere Projekte ansehen', 'Maintain Your Project': 'Projektwartung & Retainer',
     'Europe & DACH': 'Europa & DACH', 'Senior Product Engineering': 'Senior Product Engineering',
     'Build digital products': 'Digitale Produkte entwickeln', 'that move your business forward.': 'die Ihr Unternehmen voranbringen.',
@@ -258,21 +258,29 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initClientProfileLink() {
-  const link = document.getElementById('clientProfileLink');
-  const mobilePortalBtn = document.getElementById('mobilePortalBtn');
+  const portalLink = document.getElementById('portalHeaderLink');
+  const avatarBadge = document.getElementById('portalAvatarBadge');
+  const portalIcon = portalLink?.querySelector('.portal-btn-icon');
+  const drawerPortalLink = document.querySelector('.mobile-nav-links a[href*="redirect=portal"]');
   try {
     const raw = localStorage.getItem('rstechwerk_admin_session') || sessionStorage.getItem('rstechwerk_admin_session');
     const session = raw ? JSON.parse(raw) : null;
     if (session?.token && session?.role === 'client') {
-      if (link) {
-        link.href = '/portal.html';
-        link.style.display = 'inline-flex';
-        link.textContent = (session.email || 'C').slice(0, 1).toUpperCase();
-        link.title = 'Open client profile';
+      if (portalLink) {
+        portalLink.href = '/portal.html';
+        portalLink.classList.add('is-authenticated');
+        portalLink.title = 'Open client portal';
+        portalLink.setAttribute('aria-label', 'Open client portal');
       }
-      if (mobilePortalBtn) {
-        mobilePortalBtn.href = '/portal.html';
-        mobilePortalBtn.classList.add('is-authenticated');
+      if (drawerPortalLink) {
+        drawerPortalLink.href = '/portal.html';
+      }
+      if (avatarBadge) {
+        avatarBadge.textContent = (session.name || session.email || 'C').slice(0, 1).toUpperCase();
+        avatarBadge.style.display = 'inline-flex';
+      }
+      if (portalIcon) {
+        portalIcon.style.display = 'none';
       }
     }
   } catch { /* Ignore malformed local session data. */ }
@@ -881,7 +889,7 @@ function initScrollSpyAndSmoothScroll() {
   const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
   const sections = document.querySelectorAll('section[id]');
   const header = document.querySelector('.site-header');
-  const headerHeight = header ? header.offsetHeight : 72;
+  const getHeaderHeight = () => (header ? header.offsetHeight : 68);
 
   // Handle header offset for smooth scrolling
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -893,7 +901,7 @@ function initScrollSpyAndSmoothScroll() {
       if (targetEl) {
         e.preventDefault();
         const elementPosition = targetEl.getBoundingClientRect().top + window.pageYOffset;
-        const offsetPosition = elementPosition - headerHeight - 16;
+        const offsetPosition = elementPosition - getHeaderHeight() - 16;
 
         window.scrollTo({
           top: offsetPosition,
@@ -903,10 +911,14 @@ function initScrollSpyAndSmoothScroll() {
     });
   });
 
-  // Active link scroll spy
-  window.addEventListener('scroll', () => {
+  // Active link scroll spy & header scroll elevation
+  const syncHeaderScrollState = () => {
+    if (header) {
+      header.classList.toggle('is-scrolled', window.pageYOffset > 12);
+    }
+
     let current = '';
-    const scrollPos = window.pageYOffset + headerHeight + 60;
+    const scrollPos = window.pageYOffset + getHeaderHeight() + 60;
 
     sections.forEach(section => {
       const sectionTop = section.offsetTop;
@@ -922,7 +934,10 @@ function initScrollSpyAndSmoothScroll() {
         link.classList.add('active');
       }
     });
-  }, { passive: true });
+  };
+
+  syncHeaderScrollState();
+  window.addEventListener('scroll', syncHeaderScrollState, { passive: true });
 }
 
 /* ==========================================================================

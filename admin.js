@@ -762,10 +762,11 @@ function initSectionTranslations() {
     const box = document.createElement('div');
     box.className = 'content-box';
     box.style.marginBottom = '1.25rem';
-    box.innerHTML = '<div class="box-header"><div><h2 class="box-title">Section translations</h2><p class="box-subtitle">Edit German or Spanish for this section. Empty fields use the English content.</p></div></div><label class="form-label">Language <select class="form-select translation-language"><option value="de">Deutsch</option><option value="es">Español</option></select></label><div class="translation-fields" style="display:grid;gap:1rem;margin:1rem 0"></div><button type="button" class="btn btn-primary translation-save">Save section translations</button><p class="form-help-text translation-feedback" role="status"></p>';
+    box.innerHTML = '<div class="box-header"><div><h2 class="box-title">Section translations</h2><p class="box-subtitle">English is the default source content. Edit it in the section fields above, or choose German or Spanish to add an override.</p></div></div><label class="form-label">Language <select class="form-select translation-language"><option value="en">English (default)</option><option value="de">Deutsch</option><option value="es">Español</option></select></label><div class="translation-fields" style="display:grid;gap:1rem;margin:1rem 0"></div><button type="button" class="btn btn-primary translation-save">Save section translations</button><p class="form-help-text translation-feedback" role="status"></p>';
     panel.querySelector('.panel-header')?.after(box);
     const select = box.querySelector('.translation-language');
     const container = box.querySelector('.translation-fields');
+    const saveButton = box.querySelector('.translation-save');
     const feedback = box.querySelector('.translation-feedback');
     let entries = [];
     const drafts = new Map();
@@ -795,11 +796,13 @@ function initSectionTranslations() {
         entries.push({ path, label, english: value, translated: draft && Object.hasOwn(draft, draftKey) ? draft[draftKey] : (typeof current === 'string' ? current : (window.RSTechwerkLanguageCopy?.[select.value]?.[value] || '')) });
       }
       walk(adminState[section], [], section);
-      container.innerHTML = entries.map((entry, index) => `<label class="form-group"><span class="form-label">${escapeHtml(entry.label)}</span><small class="form-help-text">English: ${escapeHtml(entry.english)}</small><textarea class="form-textarea" rows="2" data-translation-index="${index}" placeholder="Leave empty to use English">${escapeHtml(entry.translated)}</textarea></label>`).join('') || '<p class="form-help-text">No translatable content in this section.</p>';
+      const isDefaultLanguage = select.value === 'en';
+      container.innerHTML = entries.map((entry, index) => `<label class="form-group"><span class="form-label">${escapeHtml(entry.label)}</span>${isDefaultLanguage ? '<small class="form-help-text">Default English content · edit in the section fields above</small>' : `<small class="form-help-text">English source: ${escapeHtml(entry.english)}</small>`}<textarea class="form-textarea" rows="2" data-translation-index="${index}" placeholder="Leave empty to use English"${isDefaultLanguage ? ' readonly aria-readonly="true"' : ''}>${escapeHtml(isDefaultLanguage ? entry.english : entry.translated)}</textarea></label>`).join('') || '<p class="form-help-text">No translatable content in this section.</p>';
+      saveButton.hidden = isDefaultLanguage;
       feedback.textContent = '';
     }
     select.addEventListener('change', render);
-    panel.querySelector(`.translation-save`).addEventListener('click', async (event) => {
+    saveButton.addEventListener('click', async (event) => {
       const button = event.currentTarget;
       const next = {};
       container.querySelectorAll('[data-translation-index]').forEach((input) => {

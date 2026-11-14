@@ -163,6 +163,7 @@ const DEFAULT_ADMIN_DATA = {
   portfolio: [
     {
       key: 'nordiclogix',
+      image: '/assets/portfolio/nordiclogix-v2.png',
       title: 'NordicLogix',
       badge: 'Concept Project · SaaS / Web',
       industry: 'Freight & Logistics Orchestration',
@@ -180,6 +181,7 @@ const DEFAULT_ADMIN_DATA = {
     },
     {
       key: 'klinikflow',
+      image: '/assets/portfolio/klinikflow-v2.png',
       title: 'KlinikFlow',
       badge: 'Concept Project · Web / SaaS',
       industry: 'Outpatient Healthcare Workflow',
@@ -197,6 +199,7 @@ const DEFAULT_ADMIN_DATA = {
     },
     {
       key: 'voltgrid',
+      image: '/assets/portfolio/voltgrid-iq-v2.png',
       title: 'VoltGrid IQ',
       badge: 'Concept Project · AI / Web',
       industry: 'Renewable Energy & Battery Telemetry',
@@ -213,6 +216,7 @@ const DEFAULT_ADMIN_DATA = {
     },
     {
       key: 'aurapay',
+      image: '/assets/portfolio/aurapay-v2.png',
       title: 'AuraPay',
       badge: 'Concept Project · Mobile / Web',
       industry: 'Cross-Border Fintech & SME Billing',
@@ -229,6 +233,7 @@ const DEFAULT_ADMIN_DATA = {
     },
     {
       key: 'craftbourse',
+      image: '/assets/portfolio/craftbourse-v2.png',
       title: 'CraftBourse',
       badge: 'Concept Project · Web / E-Commerce',
       industry: 'B2B Wholesale Marketplace',
@@ -245,6 +250,7 @@ const DEFAULT_ADMIN_DATA = {
     },
     {
       key: 'sensora',
+      image: '/assets/portfolio/sensora-field-v2.png',
       title: 'Sensora Field',
       badge: 'Concept Project · Mobile / AI',
       industry: 'Precision Agronomy & Soil Telemetry',
@@ -495,8 +501,28 @@ function saveAdminState() {
       portfolio: adminState.portfolio,
       process: adminState.process,
       techStack: adminState.techStack,
+      maintenance: adminState.maintenance,
+      faqs: adminState.faqs,
       settings: adminState.settings
     }));
+    // Persist editable public content to the API when an authenticated backend
+    // session is available. Local storage remains a draft/cache fallback.
+    const session = getAdminSession();
+    if (session?.token) {
+      adminApiFetch('/api/content/site', {
+        method: 'PUT',
+        body: JSON.stringify({
+          hero: adminState.hero,
+          services: adminState.services,
+          portfolio: adminState.portfolio,
+          process: adminState.process,
+          techStack: adminState.techStack,
+          maintenance: adminState.maintenance,
+          faqs: adminState.faqs,
+          settings: adminState.settings
+        })
+      }).catch((error) => console.warn('Could not publish content to API:', error.message));
+    }
   } catch (e) {
     console.error('Failed to save admin state to localStorage', e);
   }
@@ -523,6 +549,85 @@ function showToast(message, type = 'success') {
 }
 
 const ADMIN_SESSION_KEY = 'rstechwerk_admin_session';
+const PORTFOLIO_IMAGE_FALLBACKS = {
+  nordiclogix: '/assets/portfolio/nordiclogix-v2.png', klinikflow: '/assets/portfolio/klinikflow-v2.png',
+  voltgrid: '/assets/portfolio/voltgrid-iq-v2.png', aurapay: '/assets/portfolio/aurapay-v2.png',
+  craftbourse: '/assets/portfolio/craftbourse-v2.png', sensora: '/assets/portfolio/sensora-field-v2.png'
+};
+
+function getAdminSession() {
+  try {
+    return JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+async function adminApiFetch(path, options = {}) {
+  const session = getAdminSession();
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (session?.token) headers.Authorization = `Bearer ${session.token}`;
+  let response;
+  try { response = await fetch(path, { ...options, headers }); } catch { throw new Error('API unavailable. Please make sure npm run dev is running and the backend is listening on port 4000.'); }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.message || 'API request failed.');
+  return result;
+}
+
+async function uploadPortfolioImage(file) {
+  const session = getAdminSession();
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await fetch('/api/uploads/portfolio', {
+    method: 'POST',
+    headers: session?.token ? { Authorization: `Bearer ${session.token}` } : {},
+    body: formData
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.message || 'Image upload failed.');
+  return result.imageUrl;
+}
+
+async function loadRemoteAdminContent() {
+  try {
+    const result = await adminApiFetch('/api/content');
+    const remote = result.content?.site;
+    if (!remote || typeof remote !== 'object') {
+      await publishAdminContentToApi();
+      return;
+    }
+    adminState = {
+      ...adminState,
+      ...remote,
+      process: remote.process ? { ...adminState.process, ...remote.process } : adminState.process,
+      techStack: remote.techStack ? { ...adminState.techStack, ...remote.techStack } : adminState.techStack,
+      maintenance: remote.maintenance || adminState.maintenance,
+      faqs: Array.isArray(remote.faqs) ? remote.faqs : adminState.faqs,
+      settings: remote.settings ? { ...adminState.settings, ...remote.settings } : adminState.settings
+    };
+    localStorage.setItem(STORAGE_KEY_ADMIN, JSON.stringify(adminState));
+    localStorage.setItem(STORAGE_KEY_PUBLISHED, JSON.stringify(remote));
+    console.info('Loaded published content from database.');
+  } catch (error) {
+    console.warn('Remote content unavailable; using local admin draft.', error.message);
+  }
+}
+
+function publishAdminContentToApi() {
+  return adminApiFetch('/api/content/site', {
+    method: 'PUT',
+    body: JSON.stringify({
+      hero: adminState.hero,
+      services: adminState.services,
+      portfolio: adminState.portfolio,
+      process: adminState.process,
+      techStack: adminState.techStack,
+      maintenance: adminState.maintenance,
+      faqs: adminState.faqs,
+      settings: adminState.settings
+    })
+  });
+}
 
 function checkAdminAuth() {
   try {
@@ -543,6 +648,19 @@ function checkAdminAuth() {
     if (avatarEl && session.name) avatarEl.textContent = session.name.substring(0, 2).toUpperCase();
     return true;
   } catch (e) {
+    window.location.href = '/login.html?redirect=admin';
+    return false;
+  }
+}
+
+async function verifyAdminSession() {
+  try {
+    const result = await adminApiFetch('/api/auth/me');
+    if (!['Administrator', 'admin', 'manager'].includes(result.user?.role)) throw new Error('Staff access required.');
+    return true;
+  } catch (error) {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
     window.location.href = '/login.html?redirect=admin';
     return false;
   }
@@ -569,8 +687,11 @@ function initAdminLogout() {
 }
 
 // DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (!checkAdminAuth()) return;
+  if (!(await verifyAdminSession())) return;
+
+  await loadRemoteAdminContent();
 
   initAdminLogout();
   initThemeToggle();
@@ -578,6 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGlobalSearch();
   initDashboard();
   initInquiriesModule();
+  initDeliveryWorkspace();
   initHeroModule();
   initServicesModule();
   initPortfolioModule();
@@ -593,6 +715,213 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check if an inquiry was recently submitted from index.html
   checkForNewPublicInquiry();
 });
+
+async function initDeliveryWorkspace() {
+  const clientForm = document.getElementById('clientCreateForm');
+  const projectForm = document.getElementById('projectCreateForm');
+  const refresh = document.getElementById('refreshDeliveryBtn');
+  const clientSelect = document.getElementById('projectClientSelect');
+  const proposalClientSelect = document.getElementById('proposalClientSelect');
+  const maintenanceClientSelect = document.getElementById('maintenanceClientSelect');
+  const maintenanceProjectSelect = document.getElementById('maintenanceProjectSelect');
+  const passwordInput = document.getElementById('clientPassword');
+  document.getElementById('generateClientPassword')?.addEventListener('click', () => {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    const values = crypto.getRandomValues(new Uint32Array(16));
+    passwordInput.value = Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+    passwordInput.type = 'text';
+  });
+  document.getElementById('toggleClientPassword')?.addEventListener('click', (event) => {
+    const visible = passwordInput.type === 'text'; passwordInput.type = visible ? 'password' : 'text'; event.currentTarget.textContent = visible ? '◉' : '○'; event.currentTarget.title = visible ? 'Show password' : 'Hide password';
+  });
+
+  async function loadDeliveryData() {
+    try {
+      const [clientResult, projectResult, maintenanceResult] = await Promise.all([adminApiFetch('/api/clients'), adminApiFetch('/api/projects'), adminApiFetch('/api/maintenance')]);
+      const clients = clientResult.clients || [];
+      const clientOptions = '<option value="">Select a client</option>' + clients.map((client) => `<option value="${escapeHtml(client.id)}">${escapeHtml(client.companyName)} — ${escapeHtml(client.contactName)}</option>`).join('');
+      document.getElementById('clientAccountsContainer').innerHTML = clients.length ? clients.map((client) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(client.email)}</span><span class="status-chip ${client.status === 'active' ? 'new' : ''}">${escapeHtml(client.status)}</span></div><h3 class="card-title">${escapeHtml(client.companyName)}</h3><p class="card-desc">${escapeHtml(client.contactName)} · ${escapeHtml(client.phone || 'No phone')} · ${escapeHtml(client.country || 'No country')}</p><div class="client-project-summary"><strong>${Number(client.activeProjectCount || 0)} running</strong><span>${Number(client.projectCount || 0)} total projects</span></div><div class="card-actions-row"><button class="btn btn-secondary btn-sm client-status-btn" data-client="${escapeHtml(client.id)}" data-status="${client.status === 'active' ? 'suspended' : 'active'}">${client.status === 'active' ? 'Suspend access' : 'Activate access'}</button><button class="btn btn-secondary btn-sm client-edit-btn" data-client="${escapeHtml(client.id)}">Edit full profile</button><button class="btn btn-secondary btn-sm client-password-btn" data-client="${escapeHtml(client.id)}">Reset password</button></div></article>`).join('') : '<p class="form-help-text">No client accounts yet.</p>';
+      clientSelect.innerHTML = clientOptions;
+      proposalClientSelect.innerHTML = clientOptions;
+      maintenanceClientSelect.innerHTML = clientOptions;
+      maintenanceProjectSelect.innerHTML = '<option value="">Account-level service</option>' + (projectResult.projects || []).map((project) => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)} — ${escapeHtml(project.companyName)}</option>`).join('');
+      const proposalResult = await adminApiFetch('/api/proposals');
+      const proposals = proposalResult.proposals || [];
+      document.getElementById('proposalsContainer').innerHTML = proposals.length ? proposals.map((proposal) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(proposal.companyName)}</span><span class="status-chip new">${escapeHtml(proposal.status)}</span></div><h3 class="card-title">${escapeHtml(proposal.title)}</h3><p class="card-desc">${escapeHtml(proposal.scope)}</p><p class="card-tech-tag">${escapeHtml(proposal.currency)} ${Number(proposal.totalAmount || 0).toFixed(2)}</p><div class="card-actions-row">${proposal.status === 'draft' ? `<button class="btn btn-secondary btn-sm proposal-status-btn" data-proposal="${escapeHtml(proposal.id)}" data-status="sent">Mark as sent</button>` : ''}${proposal.status === 'accepted' ? `<button class="btn btn-primary btn-sm proposal-project-btn" data-client="${escapeHtml(proposal.clientId)}" data-proposal="${escapeHtml(proposal.id)}" data-title="${escapeHtml(proposal.title)}">Create project</button>` : ''}</div></article>`).join('') : '<p class="form-help-text">No proposals yet. Create the first offer above.</p>';
+      const projects = projectResult.projects || [];
+      const maintenance = maintenanceResult.maintenance || [];
+      document.getElementById('maintenanceContractsContainer').innerHTML = maintenance.length ? maintenance.map((item) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(item.projectName || 'Account service')}</span><span class="status-chip new">${escapeHtml(item.status)}</span></div><h3 class="card-title">${escapeHtml(item.title)}</h3><p class="card-desc">${escapeHtml(item.description || 'No service description yet.')}</p><p class="card-tech-tag">${escapeHtml(item.currency)} ${Number(item.amount || 0).toFixed(2)} · ${escapeHtml(item.billingType.replaceAll('_',' '))}</p><div class="card-actions-row"><button class="btn btn-secondary btn-sm maintenance-invoice-btn" data-maintenance="${escapeHtml(item.id)}">Generate invoice</button></div></article>`).join('') : '<p class="form-help-text">No maintenance contracts yet.</p>';
+      const container = document.getElementById('deliveryProjectsContainer');
+      container.innerHTML = projects.length ? projects.map((project) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(project.companyName)}</span><span class="status-chip new">${escapeHtml(project.status)}</span></div><h3 class="card-title">${escapeHtml(project.name)}</h3><p class="card-desc">${escapeHtml(project.description || 'No project description yet.')}</p><div class="project-progress-mini"><span style="width:${Math.min(100, Number(project.progress) || 0)}%"></span></div><p class="card-tech-tag">${Number(project.progress) || 0}% complete · Due ${escapeHtml(project.dueDate || 'Not set')}</p><div class="card-actions-row"><button class="btn btn-secondary btn-sm delivery-open-btn" data-project="${escapeHtml(project.id)}">Open workspace</button><button class="btn btn-secondary btn-sm delivery-progress-btn" data-project="${escapeHtml(project.id)}" data-status="${escapeHtml(project.status)}" data-progress="${Number(project.progress) || 0}">Update progress</button><button class="btn btn-secondary btn-sm delivery-milestone-btn" data-project="${escapeHtml(project.id)}">+ Milestone</button><button class="btn btn-secondary btn-sm delivery-update-btn" data-project="${escapeHtml(project.id)}">Post update</button></div><div class="delivery-detail" id="delivery-detail-${escapeHtml(project.id)}"></div></article>`).join('') : '<p class="form-help-text">No projects yet. Create the first client project above.</p>';
+    } catch (error) {
+      document.getElementById('deliveryProjectsContainer').innerHTML = `<p class="form-help-text" style="color:#ef4444">${escapeHtml(error.message)}</p>`;
+    }
+  }
+
+  clientForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (clientForm.dataset.submitting === 'true') return;
+    clientForm.dataset.submitting = 'true'; const submitButton = clientForm.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Creating…'; }
+    const feedback = document.getElementById('clientCreateFeedback');
+    try {
+      await adminApiFetch('/api/clients', { method: 'POST', body: JSON.stringify({ companyName: document.getElementById('clientCompanyName').value.trim(), contactName: document.getElementById('clientContactName').value.trim(), email: document.getElementById('clientEmail').value.trim(), phone: document.getElementById('clientPhone').value.trim(), password: document.getElementById('clientPassword').value }) });
+      clientForm.reset(); feedback.textContent = 'Client account created successfully.'; await loadDeliveryData();
+    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
+    finally { clientForm.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Create client access'; } }
+  });
+
+  projectForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (projectForm.dataset.submitting === 'true') return;
+    projectForm.dataset.submitting = 'true'; const submitButton = projectForm.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Creating…'; }
+    const feedback = document.getElementById('projectCreateFeedback');
+    try {
+      await adminApiFetch('/api/projects', { method: 'POST', body: JSON.stringify({ clientId: clientSelect.value, name: document.getElementById('deliveryProjectName').value.trim(), description: document.getElementById('deliveryProjectDescription').value.trim() }) });
+      projectForm.reset(); feedback.textContent = 'Project created successfully.'; await loadDeliveryData();
+    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
+    finally { projectForm.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Create project'; } }
+  });
+
+  document.getElementById('proposalCreateForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (event.currentTarget.dataset.submitting === 'true') return;
+    event.currentTarget.dataset.submitting = 'true'; const submitButton = event.currentTarget.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Saving…'; }
+    const feedback = document.getElementById('proposalCreateFeedback');
+    try {
+      await adminApiFetch('/api/proposals', { method: 'POST', body: JSON.stringify({ clientId: proposalClientSelect.value, title: document.getElementById('proposalTitle').value.trim(), scope: document.getElementById('proposalScope').value.trim(), currency: document.getElementById('proposalCurrency').value, totalAmount: Number(document.getElementById('proposalAmount').value) }) });
+      event.target.reset(); feedback.textContent = 'Draft offer saved successfully.'; feedback.style.color = ''; await loadDeliveryData();
+    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
+    finally { event.currentTarget.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Save draft offer'; } }
+  });
+
+  document.getElementById('maintenanceCreateForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const feedback = document.getElementById('maintenanceCreateFeedback');
+    if (event.currentTarget.dataset.submitting === 'true') return;
+    event.currentTarget.dataset.submitting = 'true'; const submitButton = event.currentTarget.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Saving…'; }
+    try {
+      await adminApiFetch('/api/maintenance', { method:'POST', body:JSON.stringify({ clientId: maintenanceClientSelect.value, projectId: maintenanceProjectSelect.value || null, title: document.getElementById('maintenanceTitle').value.trim(), description: document.getElementById('maintenanceDescription').value.trim(), billingType: document.getElementById('maintenanceBillingType').value, currency: document.getElementById('maintenanceCurrency').value, amount: Number(document.getElementById('maintenanceAmount').value) }) });
+      event.target.reset(); feedback.textContent = 'Maintenance service saved successfully.'; feedback.style.color = ''; 
+    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
+    finally { event.currentTarget.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Save maintenance service'; } }
+  });
+
+  document.getElementById('maintenanceContractsContainer')?.addEventListener('click', async (event) => {
+    const button = event.target.closest('.maintenance-invoice-btn'); if (!button) return;
+    const dueDate = prompt('Invoice due date (YYYY-MM-DD, optional):', '');
+    try { await adminApiFetch(`/api/maintenance/${encodeURIComponent(button.dataset.maintenance)}/invoices`, { method:'POST', body:JSON.stringify({ dueDate: dueDate || null }) }); button.textContent = 'Invoice generated'; button.disabled = true; } catch (error) { alert(error.message); }
+  });
+  document.getElementById('proposalsContainer')?.addEventListener('click', async (event) => {
+    const proposalStatusBtn = event.target.closest('.proposal-status-btn');
+    const proposalProjectBtn = event.target.closest('.proposal-project-btn');
+    if (proposalStatusBtn) {
+      if (proposalStatusBtn.dataset.submitting === 'true') return;
+      proposalStatusBtn.dataset.submitting = 'true';
+      proposalStatusBtn.disabled = true;
+      const originalText = proposalStatusBtn.textContent;
+      proposalStatusBtn.textContent = 'Sending…';
+      try {
+        await adminApiFetch(`/api/proposals/${encodeURIComponent(proposalStatusBtn.dataset.proposal)}/status`, { method: 'PATCH', body: JSON.stringify({ status: proposalStatusBtn.dataset.status }) });
+        showToast('Proposal marked as sent and email notification queued.');
+        await loadDeliveryData();
+      } catch (error) {
+        proposalStatusBtn.disabled = false;
+        proposalStatusBtn.dataset.submitting = 'false';
+        proposalStatusBtn.textContent = originalText;
+        alert(error.message);
+      }
+      return;
+    }
+    if (proposalProjectBtn) {
+      if (proposalProjectBtn.dataset.submitting === 'true') return;
+      proposalProjectBtn.dataset.submitting = 'true';
+      proposalProjectBtn.disabled = true;
+      try {
+        await adminApiFetch('/api/projects', { method: 'POST', body: JSON.stringify({ clientId: proposalProjectBtn.dataset.client, proposalId: proposalProjectBtn.dataset.proposal, name: proposalProjectBtn.dataset.title, description: 'Project created from accepted proposal.' }) });
+        showToast('Project created from accepted proposal.');
+        await loadDeliveryData();
+      } catch (error) {
+        proposalProjectBtn.disabled = false;
+        proposalProjectBtn.dataset.submitting = 'false';
+        alert(error.message);
+      }
+    }
+  });
+  document.getElementById('clientAccountsContainer')?.addEventListener('click', async (event) => {
+    const editButton = event.target.closest('.client-edit-btn');
+    if (editButton) { const modal = document.getElementById('clientEditModal'); const frame = document.getElementById('clientEditFrame'); frame.src = `/admin-client.html?id=${encodeURIComponent(editButton.dataset.client)}&embedded=1`; modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); return; }
+    const statusButton = event.target.closest('.client-status-btn');
+    if (statusButton) { try { await adminApiFetch(`/api/clients/${encodeURIComponent(statusButton.dataset.client)}`, { method:'PATCH', body:JSON.stringify({ status:statusButton.dataset.status }) }); await loadDeliveryData(); } catch (error) { alert(error.message); } return; }
+    const passwordButton = event.target.closest('.client-password-btn');
+    if (passwordButton) { const password=prompt('Enter a new temporary password (minimum 10 characters):'); if (!password) return; try { await adminApiFetch(`/api/clients/${encodeURIComponent(passwordButton.dataset.client)}/reset-password`, { method:'POST', body:JSON.stringify({ password }) }); alert('Client password reset successfully.'); } catch (error) { alert(error.message); } }
+  });
+  document.querySelectorAll('[data-close-client-modal]').forEach((element) => element.addEventListener('click', () => { const modal = document.getElementById('clientEditModal'); modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); document.getElementById('clientEditFrame').src = 'about:blank'; loadDeliveryData(); }));
+  document.getElementById('generateDueMaintenanceBtn')?.addEventListener('click', async () => {
+    try { const result = await adminApiFetch('/api/maintenance/generate-due-invoices', { method:'POST' }); alert(result.message || 'Due invoices generated.'); await loadDeliveryData(); } catch (error) { alert(error.message); }
+  });
+
+  document.getElementById('deliveryProjectsContainer')?.addEventListener('click', async (event) => {
+    const progressBtn = event.target.closest('.delivery-progress-btn');
+    if (progressBtn) {
+      const progress = Number(prompt('Project progress (0-100):', progressBtn.dataset.progress));
+      const status = prompt('Project status (active, on_hold, client_review, testing, completed):', progressBtn.dataset.status) || progressBtn.dataset.status;
+      if (!Number.isInteger(progress) || progress < 0 || progress > 100) return;
+      await adminApiFetch(`/api/projects/${progressBtn.dataset.project}`, { method: 'PATCH', body: JSON.stringify({ progress, status }) }); showToast('Project progress updated.'); await loadDeliveryData(); return;
+    }
+    const openBtn = event.target.closest('.delivery-open-btn');
+    if (openBtn) {
+      const detail = document.getElementById(`delivery-detail-${openBtn.dataset.project}`);
+      if (!detail) return;
+      detail.innerHTML = '<p class="form-help-text">Loading workspace…</p>';
+      try {
+        const [milestones, updates, files, invoices] = await Promise.all([adminApiFetch(`/api/projects/${openBtn.dataset.project}/milestones`), adminApiFetch(`/api/projects/${openBtn.dataset.project}/updates`), adminApiFetch(`/api/projects/${openBtn.dataset.project}/files`), adminApiFetch(`/api/projects/${openBtn.dataset.project}/invoices`)]);
+        const milestoneHtml = (milestones.milestones || []).map((item) => `<div class="delivery-detail-row"><span><strong>${escapeHtml(item.title)}</strong><br><small>${escapeHtml(item.currency)} ${Number(item.amount || 0).toFixed(2)} · due ${escapeHtml(item.dueDate || 'not set')}</small></span><span class="status-chip ${item.status === 'paid' ? 'new' : ''}">${escapeHtml(item.status.replaceAll('_', ' '))}</span></div>`).join('') || '<small>No milestones yet.</small>';
+        const updateHtml = (updates.updates || []).map((item) => `<div class="delivery-detail-row"><span><strong>${escapeHtml(item.title)}</strong><br><small>${escapeHtml(item.body)}</small></span><small>${new Date(item.createdAt).toLocaleDateString()}</small></div>`).join('') || '<small>No updates yet.</small>';
+        const fileHtml = (files.files || []).map((file) => `<div class="delivery-detail-row"><span>${escapeHtml(file.originalName)}<br><small>${Math.ceil(Number(file.fileSize || 0) / 1024)} KB · ${file.visibleToClient ? 'client-visible' : 'internal'}</small></span></div>`).join('') || '<small>No files uploaded yet.</small>';
+        const invoiceHtml = (invoices.invoices || []).map((invoice) => `<div class="delivery-detail-row"><span><strong>${escapeHtml(invoice.invoiceNumber)}</strong><br><small>${escapeHtml(invoice.description)} · ${escapeHtml(invoice.currency)} ${Number(invoice.amount || 0).toFixed(2)}</small></span><span class="status-chip">${escapeHtml(invoice.status)}</span></div>`).join('') || '<small>No invoices yet.</small>';
+        detail.innerHTML = `<div class="delivery-detail-section"><strong>Milestones</strong>${milestoneHtml}</div><div class="delivery-detail-section"><strong>Invoices</strong>${invoiceHtml}<button class="btn btn-secondary btn-sm delivery-invoice-btn" data-project="${escapeHtml(openBtn.dataset.project)}">+ Create invoice</button></div><div class="delivery-detail-section"><strong>Client-visible updates</strong>${updateHtml}</div><div class="delivery-detail-section"><strong>Project files</strong>${fileHtml}<div class="delivery-upload-row"><input type="file" class="delivery-file-input" accept="application/pdf,image/jpeg,image/png,image/webp,.zip,.docx,.xlsx" data-project="${escapeHtml(openBtn.dataset.project)}"><label><input type="checkbox" class="delivery-file-visible"> Client can see this file</label><button class="btn btn-secondary btn-sm delivery-upload-btn" data-project="${escapeHtml(openBtn.dataset.project)}">Upload file</button></div></div>`;
+      } catch (error) { detail.innerHTML = `<small style="color:#ef4444">${escapeHtml(error.message)}</small>`; }
+      return;
+    }
+    const uploadBtn = event.target.closest('.delivery-upload-btn');
+    if (uploadBtn) {
+      const fileInput = document.querySelector(`.delivery-file-input[data-project="${CSS.escape(uploadBtn.dataset.project)}"]`);
+      const file = fileInput?.files?.[0]; if (!file) return;
+      const formData = new FormData(); formData.append('file', file); formData.append('visibleToClient', String(document.querySelector('.delivery-file-visible')?.checked || false));
+      const session = getAdminSession();
+      const response = await fetch(`/api/projects/${uploadBtn.dataset.project}/files`, { method: 'POST', headers: session?.token ? { Authorization: `Bearer ${session.token}` } : {}, body: formData });
+      const result = await response.json(); if (!response.ok) throw new Error(result.message || 'Upload failed.');
+      showToast('Project file uploaded successfully.');
+      document.querySelector(`.delivery-open-btn[data-project="${CSS.escape(uploadBtn.dataset.project)}"]`)?.click();
+      return;
+    }
+    const invoiceBtn = event.target.closest('.delivery-invoice-btn');
+    if (invoiceBtn) {
+      const description = prompt('Invoice description:'); if (!description) return;
+      const amount = Number(prompt('Invoice amount:', '0')); if (!Number.isFinite(amount) || amount <= 0) return;
+      await adminApiFetch(`/api/projects/${invoiceBtn.dataset.project}/invoices`, { method: 'POST', body: JSON.stringify({ description, amount, currency: 'EUR' }) });
+      showToast('Invoice created successfully.');
+      document.querySelector(`.delivery-open-btn[data-project="${CSS.escape(invoiceBtn.dataset.project)}"]`)?.click();
+      return;
+    }
+    const milestoneBtn = event.target.closest('.delivery-milestone-btn');
+    const updateBtn = event.target.closest('.delivery-update-btn');
+    const projectId = milestoneBtn?.dataset.project || updateBtn?.dataset.project;
+    if (!projectId) return;
+    if (milestoneBtn) {
+      const title = prompt('Milestone title:'); if (!title) return;
+      const amount = prompt('Amount (number only):', '0');
+      await adminApiFetch(`/api/projects/${projectId}/milestones`, { method: 'POST', body: JSON.stringify({ title, amount: Number(amount || 0), currency: 'EUR' }) });
+      showToast('Milestone added successfully.');
+    } else {
+      const title = prompt('Update title:'); if (!title) return;
+      const body = prompt('Update details:'); if (!body) return;
+      await adminApiFetch(`/api/projects/${projectId}/updates`, { method: 'POST', body: JSON.stringify({ title, body, visibleToClient: true }) });
+      showToast('Client update posted successfully.');
+    }
+  });
+  refresh?.addEventListener('click', loadDeliveryData);
+  await loadDeliveryData();
+}
 
 /* ==========================================================================
    1. Theme Toggle
@@ -725,6 +1054,17 @@ function initGlobalSearch() {
 function initDashboard() {
   updateDashboardStats();
   renderInquiriesTable();
+  loadDashboardStats();
+}
+
+async function loadDashboardStats() {
+  try {
+    const result = await adminApiFetch('/api/dashboard/stats');
+    const statLeads = document.getElementById('statInboundLeads');
+    if (statLeads && result.stats) statLeads.textContent = Number(result.stats.total || 0);
+  } catch (error) {
+    console.warn('Live dashboard stats unavailable:', error.message);
+  }
 }
 
 function updateDashboardStats() {
@@ -750,6 +1090,7 @@ function updateDashboardStats() {
 function initInquiriesModule() {
   renderInquiriesTable();
   updateInquiriesBadges();
+  loadInquiriesFromApi();
 
   const searchInput = document.getElementById('inquiryFilterSearch');
   const statusFilter = document.getElementById('inquiryStatusFilter');
@@ -775,6 +1116,26 @@ function initInquiriesModule() {
 
   // Modal handlers
   initInquiryModal();
+}
+
+async function loadInquiriesFromApi() {
+  try {
+    const result = await adminApiFetch('/api/inquiries');
+    if (!Array.isArray(result.inquiries)) return;
+    adminState.inquiries = result.inquiries.map((item) => ({
+      ...item,
+      name: item.fullName || item.name || '',
+      date: item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : item.date || '',
+      serviceName: item.serviceName || item.service || '',
+      budget: item.budget || (item.customBudget ? `${item.currency || ''} ${item.customBudget}` : 'Custom Discovery')
+    }));
+    renderInquiriesTable();
+    updateInquiriesBadges();
+    loadDashboardStats();
+    showToast('Live inquiries loaded from database.');
+  } catch (error) {
+    console.warn('Live inquiry API unavailable; showing local draft data.', error.message);
+  }
 }
 
 function renderInquiriesTable() {
@@ -885,7 +1246,7 @@ function initInquiryModal() {
   }
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       if (!activeEditingInquiryId) return;
       const inquiry = adminState.inquiries.find(i => i.id === activeEditingInquiryId);
       if (!inquiry) return;
@@ -896,23 +1257,36 @@ function initInquiryModal() {
       inquiry.status = statusSelect.value;
       inquiry.internalNotes = notesInput.value.trim();
 
-      saveAdminState();
-      renderInquiriesTable();
-      closeInquiryModal();
-      showToast(`Inquiry ${inquiry.id} updated to ${inquiry.status}`);
+      try {
+        await adminApiFetch(`/api/inquiries/${encodeURIComponent(inquiry.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: inquiry.status, internalNotes: inquiry.internalNotes })
+        });
+        saveAdminState();
+        renderInquiriesTable();
+        closeInquiryModal();
+        showToast(`Inquiry ${inquiry.id} updated to ${inquiry.status}`);
+      } catch (error) {
+        showToast(error.message || 'Could not update inquiry in database.', 'error');
+      }
     });
   }
 
   if (deleteBtn) {
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', async () => {
       if (!activeEditingInquiryId) return;
       if (confirm('Are you sure you want to delete this inquiry record?')) {
-        adminState.inquiries = adminState.inquiries.filter(i => i.id !== activeEditingInquiryId);
-        saveAdminState();
-        renderInquiriesTable();
-        updateInquiriesBadges();
-        closeInquiryModal();
-        showToast('Inquiry deleted successfully', 'error');
+        try {
+          await adminApiFetch(`/api/inquiries/${encodeURIComponent(activeEditingInquiryId)}`, { method: 'DELETE' });
+          adminState.inquiries = adminState.inquiries.filter(i => i.id !== activeEditingInquiryId);
+          saveAdminState();
+          renderInquiriesTable();
+          updateInquiriesBadges();
+          closeInquiryModal();
+          showToast('Inquiry deleted successfully', 'error');
+        } catch (error) {
+          showToast(error.message || 'Could not delete inquiry from database.', 'error');
+        }
       }
     });
   }
@@ -932,6 +1306,12 @@ window.openInquiryDetail = function(id) {
   const emailEl = document.getElementById('modalInquiryEmail');
   emailEl.textContent = inquiry.email;
   emailEl.href = `mailto:${inquiry.email}`;
+
+  const phoneEl = document.getElementById('modalInquiryPhone');
+  if (phoneEl) {
+    phoneEl.textContent = inquiry.phone || 'Not provided';
+    phoneEl.href = inquiry.phone ? `tel:${inquiry.phone}` : '#';
+  }
 
   document.getElementById('modalInquiryCompany').textContent = inquiry.company || 'Not provided';
   document.getElementById('modalInquiryService').textContent = inquiry.serviceName || inquiry.service;
@@ -1081,7 +1461,7 @@ function initHeroModule() {
   updateHeroPreview();
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       adminState.hero.pill = pillInput.value.trim();
       adminState.hero.subtext = subtextInput.value.trim();
       adminState.hero.headlinePrefix = prefixInput.value.trim();
@@ -1155,7 +1535,7 @@ function initServiceModal() {
   if (cancelBtn) cancelBtn.addEventListener('click', closeFn);
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const id = document.getElementById('serviceModalId').value;
       const number = document.getElementById('serviceModalNumber').value.trim();
       const title = document.getElementById('serviceModalTitleInput').value.trim();
@@ -1264,6 +1644,7 @@ function renderPortfolioGrid() {
 
   container.innerHTML = adminState.portfolio.map(proj => `
     <div class="project-admin-card" data-key="${proj.key}">
+      ${(proj.image || PORTFOLIO_IMAGE_FALLBACKS[proj.key]) ? `<img class="project-admin-thumbnail" src="${escapeHtml(proj.image || PORTFOLIO_IMAGE_FALLBACKS[proj.key])}" alt="${escapeHtml(proj.title)} preview" loading="lazy" />` : ''}
       <div class="card-top-row">
         <span class="card-kicker">${escapeHtml(proj.industry)}</span>
         <span class="status-chip new" style="font-size:0.65rem;">Concept</span>
@@ -1298,12 +1679,14 @@ function initProjectModal() {
   if (cancelBtn) cancelBtn.addEventListener('click', closeFn);
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const key = document.getElementById('projectModalKey').value;
       const title = document.getElementById('projectModalName').value.trim();
       const industry = document.getElementById('projectModalIndustry').value.trim();
       const categories = document.getElementById('projectModalCategories').value.trim();
       const badge = document.getElementById('projectModalBadge').value.trim();
+      const image = document.getElementById('projectModalImage').value.trim();
+      const imageFile = document.getElementById('projectModalImageFile').files[0];
       const summary = document.getElementById('projectModalSummary').value.trim();
       const problem = document.getElementById('projectModalProblem').value.trim();
       const solution = document.getElementById('projectModalSolution').value.trim();
@@ -1315,20 +1698,26 @@ function initProjectModal() {
         return;
       }
 
-      if (key) {
+      saveBtn.disabled = true;
+      try {
+        const uploadedImage = imageFile ? await uploadPortfolioImage(imageFile) : '';
+        const finalImage = uploadedImage || image;
+
+        if (key) {
         const item = adminState.portfolio.find(p => p.key === key);
         if (item) {
           item.title = title;
           item.industry = industry;
           item.categories = categories;
           item.badge = badge;
+          item.image = finalImage;
           item.summary = summary;
           item.problem = problem;
           item.solution = solution;
           item.tech = tech;
           item.features = features;
         }
-      } else {
+        } else {
         const newKey = title.toLowerCase().replace(/[^a-z0-9]/g, '');
         adminState.portfolio.push({
           key: newKey || `proj-${Date.now()}`,
@@ -1336,18 +1725,24 @@ function initProjectModal() {
           industry,
           categories,
           badge,
+          image: finalImage,
           summary,
           problem,
           solution,
           tech,
           features
         });
-      }
+        }
 
-      saveAdminState();
-      renderPortfolioGrid();
-      closeFn();
-      showToast('Portfolio case study saved!');
+        saveAdminState();
+        renderPortfolioGrid();
+        closeFn();
+        showToast(imageFile ? 'Image uploaded and case study saved!' : 'Portfolio case study saved!');
+      } catch (error) {
+        showToast(error.message || 'Could not upload image.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+      }
     });
   }
 }
@@ -1362,6 +1757,7 @@ window.openProjectModal = function(key) {
   const industryInput = document.getElementById('projectModalIndustry');
   const catInput = document.getElementById('projectModalCategories');
   const badgeInput = document.getElementById('projectModalBadge');
+  const imageInput = document.getElementById('projectModalImage');
   const sumInput = document.getElementById('projectModalSummary');
   const probInput = document.getElementById('projectModalProblem');
   const solInput = document.getElementById('projectModalSolution');
@@ -1377,6 +1773,7 @@ window.openProjectModal = function(key) {
     industryInput.value = proj.industry;
     catInput.value = proj.categories;
     badgeInput.value = proj.badge;
+    imageInput.value = proj.image || PORTFOLIO_IMAGE_FALLBACKS[proj.key] || '';
     sumInput.value = proj.summary;
     probInput.value = proj.problem;
     solInput.value = proj.solution;
@@ -1389,6 +1786,7 @@ window.openProjectModal = function(key) {
     industryInput.value = 'Enterprise SaaS';
     catInput.value = 'saas web erp';
     badgeInput.value = 'Concept Project · SaaS / Web';
+    imageInput.value = '';
     sumInput.value = '';
     probInput.value = '';
     solInput.value = '';

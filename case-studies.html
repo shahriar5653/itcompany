@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Software Case Studies &amp; Product Concepts | RSTechwerk</title>
+    <meta name="description" content="Explore RSTechwerk software case studies and product concepts across logistics, healthcare, energy, fintech, commerce, and agritech." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://rstechwerk.com/case-studies.html" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .seo-page { min-height: 100vh; background: var(--color-canvas, #f8fafc); }
+      .seo-page-header { padding: 7rem 0 4rem; text-align: center; }
+      .seo-page-header .section-title { max-width: 980px; margin: 1rem auto; }
+      .seo-page-header .section-description { max-width: 780px; margin: 0 auto; }
+      .case-study-list { display: grid; gap: 1.25rem; padding-bottom: 5rem; }
+      .case-study { background: #fff; border: 1px solid #dbe4ee; border-radius: 1.25rem; padding: 2rem; box-shadow: 0 12px 30px rgba(15,23,42,.06); }
+      .case-study h2 { color: #0f172a; margin: .7rem 0; font-size: clamp(1.5rem, 2.5vw, 2.2rem); }
+      .case-study h3 { color: #0f766e; margin: 1.2rem 0 .4rem; font-size: 1rem; }
+      .case-study p, .case-study li { color: #52627a; line-height: 1.75; }
+      .case-study ul { padding-left: 1.2rem; }
+      .case-meta { color: #059669; font-family: var(--font-mono, monospace); letter-spacing: .1em; text-transform: uppercase; font-size: .78rem; }
+      .case-tags { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem; }
+      .case-tag { border: 1px solid #cbd5e1; border-radius: 999px; padding: .35rem .7rem; color: #334155; font-size: .82rem; }
+      .seo-page-footer { background: #08101d; color: #cbd5e1; padding: 2rem 0; }
+      .seo-page-footer a { color: #6ee7b7; }
+      @media (max-width: 700px) { .seo-page-header { padding: 5rem 0 3rem; } .case-study { padding: 1.4rem; } }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "RSTechwerk Software Case Studies",
+      "url": "https://rstechwerk.com/case-studies.html",
+      "description": "Selected software product concepts demonstrating RSTechwerk's approach to product design, architecture, and engineering.",
+      "mainEntity": {
+        "@type": "ItemList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "NordicLogix" },
+          { "@type": "ListItem", "position": 2, "name": "KlinikFlow" },
+          { "@type": "ListItem", "position": 3, "name": "VoltGrid IQ" },
+          { "@type": "ListItem", "position": 4, "name": "AuraPay" },
+          { "@type": "ListItem", "position": 5, "name": "CraftBourse" },
+          { "@type": "ListItem", "position": 6, "name": "Sensora Field" }
+        ]
+      }
+    }
+    </script>
+  </head>
+  <body class="seo-page">
+    <header class="site-header">
+      <div class="container header-container">
+        <a href="/" class="brand" aria-label="RSTechwerk home"><span class="brand-text"><span class="brand-rs">RS</span><span class="brand-tech">Techwerk</span></span></a>
+        <a href="/#contact" class="btn btn-primary btn-sm">Start Your Project</a>
+      </div>
+    </header>
+    <main>
+      <section class="seo-page-header">
+        <div class="container">
+          <span class="case-meta">Portfolio &amp; product concepts</span>
+          <h1 class="section-title">Software shaped around real operational problems.</h1>
+          <p class="section-description">Selected concepts across logistics, healthcare, energy, fintech, commerce, and agritech. Each demonstrates how RSTechwerk connects product thinking, system architecture, and practical engineering.</p>
+        </div>
+      </section>
+      <section aria-labelledby="case-study-list-title">
+        <div class="container">
+          <h2 id="case-study-list-title" class="sr-only">Selected software case studies</h2>
+          <div class="case-study-list">
+            <article class="case-study"><span class="case-meta">Logistics &amp; freight · SaaS / Web</span><h2>NordicLogix</h2><p>A cloud-based freight and multi-stop logistics platform for European cross-border carriers operating across DACH and Nordic transport corridors.</p><h3>Challenge</h3><p>Fragmented telematics, paper-based e-CMR documents, and unpredictable border delays made ETA forecasting and dispatch coordination difficult.</p><h3>Solution</h3><p>A unified dashboard combining real-time GPS telemetry, digital consignment notes, and dynamic route deviation planning.</p><div class="case-tags"><span class="case-tag">TypeScript</span><span class="case-tag">React</span><span class="case-tag">Node.js</span><span class="case-tag">MySQL/PostgreSQL</span><span class="case-tag">Docker</span></div></article>
+            <article class="case-study"><span class="case-meta">Healthcare · Web / SaaS</span><h2>KlinikFlow</h2><p>A patient intake, triage, and scheduling portal for outpatient practices and medical clinics in Germany and the EU.</p><h3>Challenge</h3><p>Administrative teams spent too much time transcribing intake information and coordinating appointment changes.</p><h3>Solution</h3><p>An accessible workflow portal with encrypted intake records, appointment triage, and integrations for practice management systems.</p><div class="case-tags"><span class="case-tag">Next.js</span><span class="case-tag">TypeScript</span><span class="case-tag">PostgreSQL</span><span class="case-tag">REST APIs</span></div></article>
+            <article class="case-study"><span class="case-meta">Energy &amp; cleantech · AI / Web</span><h2>VoltGrid IQ</h2><p>A telemetry and forecasting dashboard for commercial solar-plus-battery operators.</p><h3>Challenge</h3><p>Operators needed a clearer view of battery telemetry, tariff peaks, and dispatch decisions across distributed assets.</p><h3>Solution</h3><p>A forecasting interface combining time-series signals, tariff analysis, and automated battery dispatch recommendations.</p><div class="case-tags"><span class="case-tag">Python</span><span class="case-tag">Node.js</span><span class="case-tag">React</span><span class="case-tag">Time-series AI</span></div></article>
+            <article class="case-study"><span class="case-meta">Fintech · Mobile / Web</span><h2>AuraPay</h2><p>A cross-platform business wallet helping European SMEs reconcile incoming SEPA payments against digital invoices.</p><h3>Challenge</h3><p>Finance teams needed faster visibility into incoming payments and fewer manual reconciliation tasks.</p><h3>Solution</h3><p>A secure mobile wallet with real-time payment notifications, invoice matching, and business account workflows.</p><div class="case-tags"><span class="case-tag">React Native</span><span class="case-tag">TypeScript</span><span class="case-tag">MySQL</span><span class="case-tag">REST APIs</span></div></article>
+            <article class="case-study"><span class="case-meta">B2B commerce · Web / SaaS</span><h2>CraftBourse</h2><p>A wholesale marketplace connecting specialty retailers with verified regional artisanal producers.</p><h3>Challenge</h3><p>Wholesale buyers needed structured catalogs, volume pricing, sample workflows, and reliable purchase-order handling.</p><h3>Solution</h3><p>A responsive B2B platform with tiered pricing, sample evaluation, minimum order rules, and automated purchase workflows.</p><div class="case-tags"><span class="case-tag">Next.js</span><span class="case-tag">TypeScript</span><span class="case-tag">Node.js</span><span class="case-tag">Stripe</span></div></article>
+            <article class="case-study"><span class="case-meta">Agritech · Mobile / Edge AI</span><h2>Sensora Field</h2><p>An offline-first agronomy companion app for local soil telemetry, crop health diagnostics, and irrigation guidance.</p><h3>Challenge</h3><p>Field teams working in remote areas could not depend on continuous network connectivity for crop inspection tools.</p><h3>Solution</h3><p>A resilient mobile experience that caches sensor data locally, performs lightweight on-device analysis, and syncs when connectivity returns.</p><div class="case-tags"><span class="case-tag">Flutter</span><span class="case-tag">SQLite</span><span class="case-tag">Dart</span><span class="case-tag">Edge AI</span></div></article>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="seo-page-footer"><div class="container">© 2026 RSTechwerk · <a href="/#contact">Discuss your project</a> · <a href="/services.html">Our services</a> · <a href="/">Back to homepage</a></div></footer>
+  </body>
+</html>

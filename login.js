@@ -4,8 +4,6 @@
  */
 
 const ADMIN_SESSION_KEY = 'rstechwerk_admin_session';
-const DEMO_EMAIL = 'admin@rstechwerk.com';
-const DEMO_PASSWORD = 'rstechwerk2026';
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
@@ -37,16 +35,21 @@ function initTheme() {
 }
 
 // 2. Check if already logged in
-function checkExistingSession() {
+async function checkExistingSession() {
   try {
     const raw = localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (raw) {
       const session = JSON.parse(raw);
-      // If session exists and was created within last 30 days
       if (session && session.token) {
-        const params = new URLSearchParams(window.location.search);
-        const redirectUrl = params.get('redirect') ? `/${params.get('redirect')}.html` : '/admin.html';
-        window.location.href = redirectUrl;
+        const response = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${session.token}` } });
+        if (response.ok) {
+          const params = new URLSearchParams(window.location.search);
+          const redirectUrl = params.get('redirect') ? `/${params.get('redirect')}.html` : '/admin.html';
+          window.location.href = session.role === 'client' ? '/portal.html#profileForm' : redirectUrl;
+          return;
+        }
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
       }
     }
   } catch (e) {
@@ -77,16 +80,14 @@ function initPasswordToggle() {
 function initDemoAutofill() {
   const demoBtn = document.getElementById('fillDemoBtn');
   const emailInput = document.getElementById('loginEmail');
-  const passwordInput = document.getElementById('loginPassword');
 
   if (!demoBtn) return;
 
   demoBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (emailInput) emailInput.value = DEMO_EMAIL;
-    if (passwordInput) passwordInput.value = DEMO_PASSWORD;
+    if (emailInput) emailInput.focus();
     hideAlert();
-    showToast('Demo credentials inserted: admin@rstechwerk.com', 'success');
+    showToast('Enter the administrator credentials configured on the backend.', 'success');
   });
 }
 
@@ -103,7 +104,7 @@ function initLoginForm() {
 
   if (!form) return;
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert();
 
@@ -122,56 +123,46 @@ function initLoginForm() {
     if (btnText) btnText.style.display = 'none';
     if (btnSpinner) btnSpinner.style.display = 'inline-block';
 
-    // Simulate real enterprise crypto-auth latency
-    setTimeout(() => {
-      // Validate credentials (accepts DEMO credentials or any password containing "rstechwerk" or "admin")
-      const isValid = (email.toLowerCase() === DEMO_EMAIL.toLowerCase() && password === DEMO_PASSWORD) ||
-                      (email.includes('@') && (password === 'admin123' || password === 'rstechwerk2026' || password === 'admin'));
-
-      if (isValid) {
-        // Create session payload
-        const sessionPayload = {
-          email,
-          role: 'Administrator',
-          name: email.split('@')[0].toUpperCase(),
-          token: `RSTW-SEC-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now()}`,
-          timestamp: Date.now()
-        };
-
-        if (remember) {
-          localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionPayload));
-        } else {
-          sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionPayload));
-        }
-
-        if (btnText) {
-          btnText.textContent = 'Authorized! Launching Console...';
-          btnText.style.display = 'inline-block';
-        }
-        if (btnSpinner) btnSpinner.style.display = 'none';
-
-        showToast('Authentication confirmed. Welcome back!', 'success');
-
-        // Redirect
-        setTimeout(() => {
-          const params = new URLSearchParams(window.location.search);
-          const redirect = params.get('redirect');
-          window.location.href = redirect ? `/${redirect}.html` : '/admin.html';
-        }, 350);
-      } else {
-        // Reset button
-        if (submitBtn) submitBtn.disabled = false;
-        if (btnText) btnText.style.display = 'inline-block';
-        if (btnSpinner) btnSpinner.style.display = 'none';
-
-        showAlert('Access Denied: Invalid admin email or security passkey. Use the 1-click demo button above.');
-        triggerShake(card);
-        if (passwordInput) {
-          passwordInput.value = '';
-          passwordInput.focus();
-        }
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.token) {
+        throw new Error(result.message || 'Authentication failed.');
       }
-    }, 450);
+
+      const sessionPayload = {
+        ...result.user,
+        token: result.token,
+        timestamp: Date.now()
+      };
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionPayload));
+      if (btnText) {
+        btnText.textContent = 'Authorized! Launching Console...';
+        btnText.style.display = 'inline-block';
+      }
+      if (btnSpinner) btnSpinner.style.display = 'none';
+      showToast('Authentication confirmed. Welcome back!', 'success');
+      setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        window.location.href = result.user.role === 'client' ? '/portal.html#profileForm' : (redirect ? `/${redirect}.html` : '/admin.html');
+      }, 350);
+    } catch (error) {
+      if (submitBtn) submitBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline-block';
+      if (btnSpinner) btnSpinner.style.display = 'none';
+      showAlert(error.message || 'Unable to reach the authentication server.');
+      triggerShake(card);
+      if (passwordInput) {
+        passwordInput.value = '';
+        passwordInput.focus();
+      }
+    }
   });
 }
 
@@ -203,7 +194,9 @@ function initForgotPasswordModal() {
 
   forgotBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    alert('Enterprise Security Policy:\n\nSelf-service credential resets are disabled in this environment.\n\nTo access the console right now, click "⚡ Fill Demo Credentials" on the login card:\n• Email: admin@rstechwerk.com\n• Password: rstechwerk2026\n\nFor production resets, please contact: devops@rstechwerk.com');
+    const email = document.getElementById('loginEmail')?.value?.trim();
+    if (!email) { showAlert('Enter your email first, then click Forgot Passkey again.'); return; }
+    fetch('/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) }).then((response) => response.json()).then((result) => showToast(result.message || 'Check your email for a reset link.', 'success')).catch(() => showAlert('Unable to request a password reset right now.'));
   });
 }
 

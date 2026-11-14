@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client Project Portal | RSTechwerk</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body { background: #f5f7fa; color: #10182b; }
+      .portal-topbar { background:#0b1320; color:#f8fafc; border-bottom:1px solid rgba(52,211,153,.35); }
+      .portal-topbar-inner { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+      .portal-brand { display:inline-flex; align-items:center; gap:.7rem; color:#fff; text-decoration:none; font-weight:800; font-size:1.15rem; }
+      .portal-brand-mark { width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:#0f2d2b; color:#34d399; border:1px solid #10b981; }
+      .portal-topnav { display:flex; align-items:center; gap:1.1rem; }
+      .portal-topnav a { color:#b8c5d8; text-decoration:none; font-size:.9rem; }
+      .portal-topnav a:hover { color:#34d399; }
+      .portal-shell { min-height: 100vh; padding: 2rem 0 5rem; }
+      .portal-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:2.5rem; }
+      .portal-title { font-size:clamp(2rem,5vw,4rem); margin:.4rem 0; }
+      .portal-muted { color:#64748b; }
+      .portal-grid { display:grid; gap:1.25rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+      .portal-card { background:#fff; border:1px solid #dbe4ee; border-radius:1.25rem; padding:1.5rem; box-shadow:0 12px 30px rgba(15,23,42,.06); }
+      .portal-card h2 { margin:.2rem 0 .5rem; }
+      .portal-status { display:inline-flex; border-radius:999px; padding:.3rem .7rem; background:#ecfdf5; color:#047857; font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }
+      .portal-progress { height:9px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin:1rem 0; }
+      .portal-progress span { display:block; height:100%; background:linear-gradient(90deg,#059669,#34d399); border-radius:inherit; }
+      .portal-list { display:grid; gap:.75rem; margin-top:1rem; }
+      .portal-row { display:flex; justify-content:space-between; gap:1rem; padding:.85rem 0; border-bottom:1px solid #e2e8f0; }
+      .portal-row:last-child { border-bottom:0; }
+      .portal-empty, .portal-error { padding:2rem; text-align:center; background:#fff; border:1px solid #dbe4ee; border-radius:1rem; }
+      .portal-error { color:#b91c1c; }
+      .portal-dashboard { display:grid; grid-template-columns:220px minmax(0,1fr); gap:1.25rem; align-items:start; }
+      .portal-sidebar { position:sticky; top:1rem; background:#fff; border:1px solid #dbe4ee; border-radius:1.25rem; padding:.75rem; box-shadow:0 12px 30px rgba(15,23,42,.06); }
+      .portal-sidebar button { display:block; width:100%; border:0; background:transparent; color:#64748b; text-align:left; border-radius:.75rem; padding:.8rem .9rem; font:inherit; cursor:pointer; }
+      .portal-sidebar button:hover,.portal-sidebar button.active { background:#ecfdf5; color:#047857; }
+      .portal-main { min-width:0; }
+      .portal-overview-card { background:linear-gradient(135deg,#0b1320 0%,#12243a 100%); color:#f8fafc; border:1px solid rgba(52,211,153,.24); border-radius:1.1rem; padding:.8rem 1.1rem; box-shadow:0 14px 32px rgba(2,8,23,.18); }
+      .portal-overview-card h2 { color:#f8fafc; font-size:clamp(1.35rem,2.2vw,1.8rem); margin:.35rem 0 .2rem; }
+      .portal-overview-card > .portal-muted { margin:.25rem 0; }
+      .portal-overview-card .portal-muted { color:#aabbd0; }
+      .portal-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem; margin:.6rem 0; }
+      .portal-stats div { background:rgba(255,255,255,.055); border:1px solid rgba(52,211,153,.2); border-radius:.7rem; padding:.5rem .7rem; }
+      .portal-stats strong { display:block; color:#34d399; font-size:1.15rem; line-height:1.1; }
+      .portal-stats span { color:#b8c5d8; font-size:.8rem; }
+      .portal-stats .portal-stat-quotes { border-color:rgba(96,165,250,.38); background:rgba(37,99,235,.1); }
+      .portal-stats .portal-stat-quotes strong { color:#93c5fd; }
+      .portal-stats .portal-stat-projects { border-color:rgba(52,211,153,.34); background:rgba(5,150,105,.1); }
+      .portal-stats .portal-stat-projects strong { color:#6ee7b7; }
+      .portal-stats .portal-stat-progress { border-color:rgba(251,191,36,.38); background:rgba(180,83,9,.1); }
+      .portal-stats .portal-stat-progress strong { color:#fcd34d; }
+      .portal-overview-note { border-top:1px solid rgba(255,255,255,.12); padding-top:.5rem; }
+      .portal-overview-note strong { font-size:.9rem; }
+      .portal-overview-note .portal-muted { font-size:.82rem; }
+      @media(max-width:760px){ .portal-dashboard{display:block}.portal-sidebar{position:static;display:flex;overflow-x:auto;margin-bottom:1rem;gap:.35rem}.portal-sidebar button{min-width:max-content;text-align:center} }
+      .profile-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+      .profile-form label { display:grid; gap:.4rem; color:#475569; font-size:.9rem; }
+      .profile-form input, .profile-form select { width:100%; box-sizing:border-box; border:1px solid #dbe4ee; border-radius:.75rem; padding:.8rem; font:inherit; color:#0f172a; }
+      .profile-form .full { grid-column:1/-1; }
+      @media(max-width:600px){ .profile-form{grid-template-columns:1fr;} .profile-form .full{grid-column:auto;} .portal-stats{grid-template-columns:1fr;} }
+      .portal-card .btn { margin:.35rem .35rem .1rem 0; }
+      @media(max-width:600px){ .portal-header{align-items:flex-start;flex-direction:column;} }
+    </style>
+  </head>
+  <body>
+    <header class="portal-topbar"><div class="container portal-topbar-inner"><a class="portal-brand" href="/"><span class="portal-brand-mark">RS</span><span>Techwerk</span></a><nav class="portal-topnav" aria-label="Client portal navigation"><a href="/">Home</a><a href="/#services">Services</a><a href="/#work">Work</a><a href="/#contact">Contact</a><a href="/">Back to website ↗</a></nav></div></header>
+    <main class="portal-shell"><div class="container">
+      <header class="portal-header">
+        <div><span class="section-kicker">CLIENT PORTAL</span><h1 class="portal-title">Your projects, clearly managed.</h1><p class="portal-muted">Review progress, milestones, and delivery updates from one secure workspace.</p></div>
+        <div style="display:flex;gap:.65rem;flex-wrap:wrap"><a class="btn btn-secondary" href="#profileForm">My profile</a><button class="btn btn-secondary" id="portalLogout">Sign out</button></div>
+      </header>
+      <section id="portalContent" aria-live="polite"><div class="portal-empty">Loading your projects…</div></section>
+    </div></main>
+    <script src="/portal.js"></script>
+    <style>@media(max-width:640px){.portal-topnav{gap:.6rem;overflow-x:auto}.portal-topnav a{white-space:nowrap;font-size:.78rem}.portal-topnav a:nth-child(2),.portal-topnav a:nth-child(3){display:none}.portal-topbar-inner{min-height:62px}}</style>
+  </body>
+</html>

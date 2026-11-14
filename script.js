@@ -9,11 +9,20 @@ document.documentElement.classList.add('js');
 
 // Configurable endpoint hook for production deployment
 const CONFIG = {
-  // Replace with live backend endpoint URL when deploying (e.g. '/api/inquiry')
-  apiEndpoint: null,
+  // Vite proxies this path to the local API in development. In production,
+  // serve the API behind the same origin or set a full API URL at deploy time.
+  apiEndpoint: '/api/inquiries',
   companyName: 'RSTechwerk',
   companyDomain: 'rstechwerk.com',
   companyEmail: 'inquiry@rstechwerk.com'
+};
+const PORTFOLIO_IMAGE_FALLBACKS = {
+  nordiclogix: '/assets/portfolio/nordiclogix-v2.png',
+  klinikflow: '/assets/portfolio/klinikflow-v2.png',
+  voltgrid: '/assets/portfolio/voltgrid-iq-v2.png',
+  aurapay: '/assets/portfolio/aurapay-v2.png',
+  craftbourse: '/assets/portfolio/craftbourse-v2.png',
+  sensora: '/assets/portfolio/sensora-field-v2.png'
 };
 
 const LANGUAGE_COPY = {
@@ -165,8 +174,8 @@ const LEGAL_CONTENT = {
     title: 'Privacy Notice (Datenschutzerklärung)',
     content: `
       <div class="dialog-section-block">
-        <h4 class="dialog-block-title">Prototype & Demonstration Notice</h4>
-        <p>This website serves as a design and functional prototype for RSTechwerk (rstechwerk.com). Any contact information entered into the demonstration contact form is processed strictly in your local browser session and is not stored in a persistent database unless an operational backend endpoint is connected.</p>
+        <h4 class="dialog-block-title">Inquiry Data</h4>
+        <p>Project inquiries submitted through this website are sent securely to our backend and stored for the purpose of reviewing and responding to your request. We use your contact details only for project communication and do not sell them to third parties.</p>
       </div>
       <div class="dialog-section-block">
         <h4 class="dialog-block-title">Data Protection Standards</h4>
@@ -245,7 +254,22 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollReveals();
   updateFooterYear();
   applyPublishedAdminContent();
+  initClientProfileLink();
 });
+
+function initClientProfileLink() {
+  const link = document.getElementById('clientProfileLink');
+  if (!link) return;
+  try {
+    const raw = localStorage.getItem('rstechwerk_admin_session') || sessionStorage.getItem('rstechwerk_admin_session');
+    const session = raw ? JSON.parse(raw) : null;
+    if (session?.token && session?.role === 'client') {
+      link.style.display = 'inline-flex';
+      link.textContent = (session.email || 'C').slice(0, 1).toUpperCase();
+      link.title = 'Open client profile';
+    }
+  } catch { /* Ignore malformed local session data. */ }
+}
 
 function initThemeSwitcher() {
   const button = document.querySelector('#themeToggle');
@@ -637,12 +661,29 @@ function initContactForm() {
   const nameInput = document.getElementById('inquiryName');
   const emailInput = document.getElementById('inquiryEmail');
   const serviceInput = document.getElementById('inquiryService');
+  const phoneInput = document.getElementById('inquiryPhone');
+  const countryCodeInput = document.getElementById('inquiryCountryCode');
   const descInput = document.getElementById('inquiryDesc');
   const budgetInput = document.getElementById('inquiryBudget');
   const currencyInput = document.getElementById('inquiryCurrency');
   const customBudgetInput = document.getElementById('inquiryCustomBudget');
   const privacyCheckbox = document.getElementById('inquiryPrivacy');
   const honeypot = document.getElementById('inquiryHoneypot');
+
+  // Use the browser's regional locale when available, while keeping Bangladesh
+  // as the privacy-friendly fallback. Visitors can always change the code.
+  const localeToCallingCode = {
+    BD: '+880', DE: '+49', GB: '+44', FR: '+33', BE: '+32', CH: '+41',
+    NL: '+31', SE: '+46', DK: '+45', US: '+1', CA: '+1', AU: '+61',
+    IN: '+91', AE: '+971'
+  };
+  try {
+    const region = new Intl.Locale(navigator.language || 'en-BD').region;
+    const detectedCode = localeToCallingCode[region];
+    if (detectedCode && countryCodeInput) countryCodeInput.value = detectedCode;
+  } catch {
+    // Keep the Bangladesh default when the browser does not expose a region.
+  }
 
   let isSubmitting = false;
 
@@ -669,6 +710,7 @@ function initContactForm() {
   if (nameInput) nameInput.addEventListener('input', () => clearFieldError(nameInput, 'nameError'));
   if (emailInput) emailInput.addEventListener('input', () => clearFieldError(emailInput, 'emailError'));
   if (serviceInput) serviceInput.addEventListener('change', () => clearFieldError(serviceInput, 'serviceError'));
+  if (phoneInput) phoneInput.addEventListener('input', () => clearFieldError(phoneInput, 'phoneError'));
   if (descInput) descInput.addEventListener('input', () => clearFieldError(descInput, 'descError'));
   if (budgetInput) budgetInput.addEventListener('change', () => {
     const custom = budgetInput.value === 'custom';
@@ -722,7 +764,16 @@ function initContactForm() {
       clearFieldError(serviceInput, 'serviceError');
     }
 
-    // 4. Project Description Validation
+    // 4. Phone Number Validation
+    const phoneDigits = phoneInput.value.replace(/\D/g, '');
+    if (phoneDigits.length < 6 || phoneDigits.length > 15) {
+      setFieldError(phoneInput, 'phoneError', 'Please enter a valid phone number.');
+      hasErrors = true;
+    } else {
+      clearFieldError(phoneInput, 'phoneError');
+    }
+
+    // 5. Project Description Validation
     if (!descInput.value.trim()) {
       setFieldError(descInput, 'descError', 'Please provide a brief description of your project.');
       hasErrors = true;
@@ -733,7 +784,7 @@ function initContactForm() {
       clearFieldError(descInput, 'descError');
     }
 
-    // 5. Privacy Notice Acceptance Validation
+    // 6. Privacy Notice Acceptance Validation
     if (!privacyCheckbox.checked) {
       setFieldError(privacyCheckbox, 'privacyError', 'You must acknowledge the privacy notice to proceed.');
       hasErrors = true;
@@ -752,6 +803,7 @@ function initContactForm() {
     const payload = {
       fullName: nameInput.value.trim(),
       email: emailInput.value.trim(),
+      phone: `${countryCodeInput?.value || '+880'}${phoneDigits}`,
       company: document.getElementById('inquiryCompany')?.value.trim() || '',
       service: serviceInput.value,
       budget: budgetInput?.value || 'Not sure yet',
@@ -773,60 +825,18 @@ function initContactForm() {
     `;
 
     try {
-      // Submit Handler (Supports real backend endpoint or honest demo validation)
+      // Submit Handler
       const response = await submitProjectInquiry(payload);
 
       if (response.success) {
         feedbackEl.className = 'form-feedback success';
-        // Note: Strict requirement: Never show a false "Message sent" confirmation!
-        // Clearly disclose "Demo validated. Your message has not been sent."
-        feedbackEl.innerHTML = `
-          <strong>Demo validated. Your message has not been sent.</strong><br>
-          All form fields passed validation. To send real inquiries, configure the backend endpoint in <code>script.js</code> or contact us directly at <a href="mailto:${CONFIG.companyEmail}" style="text-decoration:underline; font-weight:600;">${CONFIG.companyEmail}</a>.
-        `;
-
-        // Store into localStorage for instant sync with the Admin Panel Leads CRM
-        try {
-          const serviceLabel = serviceInput.options[serviceInput.selectedIndex]?.text || payload.service;
-          const budgetLabel = payload.budget === 'custom' && payload.customBudget 
-            ? `${payload.currency} ${Number(payload.customBudget).toLocaleString()}` 
-            : `${payload.currency} ${payload.budget}`;
-
-          const newLead = {
-            id: `LEAD-${Math.floor(1000 + Math.random() * 9000)}`,
-            date: new Date().toISOString().split('T')[0],
-            name: payload.fullName,
-            company: payload.company || 'Direct Website Inquiry',
-            email: payload.email,
-            service: payload.service,
-            serviceName: serviceLabel,
-            budget: budgetLabel,
-            description: payload.description,
-            timestamp: payload.timestamp
-          };
-
-          localStorage.setItem('tecklumo_latest_inquiry', JSON.stringify(newLead));
-
-          // Also directly append to admin state if present
-          const existingAdminState = localStorage.getItem('tecklumo_admin_state_v1');
-          if (existingAdminState) {
-            const parsed = JSON.parse(existingAdminState);
-            if (Array.isArray(parsed.inquiries)) {
-              parsed.inquiries.unshift({
-                ...newLead,
-                status: 'new',
-                internalNotes: 'Auto-ingested from live website submission.'
-              });
-              localStorage.setItem('tecklumo_admin_state_v1', JSON.stringify(parsed));
-            }
-          }
-        } catch (storageErr) {
-          console.warn('Could not sync to admin storage', storageErr);
-        }
-        // Do not clear fields on validation demo so user can verify what they typed
+        feedbackEl.innerHTML = `<strong>Thanks — your inquiry has been received.</strong><br>Our team will review your project and respond within one business day.`;
+        form.reset();
+        if (customBudgetInput) customBudgetInput.hidden = true;
+        if (customBudgetInput) customBudgetInput.required = false;
       } else {
         feedbackEl.className = 'form-feedback error';
-        feedbackEl.textContent = response.message || 'An error occurred while validating your inquiry. Please try again.';
+        feedbackEl.textContent = response.message || 'We could not process your inquiry. Please try again.';
       }
     } catch (err) {
       feedbackEl.className = 'form-feedback error';
@@ -840,8 +850,7 @@ function initContactForm() {
 }
 
 /**
- * Handles the actual network request or demo response.
- * Structured cleanly so a backend API URL can be plugged into CONFIG.apiEndpoint.
+ * Sends the inquiry to the configured backend API.
  */
 async function submitProjectInquiry(formData) {
   if (CONFIG.apiEndpoint) {
@@ -854,14 +863,7 @@ async function submitProjectInquiry(formData) {
     return await res.json();
   }
 
-  // Simulated validation latency for client-side demo
-  await new Promise(resolve => setTimeout(resolve, 600));
-
-  return {
-    success: true,
-    isDemo: true,
-    validatedData: formData
-  };
+  throw new Error('Inquiry API is not configured.');
 }
 
 /* ==========================================================================
@@ -1112,11 +1114,40 @@ function animateCardsStaggered(cardsList, stepDelay = 80) {
    Reflect Admin Content Updates on Public Landing Page
    ========================================================================== */
 
-function applyPublishedAdminContent() {
+async function applyPublishedAdminContent() {
   try {
     const raw = localStorage.getItem('tecklumo_published_content');
-    if (!raw) return;
-    const published = JSON.parse(raw);
+    let published = raw ? JSON.parse(raw) : null;
+    try {
+      const response = await fetch('/api/content');
+      const result = await response.json();
+      if (result.success && result.content?.site) {
+        published = result.content.site;
+        localStorage.setItem('tecklumo_published_content', JSON.stringify(published));
+      }
+    } catch (apiError) {
+      console.warn('Live content API unavailable; using local published cache.', apiError.message);
+    }
+    if (!published) return;
+
+    if (published.settings) {
+      const metaTitle = published.settings.metaTitle;
+      const metaDescription = published.settings.metaDescription;
+      const canonicalUrl = published.settings.canonicalUrl;
+      if (metaTitle) document.title = metaTitle;
+      if (metaDescription) {
+        const description = document.querySelector('meta[name="description"]');
+        if (description) description.setAttribute('content', metaDescription);
+      }
+      if (canonicalUrl) {
+        const canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.setAttribute('href', canonicalUrl);
+      }
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      const ogDescription = document.querySelector('meta[property="og:description"]');
+      if (ogTitle && metaTitle) ogTitle.setAttribute('content', metaTitle);
+      if (ogDescription && metaDescription) ogDescription.setAttribute('content', metaDescription);
+    }
 
     // 1. Hero Content
     if (published.hero) {
@@ -1140,6 +1171,127 @@ function applyPublishedAdminContent() {
       if (maintenanceCta && hero.maintenanceCtaText) maintenanceCta.textContent = hero.maintenanceCtaText;
     }
 
+    if (Array.isArray(published.services) && published.services.length > 0) {
+      document.querySelectorAll('.service-card').forEach((card, index) => {
+        const service = published.services[index];
+        if (!service) return;
+        const number = card.querySelector('.service-num');
+        const title = card.querySelector('.service-title');
+        const desc = card.querySelector('.service-desc');
+        const tech = card.querySelector('.service-tech-note');
+        const list = card.querySelector('.deliverables-list');
+        if (number && service.number) number.textContent = service.number;
+        if (title && service.title) title.textContent = service.title;
+        if (desc && service.desc) desc.textContent = service.desc;
+        if (tech && service.tech) tech.textContent = service.tech;
+        if (list && Array.isArray(service.deliverables)) {
+          list.innerHTML = service.deliverables.map((item) => `
+            <li class="deliverable-item"><span class="deliverable-bullet">&bull;</span><span>${escapeText(item)}</span></li>
+          `).join('');
+        }
+      });
+    }
+
+    if (Array.isArray(published.portfolio) && published.portfolio.length > 0) {
+      document.querySelectorAll('.project-card').forEach((card, index) => {
+        const project = published.portfolio[index];
+        if (!project) return;
+        if (project.categories) card.dataset.category = project.categories;
+        const meta = card.querySelector('.project-meta-line span');
+        const title = card.querySelector('.project-title');
+        const summary = card.querySelector('.project-summary');
+        const tags = card.querySelector('.project-tags-line');
+        const button = card.querySelector('.view-case-study-btn');
+        const media = card.querySelector('.project-mockup-frame');
+        if (meta && project.industry) meta.textContent = project.industry;
+        if (title && project.title) title.textContent = project.title;
+        if (summary && project.summary) summary.textContent = project.summary;
+        const legacyImage = project.image && /\/portfolio\/(nordiclogix|klinikflow|voltgrid-iq|aurapay|craftbourse|sensora-field)\.png$/.test(project.image);
+        const imagePath = legacyImage ? PORTFOLIO_IMAGE_FALLBACKS[project.key] : (project.image || PORTFOLIO_IMAGE_FALLBACKS[project.key] || '');
+        if (media && imagePath) {
+          media.innerHTML = `<img class="project-card-image" src="${escapeText(imagePath)}" alt="${escapeText(project.title || 'Project')} software interface preview" loading="lazy" />`;
+        }
+        if (button && project.key) button.dataset.caseStudy = project.key;
+        if (tags && project.tech) {
+          tags.innerHTML = project.tech.split(',').map((tag) => `<span class="project-tag">${escapeText(tag.trim())}</span>`).join('<span aria-hidden="true">&bull;</span>');
+        }
+      });
+    }
+
+    if (published.process) {
+      const process = published.process;
+      const processSection = document.querySelector('#process');
+      if (processSection) {
+        const kicker = processSection.querySelector('.section-kicker');
+        const title = processSection.querySelector('.section-title');
+        const description = processSection.querySelector('.section-description');
+        if (kicker && process.kicker) kicker.textContent = process.kicker;
+        if (title && process.title) title.textContent = process.title;
+        if (description && process.description) description.textContent = process.description;
+        if (Array.isArray(process.stages)) {
+          processSection.querySelectorAll('.process-card').forEach((card, index) => {
+            const stage = process.stages[index];
+            if (!stage) return;
+            const fields = [
+              ['.stage-num', stage.step], ['.stage-title', stage.title], ['.stage-desc', stage.desc],
+              ['.stage-detail-text', stage.deliverables], ['.stage-detail-text:nth-of-type(2)', stage.involvement]
+            ];
+            fields.forEach(([selector, value]) => {
+              const element = card.querySelector(selector);
+              if (element && value) element.textContent = value;
+            });
+          });
+        }
+      }
+    }
+
+    if (published.techStack) {
+      const techSection = document.querySelector('#tech-stack');
+      if (techSection) {
+        const kicker = techSection.querySelector('.section-kicker');
+        const title = techSection.querySelector('.section-title');
+        const description = techSection.querySelector('.section-description');
+        if (kicker && published.techStack.kicker) kicker.textContent = published.techStack.kicker;
+        if (title && published.techStack.title) title.textContent = published.techStack.title;
+        if (description && published.techStack.description) description.textContent = published.techStack.description;
+        if (Array.isArray(published.techStack.categories)) {
+          techSection.querySelectorAll('.tech-card').forEach((card, index) => {
+            const category = published.techStack.categories[index];
+            if (!category) return;
+            const heading = card.querySelector('.tech-group-title');
+            const role = card.querySelector('.tech-group-role');
+            const tags = card.querySelector('.tech-items-wrap');
+            if (heading && category.name) heading.textContent = category.name;
+            if (role && category.role) role.textContent = category.role;
+            if (tags && Array.isArray(category.tags)) tags.innerHTML = category.tags.map((tag) => `<span class="tech-badge">${escapeText(tag)}</span>`).join('');
+          });
+        }
+      }
+    }
+
+    if (published.maintenance) {
+      const plans = [...(published.maintenance.monthly || []), ...(published.maintenance.hourly || [])];
+      const maintenanceSection = document.querySelector('#maintenance');
+      if (maintenanceSection && plans.length > 0) {
+        maintenanceSection.querySelectorAll('.maintenance-card').forEach((card, index) => {
+          const plan = plans[index];
+          if (!plan) return;
+          const pill = card.querySelector('.plan-pill');
+          const sla = card.querySelector('.plan-sla-tag');
+          const title = card.querySelector('.plan-title');
+          const desc = card.querySelector('.plan-desc');
+          const hours = card.querySelector('.hours-val');
+          const period = card.querySelector('.hours-period');
+          if (pill && plan.pill) pill.textContent = plan.pill;
+          if (sla && plan.sla) sla.textContent = plan.sla;
+          if (title && plan.title) title.textContent = plan.title;
+          if (desc && plan.desc) desc.textContent = plan.desc;
+          if (hours && plan.hours) hours.textContent = plan.hours;
+          if (period && plan.period) period.textContent = plan.period;
+        });
+      }
+    }
+
     // 2. European Delivery Trust Principles (Trust Strip)
     const trustBadges = (published.process && Array.isArray(published.process.trustBadges)) 
       ? published.process.trustBadges 
@@ -1159,6 +1311,25 @@ function applyPublishedAdminContent() {
             </div>
           </div>
         `).join('');
+      }
+    }
+
+    if (Array.isArray(published.faqs) && published.faqs.length > 0) {
+      const faqList = document.querySelector('.faq-list');
+      if (faqList) {
+        faqList.innerHTML = published.faqs.map((faq, index) => {
+          const number = index + 1;
+          return `<div class="faq-item reveal">
+            <button type="button" class="faq-button" aria-expanded="false" aria-controls="faq-panel-${number}" id="faq-btn-${number}">
+              <span>${escapeText(faq.question)}</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-panel" id="faq-panel-${number}" role="region" aria-labelledby="faq-btn-${number}">
+              <div class="faq-panel-inner">${escapeText(faq.answer)}</div>
+            </div>
+          </div>`;
+        }).join('');
+        initFaqAccordion();
       }
     }
   } catch (e) {

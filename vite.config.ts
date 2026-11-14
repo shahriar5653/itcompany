@@ -25,6 +25,18 @@ export default defineConfig(() => {
               res.end();
               return;
             }
+            if (pathname === '/register' || pathname === '/register/') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/register.html');
+              res.end();
+              return;
+            }
+            if (pathname === '/reset-password' || pathname === '/reset-password/') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/reset-password.html');
+              res.end();
+              return;
+            }
             next();
           });
         },
@@ -36,6 +48,9 @@ export default defineConfig(() => {
       },
     },
     server: {
+      proxy: {
+        '/api': 'http://localhost:4000',
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
@@ -48,6 +63,12 @@ export default defineConfig(() => {
           main: path.resolve(__dirname, 'index.html'),
           admin: path.resolve(__dirname, 'admin.html'),
           login: path.resolve(__dirname, 'login.html'),
+          services: path.resolve(__dirname, 'services.html'),
+          caseStudies: path.resolve(__dirname, 'case-studies.html'),
+          portal: path.resolve(__dirname, 'portal.html'),
+          register: path.resolve(__dirname, 'register.html'),
+          resetPassword: path.resolve(__dirname, 'reset-password.html'),
+          adminClient: path.resolve(__dirname, 'admin-client.html'),
         },
       },
     },

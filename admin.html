@@ -124,6 +124,17 @@
             <span class="badge-count" id="inquiriesCountBadge">4</span>
           </button>
 
+          <button type="button" class="nav-tab-btn" data-tab="tab-delivery">
+            <span aria-hidden="true">◈</span>
+            <span>Clients &amp; Delivery</span>
+            <span class="badge-pill-accent">CRM</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab="tab-users">
+            <span aria-hidden="true">◎</span>
+            <span>User Management</span>
+            <span class="badge-pill-accent">PORTAL</span>
+          </button>
+
           <div class="sidebar-section-kicker" style="margin-top: 1.25rem;">Landing Page Content</div>
 
           <button type="button" class="nav-tab-btn" data-tab="tab-hero">
@@ -378,6 +389,42 @@
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- ====================================================================
+             DELIVERY WORKSPACE: CLIENTS, PROJECTS & MILESTONES
+             ==================================================================== -->
+        <section class="admin-tab-panel delivery-workspace-panel" id="tab-delivery" role="tabpanel">
+          <div class="panel-header"><div><h1 class="panel-title">Clients &amp; Delivery Workspace</h1><p class="panel-subtitle">Create client access, start projects, and manage milestones and delivery updates.</p></div></div>
+          <div class="delivery-summary-grid"><div class="delivery-summary-card"><span>CLIENT OPERATIONS</span><strong>Accounts, offers &amp; projects</strong><small>Manage every engagement from one workspace.</small></div><div class="delivery-summary-card"><span>CLIENT EXPERIENCE</span><strong>Portal-ready delivery</strong><small>Clients can review updates, invoices and files securely.</small></div><div class="delivery-summary-card accent"><span>RECURRING SERVICES</span><strong>Maintenance &amp; retainers</strong><small>Track ongoing support and recurring charges.</small></div></div>
+          <div class="dashboard-row two-col">
+            <div class="admin-box"><div class="box-header"><div><h2 class="box-title">Create client account</h2><p class="box-subtitle">The client can later sign in to the secure portal.</p></div></div>
+              <form id="clientCreateForm" class="admin-form">
+                <div class="form-group"><label class="form-label" for="clientCompanyName">Company name</label><input class="form-input" id="clientCompanyName" required placeholder="Logix GmbH" /></div>
+                <div class="form-grid two-col"><div class="form-group"><label class="form-label" for="clientContactName">Contact name</label><input class="form-input" id="clientContactName" required placeholder="Johannes Weber" /></div><div class="form-group"><label class="form-label" for="clientEmail">Email</label><input type="email" class="form-input" id="clientEmail" required placeholder="client@company.com" /></div></div>
+                <div class="form-grid two-col"><div class="form-group"><label class="form-label" for="clientPhone">Phone</label><input class="form-input" id="clientPhone" placeholder="+49..." /></div><div class="form-group"><label class="form-label" for="clientPassword">Temporary password</label><div class="password-field"><input type="password" class="form-input" id="clientPassword" minlength="10" required placeholder="Generate or enter password" /><button type="button" class="password-action" id="generateClientPassword" title="Generate secure password">Generate</button><button type="button" class="password-action password-eye" id="toggleClientPassword" title="Show password" aria-label="Show password">◉</button></div><span class="form-help-text">Save or copy this password before sending it to the client.</span></div></div>
+                <button class="btn btn-primary" type="submit">Create client access</button><span id="clientCreateFeedback" class="form-help-text"></span>
+              </form>
+            </div>
+            <div class="admin-box"><div class="box-header"><div><h2 class="box-title">Create project</h2><p class="box-subtitle">Connect the project to a client and start delivery tracking.</p></div></div>
+              <form id="projectCreateForm" class="admin-form"><div class="form-group"><label class="form-label" for="projectClientSelect">Client</label><select class="form-select" id="projectClientSelect" required><option value="">Load clients…</option></select></div><div class="form-group"><label class="form-label" for="deliveryProjectName">Project name</label><input class="form-input" id="deliveryProjectName" required placeholder="KlinikFlow platform" /></div><div class="form-group"><label class="form-label" for="deliveryProjectDescription">Description</label><textarea class="form-textarea" id="deliveryProjectDescription" rows="2" placeholder="Project scope and delivery objective"></textarea></div><button class="btn btn-primary" type="submit">Create project</button><span id="projectCreateFeedback" class="form-help-text"></span></form>
+            </div>
+            <div class="admin-box"><div class="box-header"><div><h2 class="box-title">Create proposal / offer</h2><p class="box-subtitle">Prepare a scope and price before starting delivery.</p></div></div>
+              <form id="proposalCreateForm" class="admin-form"><div class="form-group"><label class="form-label" for="proposalClientSelect">Client</label><select class="form-select" id="proposalClientSelect" required><option value="">Load clients…</option></select></div><div class="form-group"><label class="form-label" for="proposalTitle">Offer title</label><input class="form-input" id="proposalTitle" required placeholder="KlinikFlow product development proposal" /></div><div class="form-group"><label class="form-label" for="proposalScope">Scope and deliverables</label><textarea class="form-textarea" id="proposalScope" rows="3" required placeholder="Discovery, UX, frontend, backend, testing and launch..."></textarea></div><div class="form-grid two-col"><div class="form-group"><label class="form-label" for="proposalCurrency">Currency</label><select class="form-select" id="proposalCurrency"><option>EUR</option><option>USD</option></select></div><div class="form-group"><label class="form-label" for="proposalAmount">Total amount</label><input type="number" min="0" step="0.01" class="form-input" id="proposalAmount" required placeholder="25000" /></div></div><button class="btn btn-primary" type="submit">Save draft offer</button><span id="proposalCreateFeedback" class="form-help-text"></span></form>
+            </div>
+            <div class="admin-box"><div class="box-header"><div><h2 class="box-title">Create maintenance contract</h2><p class="box-subtitle">Add monthly, annual or one-time support for a client project.</p></div></div>
+              <form id="maintenanceCreateForm" class="admin-form"><div class="form-group"><label class="form-label" for="maintenanceClientSelect">Client</label><select class="form-select" id="maintenanceClientSelect" required><option value="">Load clients…</option></select></div><div class="form-group"><label class="form-label" for="maintenanceProjectSelect">Related project</label><select class="form-select" id="maintenanceProjectSelect"><option value="">Account-level service</option></select></div><div class="form-group"><label class="form-label" for="maintenanceTitle">Service title</label><input class="form-input" id="maintenanceTitle" required placeholder="Monthly application maintenance" /></div><div class="form-group"><label class="form-label" for="maintenanceDescription">Included services</label><textarea class="form-textarea" id="maintenanceDescription" rows="2" placeholder="Monitoring, security updates, bug fixes and support"></textarea></div><div class="form-grid three-col"><div class="form-group"><label class="form-label" for="maintenanceBillingType">Billing</label><select class="form-select" id="maintenanceBillingType"><option value="monthly">Monthly</option><option value="annual">Annual</option><option value="one_time">One-time</option></select></div><div class="form-group"><label class="form-label" for="maintenanceCurrency">Currency</label><select class="form-select" id="maintenanceCurrency"><option>EUR</option><option>USD</option></select></div><div class="form-group"><label class="form-label" for="maintenanceAmount">Charge</label><input type="number" min="0" step="0.01" class="form-input" id="maintenanceAmount" required placeholder="850" /></div></div><button class="btn btn-primary" type="submit">Save maintenance service</button><span id="maintenanceCreateFeedback" class="form-help-text"></span></form>
+            </div>
+          </div>
+          <div class="admin-box" style="margin-top:1.5rem"><div class="box-header"><div><h2 class="box-title">Offers and proposals</h2><p class="box-subtitle">Track draft, sent, accepted and rejected offers.</p></div></div><div id="proposalsContainer" class="portfolio-admin-grid"><p class="form-help-text">Loading proposals…</p></div></div>
+          <div class="admin-box" style="margin-top:1.5rem"><div class="box-header"><div><h2 class="box-title">Maintenance contracts</h2><p class="box-subtitle">Review retainers and generate client invoices.</p></div><button class="btn btn-secondary btn-sm" id="generateDueMaintenanceBtn" type="button">Generate due invoices</button></div><div id="maintenanceContractsContainer" class="portfolio-admin-grid"><p class="form-help-text">Loading maintenance contracts…</p></div></div>
+          <div class="admin-box" style="margin-top:1.5rem"><div class="box-header"><div><h2 class="box-title">Active projects</h2><p class="box-subtitle">Milestone and update management will appear inside each project.</p></div><button class="btn btn-secondary btn-sm" id="refreshDeliveryBtn" type="button">Refresh</button></div><div id="deliveryProjectsContainer" class="portfolio-admin-grid"><p class="form-help-text">Loading projects…</p></div></div>
+        </section>
+
+        <section class="admin-tab-panel" id="tab-users" role="tabpanel">
+          <div class="panel-header"><div><h1 class="panel-title">User Management</h1><p class="panel-subtitle">Manage client portal accounts, access status and account recovery.</p></div></div>
+          <div class="delivery-summary-grid"><div class="delivery-summary-card"><span>PORTAL USERS</span><strong>Client accounts</strong><small>Keep customer access organized and secure.</small></div><div class="delivery-summary-card"><span>ACCOUNT CONTROL</span><strong>Access status</strong><small>Activate or suspend portal access when needed.</small></div><div class="delivery-summary-card accent"><span>SUPPORT</span><strong>Password recovery</strong><small>Reset credentials without touching project data.</small></div></div>
+          <div class="admin-box" style="margin-top:1.5rem"><div class="box-header"><div><h2 class="box-title">All client users</h2><p class="box-subtitle">Edit account details, manage access and reset passwords.</p></div></div><div id="clientAccountsContainer" class="portfolio-admin-grid"><p class="form-help-text">Loading clients…</p></div></div>
         </section>
 
         <!-- ====================================================================
@@ -996,6 +1043,10 @@
               <a href="#" class="meta-value email-link" id="modalInquiryEmail">johannes@logixgmbh.de</a>
             </div>
             <div>
+              <span class="meta-label">Phone:</span>
+              <a href="#" class="meta-value email-link" id="modalInquiryPhone">Not provided</a>
+            </div>
+            <div>
               <span class="meta-label">Company:</span>
               <span class="meta-value" id="modalInquiryCompany">Logix GmbH</span>
             </div>
@@ -1115,6 +1166,15 @@
                 <label class="form-label" for="projectModalBadge">Badge Label</label>
                 <input type="text" id="projectModalBadge" class="form-input" value="Concept Project · SaaS / Web" />
               </div>
+            <div class="form-group">
+              <label class="form-label" for="projectModalImage">Project Image URL / Local Path</label>
+              <input type="text" id="projectModalImage" class="form-input" placeholder="/assets/portfolio/project-name.png" />
+              <label class="upload-dropzone" for="projectModalImageFile">
+                <span>Upload a new project image</span>
+                <input type="file" id="projectModalImageFile" accept="image/jpeg,image/png,image/webp,image/avif" />
+              </label>
+              <small class="form-help-text">Choose an image to upload, or keep using a local path / trusted URL.</small>
+            </div>
             </div>
 
             <div class="form-group">
@@ -1227,6 +1287,7 @@
       </div>
     </div>
 
+    <div class="client-edit-modal" id="clientEditModal" aria-hidden="true"><div class="client-edit-modal-backdrop" data-close-client-modal></div><div class="client-edit-modal-dialog" role="dialog" aria-modal="true" aria-label="Edit client profile"><button type="button" class="client-edit-modal-close" data-close-client-modal aria-label="Close">×</button><iframe id="clientEditFrame" title="Edit client profile"></iframe></div></div>
     <!-- Admin Script -->
     <script src="/admin.js"></script>
   </body>

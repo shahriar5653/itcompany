@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /login.html
+Disallow: /admin
+Disallow: /login
 
 Sitemap: https://rstechwerk.com/sitemap.xml

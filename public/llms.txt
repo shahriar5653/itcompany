@@ -1,0 +1,36 @@
+# RSTechwerk
+
+> RSTechwerk is a software engineering partner headquartered in Dhaka, Bangladesh, helping German, DACH, European, and international businesses design, build, modernize, and maintain reliable digital products.
+
+## Company
+
+- Website: https://rstechwerk.com/
+- Contact: mailto:inquiry@rstechwerk.com
+- Primary delivery team: Dhaka, Bangladesh
+- Collaboration: European time-zone overlap with direct senior engineering communication
+- Languages: English and German
+
+## Services
+
+- Custom software development and enterprise ERP systems
+- Web applications and multi-tenant SaaS platforms
+- iOS and Android mobile applications with Flutter, React Native, Swift, and Kotlin
+- AI integrations, document parsing, RAG, workflow automation, and business process tooling
+- Backend architecture, REST and GraphQL APIs, authentication, databases, and integrations
+- Cloud infrastructure, DevOps, monitoring, security updates, maintenance, and product improvement
+
+## Delivery approach
+
+1. Discover: clarify objectives, users, constraints, and scope.
+2. Design: create accessible UX flows, prototypes, and component systems.
+3. Develop: deliver modular frontend and backend software in iterative sprints.
+4. Test and launch: validate security, accessibility, performance, and production readiness.
+5. Support: monitor, maintain, secure, and continuously improve the product.
+
+## Relevant topics
+
+custom software development, ERP software, SaaS development, web development, mobile app development, AI automation, API integration, MySQL, PostgreSQL, cloud infrastructure, DevOps, software maintenance, German software partner, European engineering team
+
+## Important context
+
+Portfolio examples on the website are concept projects used to demonstrate product architecture and delivery capability. Prospective clients should contact RSTechwerk for a project-specific assessment.

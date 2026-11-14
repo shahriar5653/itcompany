@@ -27,10 +27,10 @@ async function waitForApi(timeoutMs = 30000) {
   return false;
 }
 
-function start(label, command, args) {
+function start(label, command, args, extraEnv = {}) {
   const child = spawn(command, args, {
     stdio: 'inherit',
-    env: process.env
+    env: { ...process.env, ...extraEnv }
   });
   children.push(child);
   child.on('exit', (code, signal) => {
@@ -62,7 +62,9 @@ let apiReady = await isApiHealthy();
 if (apiReady) {
   console.log('API already running on http://localhost:4000 — reusing it.');
 } else {
-  start('api', process.execPath, ['server/index.js']);
+  start('api', process.execPath, ['server/index.js'], {
+    PORT: process.env.API_PORT || '4000'
+  });
   apiReady = await waitForApi();
   if (!apiReady) {
     console.error('API did not become ready on http://localhost:4000. Frontend was not started.');

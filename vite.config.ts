@@ -37,6 +37,18 @@ export default defineConfig(() => {
               res.end();
               return;
             }
+            if (pathname === '/portal' || pathname === '/portal/') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/portal.html');
+              res.end();
+              return;
+            }
+            if (pathname === '/admin-client' || pathname === '/admin-client/') {
+              res.statusCode = 302;
+              res.setHeader('Location', '/admin-client.html');
+              res.end();
+              return;
+            }
             next();
           });
         },

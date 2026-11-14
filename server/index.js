@@ -13,7 +13,11 @@ import { checkDatabase, initializeDatabase, pool } from './db.js';
 import { emailEnabled, sendNotification } from './mailer.js';
 
 const app = express();
-const port = Number(process.env.PORT || 4000);
+const port = Number(
+  process.env.API_PORT ||
+    (process.env.NODE_ENV !== 'production' && process.env.PORT === '8080' ? 4000 : process.env.PORT) ||
+    4000
+);
 const jwtSecret = process.env.JWT_SECRET;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 

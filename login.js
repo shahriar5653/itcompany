@@ -45,7 +45,7 @@ async function checkExistingSession() {
         if (response.ok) {
           const params = new URLSearchParams(window.location.search);
           const redirectUrl = params.get('redirect') ? `/${params.get('redirect')}.html` : '/admin.html';
-          window.location.href = session.role === 'client' ? '/portal.html#profileForm' : redirectUrl;
+          window.location.href = session.role === 'client' ? '/portal.html' : redirectUrl;
           return;
         }
         localStorage.removeItem(ADMIN_SESSION_KEY);
@@ -150,7 +150,7 @@ function initLoginForm() {
       setTimeout(() => {
         const params = new URLSearchParams(window.location.search);
         const redirect = params.get('redirect');
-        window.location.href = result.user.role === 'client' ? '/portal.html#profileForm' : (redirect ? `/${redirect}.html` : '/admin.html');
+        window.location.href = result.user.role === 'client' ? '/portal.html' : (redirect ? `/${redirect}.html` : '/admin.html');
       }, 350);
     } catch (error) {
       if (submitBtn) submitBtn.disabled = false;

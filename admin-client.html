@@ -1,1 +1,260 @@
-<!doctype html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Edit Client Profile | RSTechwerk Admin</title><link rel="stylesheet" href="/admin.css"><style>.client-edit-shell{max-width:1000px;margin:0 auto;padding:3rem 1.5rem}.client-edit-header{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:2rem}.client-edit-card{background:var(--admin-surface,#111827);border:1px solid rgba(148,163,184,.25);border-radius:22px;padding:2rem;box-shadow:0 18px 45px #0005}.client-edit-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem}.client-edit-form .full{grid-column:1/-1}.client-edit-form label{display:grid;gap:.45rem;color:#94a3b8}.client-edit-form input,.client-edit-form select{width:100%;box-sizing:border-box}.client-detail-strip{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0 2rem}.client-detail-strip span{padding:.65rem .85rem;border-radius:10px;background:rgba(16,185,129,.1);color:#34d399}@media(max-width:700px){.client-edit-header{flex-direction:column}.client-edit-form{grid-template-columns:1fr}.client-edit-form .full{grid-column:auto}}</style></head><body><main class="client-edit-shell"><div class="client-edit-header"><div><a href="/admin.html">← Back to admin</a><p class="section-kicker" style="margin-top:2rem">USER MANAGEMENT</p><h1 class="panel-title">Edit client profile</h1><p class="panel-subtitle">Update account details and portal access settings.</p></div><button class="btn btn-secondary" id="clientEditLogout">Sign out</button></div><section id="clientEditContent"><div class="client-edit-card">Loading client profile…</div></section></main><script src="/admin-client.js"></script></body></html>
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Client Profile | RSTechwerk Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin.css" />
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('tecklumo_admin_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    body.client-edit-body {
+      font-family: var(--font-body);
+      background: var(--admin-canvas);
+      color: var(--admin-text-primary);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    body.client-edit-body.is-embedded {
+      background: var(--admin-surface);
+    }
+
+    .client-edit-shell {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2.25rem 1.5rem 2.75rem;
+    }
+
+    body.is-embedded .client-edit-shell {
+      max-width: 100%;
+      padding: 1.5rem 1.75rem 2rem;
+    }
+
+    .client-edit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-right: 2.5rem;
+    }
+
+    .client-edit-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+      color: var(--admin-text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 600;
+      transition: color var(--transition-fast);
+    }
+
+    .client-edit-back:hover {
+      color: var(--admin-accent);
+    }
+
+    body.is-embedded .client-edit-standalone-only {
+      display: none !important;
+    }
+
+    .client-edit-card {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    body.is-embedded .client-edit-card {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .client-edit-kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      background: var(--admin-canvas-subtle);
+      border: 1px solid var(--admin-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .client-edit-kpi-cell {
+      padding: 0.85rem 1.1rem;
+      border-right: 1px solid var(--admin-border);
+      min-width: 0;
+    }
+
+    .client-edit-kpi-cell:last-child {
+      border-right: 0;
+    }
+
+    .client-edit-kpi-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--admin-text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .client-edit-kpi-value {
+      display: block;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--admin-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-edit-section {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--admin-border);
+    }
+
+    body.is-embedded .client-edit-section {
+      padding: 0 0 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .client-edit-section:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .client-edit-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--admin-text-primary);
+      margin: 0 0 0.25rem;
+    }
+
+    .client-edit-section-sub {
+      font-size: 0.84rem;
+      color: var(--admin-text-muted);
+      margin: 0 0 1.15rem;
+    }
+
+    .client-edit-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem 1.15rem;
+    }
+
+    .client-edit-form .full {
+      grid-column: 1 / -1;
+    }
+
+    .client-edit-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+    }
+
+    .client-recovery-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .client-recovery-field {
+      flex: 1 1 280px;
+      min-width: 0;
+    }
+
+    .client-feedback {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--admin-text-muted);
+    }
+
+    .client-feedback.is-success {
+      color: var(--admin-accent);
+    }
+
+    .client-feedback.is-error {
+      color: #ef4444;
+    }
+
+    .client-edit-error-box {
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: rgba(239, 68, 68, 0.08);
+      color: #ef4444;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 680px) {
+      .client-edit-header {
+        flex-direction: column;
+        padding-right: 0;
+      }
+
+      .client-edit-kpi-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .client-edit-kpi-cell {
+        border-right: 0;
+        border-bottom: 1px solid var(--admin-border);
+      }
+
+      .client-edit-kpi-cell:last-child {
+        border-bottom: 0;
+      }
+
+      .client-edit-form {
+        grid-template-columns: 1fr;
+      }
+
+      .client-edit-form .full {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body class="client-edit-body">
+  <main class="client-edit-shell">
+    <div class="client-edit-header">
+      <div>
+        <a href="/admin.html" class="client-edit-back client-edit-standalone-only">← Back to Admin Console</a>
+        <p class="section-kicker">User Management</p>
+        <h1 class="panel-title">Edit Client Profile</h1>
+        <p class="panel-subtitle">Update company account details, portal access status, and recovery credentials.</p>
+      </div>
+      <button class="btn btn-secondary btn-sm client-edit-standalone-only" id="clientEditLogout" type="button">Sign out</button>
+    </div>
+
+    <section id="clientEditContent">
+      <div class="client-edit-card">
+        <div class="ops-empty-box">
+          <strong>Loading client profile…</strong>
+          <span>Fetching account record and project summary.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/admin-client.js"></script>
+</body>
+</html>

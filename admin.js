@@ -720,96 +720,906 @@ async function initDeliveryWorkspace() {
   const clientForm = document.getElementById('clientCreateForm');
   const projectForm = document.getElementById('projectCreateForm');
   const refresh = document.getElementById('refreshDeliveryBtn');
+  const refreshUsersBtn = document.getElementById('refreshUsersBtn');
   const clientSelect = document.getElementById('projectClientSelect');
   const proposalClientSelect = document.getElementById('proposalClientSelect');
   const maintenanceClientSelect = document.getElementById('maintenanceClientSelect');
   const maintenanceProjectSelect = document.getElementById('maintenanceProjectSelect');
   const passwordInput = document.getElementById('clientPassword');
-  document.getElementById('generateClientPassword')?.addEventListener('click', () => {
+
+  const deliveryState = {
+    clients: [],
+    projects: [],
+    proposals: [],
+    maintenance: [],
+    activeSubtab: 'projects',
+    projectQuery: '',
+    projectStatus: 'all',
+    proposalQuery: '',
+    proposalStatus: 'all',
+    maintenanceQuery: '',
+    userQuery: '',
+    userStatus: 'all',
+    expandedProjects: new Set()
+  };
+
+  function generateSecurePassword() {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
     const values = crypto.getRandomValues(new Uint32Array(16));
-    passwordInput.value = Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
-    passwordInput.type = 'text';
-  });
-  document.getElementById('toggleClientPassword')?.addEventListener('click', (event) => {
-    const visible = passwordInput.type === 'text'; passwordInput.type = visible ? 'password' : 'text'; event.currentTarget.textContent = visible ? '◉' : '○'; event.currentTarget.title = visible ? 'Show password' : 'Hide password';
+    return Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+  }
+
+  function formatOpsMoney(amount, currency = 'EUR') {
+    const code = String(currency || 'EUR').toUpperCase();
+    return `${escapeHtml(code)} ${Number(amount || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+
+  function formatOpsDate(value) {
+    if (!value) return 'Not set';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return escapeHtml(value);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatOpsStatus(status) {
+    if (!status) return 'Unknown';
+    return String(status).replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  function getOpsStatusClass(status) {
+    const s = String(status || '').toLowerCase();
+    if (['active', 'paid', 'approved', 'accepted', 'completed'].includes(s)) return 'success';
+    if (['sent', 'submitted', 'client_review', 'testing', 'in_progress'].includes(s)) return 'info';
+    if (['draft', 'pending', 'payment_pending', 'on_hold', 'revision_requested'].includes(s)) return 'warn';
+    if (['suspended', 'inactive', 'rejected', 'overdue', 'cancelled', 'expired'].includes(s)) return 'danger';
+    return '';
+  }
+
+  function renderOpsTag(status) {
+    return `<span class="ops-status-tag ${getOpsStatusClass(status)}">${escapeHtml(formatOpsStatus(status))}</span>`;
+  }
+
+  // Reusable Action Modal Controller
+  const actionModal = document.getElementById('deliveryActionModal');
+  const actionModalForm = document.getElementById('deliveryActionModalForm');
+  const actionModalKicker = document.getElementById('deliveryModalKicker');
+  const actionModalTitle = document.getElementById('deliveryModalTitle');
+  const actionModalBody = document.getElementById('deliveryActionModalBody');
+  const actionModalSubmit = document.getElementById('submitDeliveryActionModalBtn');
+  let activeModalSubmitHandler = null;
+
+  function closeDeliveryActionModal() {
+    if (!actionModal) return;
+    actionModal.classList.remove('open');
+    activeModalSubmitHandler = null;
+    if (actionModalBody) actionModalBody.innerHTML = '';
+  }
+
+  function openDeliveryActionModal({ kicker, title, submitLabel = 'Save', bodyHtml, onSubmit }) {
+    if (!actionModal) return;
+    if (actionModalKicker) actionModalKicker.textContent = kicker || 'Workspace Action';
+    if (actionModalTitle) actionModalTitle.textContent = title || 'Action';
+    if (actionModalSubmit) {
+      actionModalSubmit.textContent = submitLabel;
+      actionModalSubmit.disabled = false;
+    }
+    if (actionModalBody) actionModalBody.innerHTML = bodyHtml || '';
+    activeModalSubmitHandler = onSubmit;
+    actionModal.classList.add('open');
+    const firstInput = actionModalBody?.querySelector('input, select, textarea');
+    if (firstInput) setTimeout(() => firstInput.focus(), 60);
+  }
+
+  document.getElementById('closeDeliveryActionModalBtn')?.addEventListener('click', closeDeliveryActionModal);
+  document.getElementById('cancelDeliveryActionModalBtn')?.addEventListener('click', closeDeliveryActionModal);
+  actionModal?.addEventListener('click', (event) => {
+    if (event.target === actionModal) closeDeliveryActionModal();
   });
 
-  async function loadDeliveryData() {
+  actionModalForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!activeModalSubmitHandler) return;
+    if (actionModalSubmit) actionModalSubmit.disabled = true;
     try {
-      const [clientResult, projectResult, maintenanceResult] = await Promise.all([adminApiFetch('/api/clients'), adminApiFetch('/api/projects'), adminApiFetch('/api/maintenance')]);
-      const clients = clientResult.clients || [];
-      const clientOptions = '<option value="">Select a client</option>' + clients.map((client) => `<option value="${escapeHtml(client.id)}">${escapeHtml(client.companyName)} — ${escapeHtml(client.contactName)}</option>`).join('');
-      document.getElementById('clientAccountsContainer').innerHTML = clients.length ? clients.map((client) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(client.email)}</span><span class="status-chip ${client.status === 'active' ? 'new' : ''}">${escapeHtml(client.status)}</span></div><h3 class="card-title">${escapeHtml(client.companyName)}</h3><p class="card-desc">${escapeHtml(client.contactName)} · ${escapeHtml(client.phone || 'No phone')} · ${escapeHtml(client.country || 'No country')}</p><div class="client-project-summary"><strong>${Number(client.activeProjectCount || 0)} running</strong><span>${Number(client.projectCount || 0)} total projects</span></div><div class="card-actions-row"><button class="btn btn-secondary btn-sm client-status-btn" data-client="${escapeHtml(client.id)}" data-status="${client.status === 'active' ? 'suspended' : 'active'}">${client.status === 'active' ? 'Suspend access' : 'Activate access'}</button><button class="btn btn-secondary btn-sm client-edit-btn" data-client="${escapeHtml(client.id)}">Edit full profile</button><button class="btn btn-secondary btn-sm client-password-btn" data-client="${escapeHtml(client.id)}">Reset password</button></div></article>`).join('') : '<p class="form-help-text">No client accounts yet.</p>';
-      clientSelect.innerHTML = clientOptions;
-      proposalClientSelect.innerHTML = clientOptions;
-      maintenanceClientSelect.innerHTML = clientOptions;
-      maintenanceProjectSelect.innerHTML = '<option value="">Account-level service</option>' + (projectResult.projects || []).map((project) => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)} — ${escapeHtml(project.companyName)}</option>`).join('');
-      const proposalResult = await adminApiFetch('/api/proposals');
-      const proposals = proposalResult.proposals || [];
-      document.getElementById('proposalsContainer').innerHTML = proposals.length ? proposals.map((proposal) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(proposal.companyName)}</span><span class="status-chip new">${escapeHtml(proposal.status)}</span></div><h3 class="card-title">${escapeHtml(proposal.title)}</h3><p class="card-desc">${escapeHtml(proposal.scope)}</p><p class="card-tech-tag">${escapeHtml(proposal.currency)} ${Number(proposal.totalAmount || 0).toFixed(2)}</p><div class="card-actions-row">${proposal.status === 'draft' ? `<button class="btn btn-secondary btn-sm proposal-status-btn" data-proposal="${escapeHtml(proposal.id)}" data-status="sent">Mark as sent</button>` : ''}${proposal.status === 'accepted' ? `<button class="btn btn-primary btn-sm proposal-project-btn" data-client="${escapeHtml(proposal.clientId)}" data-proposal="${escapeHtml(proposal.id)}" data-title="${escapeHtml(proposal.title)}">Create project</button>` : ''}</div></article>`).join('') : '<p class="form-help-text">No proposals yet. Create the first offer above.</p>';
-      const projects = projectResult.projects || [];
-      const maintenance = maintenanceResult.maintenance || [];
-      document.getElementById('maintenanceContractsContainer').innerHTML = maintenance.length ? maintenance.map((item) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(item.projectName || 'Account service')}</span><span class="status-chip new">${escapeHtml(item.status)}</span></div><h3 class="card-title">${escapeHtml(item.title)}</h3><p class="card-desc">${escapeHtml(item.description || 'No service description yet.')}</p><p class="card-tech-tag">${escapeHtml(item.currency)} ${Number(item.amount || 0).toFixed(2)} · ${escapeHtml(item.billingType.replaceAll('_',' '))}</p><div class="card-actions-row"><button class="btn btn-secondary btn-sm maintenance-invoice-btn" data-maintenance="${escapeHtml(item.id)}">Generate invoice</button></div></article>`).join('') : '<p class="form-help-text">No maintenance contracts yet.</p>';
-      const container = document.getElementById('deliveryProjectsContainer');
-      container.innerHTML = projects.length ? projects.map((project) => `<article class="project-admin-card"><div class="card-top-row"><span class="card-kicker">${escapeHtml(project.companyName)}</span><span class="status-chip new">${escapeHtml(project.status)}</span></div><h3 class="card-title">${escapeHtml(project.name)}</h3><p class="card-desc">${escapeHtml(project.description || 'No project description yet.')}</p><div class="project-progress-mini"><span style="width:${Math.min(100, Number(project.progress) || 0)}%"></span></div><p class="card-tech-tag">${Number(project.progress) || 0}% complete · Due ${escapeHtml(project.dueDate || 'Not set')}</p><div class="card-actions-row"><button class="btn btn-secondary btn-sm delivery-open-btn" data-project="${escapeHtml(project.id)}">Open workspace</button><button class="btn btn-secondary btn-sm delivery-progress-btn" data-project="${escapeHtml(project.id)}" data-status="${escapeHtml(project.status)}" data-progress="${Number(project.progress) || 0}">Update progress</button><button class="btn btn-secondary btn-sm delivery-milestone-btn" data-project="${escapeHtml(project.id)}">+ Milestone</button><button class="btn btn-secondary btn-sm delivery-update-btn" data-project="${escapeHtml(project.id)}">Post update</button></div><div class="delivery-detail" id="delivery-detail-${escapeHtml(project.id)}"></div></article>`).join('') : '<p class="form-help-text">No projects yet. Create the first client project above.</p>';
+      await activeModalSubmitHandler(new FormData(actionModalForm));
+      closeDeliveryActionModal();
     } catch (error) {
-      document.getElementById('deliveryProjectsContainer').innerHTML = `<p class="form-help-text" style="color:#ef4444">${escapeHtml(error.message)}</p>`;
+      showToast(error.message || 'Action failed.', 'error');
+      if (actionModalSubmit) actionModalSubmit.disabled = false;
+    }
+  });
+
+  // Sub-tab Switching
+  function switchDeliverySubtab(subtab, focusCardId = null) {
+    deliveryState.activeSubtab = subtab;
+    document.querySelectorAll('[data-delivery-subtab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.deliverySubtab === subtab);
+    });
+    const map = {
+      projects: 'deliverySubpanelProjects',
+      proposals: 'deliverySubpanelProposals',
+      maintenance: 'deliverySubpanelMaintenance',
+      create: 'deliverySubpanelCreate'
+    };
+    Object.entries(map).forEach(([key, panelId]) => {
+      document.getElementById(panelId)?.classList.toggle('active', key === subtab);
+    });
+    if (focusCardId) {
+      setTimeout(() => {
+        const card = document.getElementById(focusCardId);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.querySelector('input, select')?.focus();
+        }
+      }, 60);
     }
   }
 
+  document.querySelectorAll('[data-delivery-subtab]').forEach((btn) => {
+    btn.addEventListener('click', () => switchDeliverySubtab(btn.dataset.deliverySubtab));
+  });
+
+  document.querySelectorAll('[data-delivery-quick-create]').forEach((btn) => {
+    btn.addEventListener('click', () => switchDeliverySubtab('create', btn.dataset.deliveryQuickCreate));
+  });
+
+  document.getElementById('usersCreateClientBtn')?.addEventListener('click', () => {
+    document.querySelector('.nav-tab-btn[data-tab="tab-delivery"]')?.click();
+    switchDeliverySubtab('create', 'clientCreateCard');
+  });
+
+  // Password Generator on Client Create Form
+  document.getElementById('generateClientPassword')?.addEventListener('click', () => {
+    passwordInput.value = generateSecurePassword();
+    passwordInput.type = 'text';
+  });
+  document.getElementById('toggleClientPassword')?.addEventListener('click', (event) => {
+    const visible = passwordInput.type === 'text';
+    passwordInput.type = visible ? 'password' : 'text';
+    event.currentTarget.textContent = visible ? '◉' : '○';
+    event.currentTarget.title = visible ? 'Show password' : 'Hide password';
+  });
+
+  // KPI & Segmented Counts Renderer
+  function updateWorkspaceKpis() {
+    const { clients, projects, proposals, maintenance } = deliveryState;
+    const activeProjects = projects.filter((p) => !['completed', 'cancelled'].includes(p.status));
+    const openOffers = proposals.filter((p) => ['draft', 'sent'].includes(p.status));
+    const activeMaint = maintenance.filter((m) => m.status === 'active');
+    const activeClients = clients.filter((c) => c.status === 'active');
+    const suspendedClients = clients.filter((c) => c.status !== 'active');
+    const totalRunningEngagements = clients.reduce((sum, c) => sum + Number(c.activeProjectCount || 0), 0);
+
+    const setEl = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    setEl('kpiDeliveryProjects', String(activeProjects.length));
+    setEl('kpiDeliveryProjectsMeta', `${projects.length} total workspace${projects.length === 1 ? '' : 's'}`);
+    setEl('kpiDeliveryOffers', String(openOffers.length));
+    setEl('kpiDeliveryOffersMeta', `${proposals.length} proposal${proposals.length === 1 ? '' : 's'} on file`);
+    setEl('kpiDeliveryMaintenance', String(activeMaint.length));
+    setEl('kpiDeliveryMaintenanceMeta', `${maintenance.length} contract${maintenance.length === 1 ? '' : 's'} on file`);
+    setEl('kpiDeliveryClients', String(clients.length));
+    setEl('kpiDeliveryClientsMeta', `${activeClients.length} active portal user${activeClients.length === 1 ? '' : 's'}`);
+
+    setEl('deliveryCountProjects', String(projects.length));
+    setEl('deliveryCountProposals', String(proposals.length));
+    setEl('deliveryCountMaintenance', String(maintenance.length));
+
+    setEl('kpiUsersTotal', String(clients.length));
+    setEl('kpiUsersActive', String(activeClients.length));
+    setEl('kpiUsersSuspended', String(suspendedClients.length));
+    setEl('kpiUsersProjects', String(totalRunningEngagements));
+    setEl('kpiUsersProjectsMeta', `${projects.length} total client project${projects.length === 1 ? '' : 's'}`);
+  }
+
+  // Renderers
+  function renderClientAccountsTable() {
+    const container = document.getElementById('clientAccountsContainer');
+    if (!container) return;
+    const q = deliveryState.userQuery.trim().toLowerCase();
+    const filtered = deliveryState.clients.filter((client) => {
+      const matchesStatus =
+        deliveryState.userStatus === 'all' ||
+        (deliveryState.userStatus === 'suspended' ? client.status !== 'active' : client.status === deliveryState.userStatus);
+      const matchesQuery =
+        !q ||
+        (client.companyName || '').toLowerCase().includes(q) ||
+        (client.contactName || '').toLowerCase().includes(q) ||
+        (client.email || '').toLowerCase().includes(q) ||
+        (client.country || '').toLowerCase().includes(q);
+      return matchesStatus && matchesQuery;
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="ops-empty-box"><strong>${
+        deliveryState.clients.length ? 'No matching client accounts' : 'No client accounts yet'
+      }</strong><p>${
+        deliveryState.clients.length
+          ? 'Try adjusting your search query or status filter.'
+          : 'Provision your first client portal account to grant secure project access.'
+      }</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Organization &amp; Contact</th>
+            <th>Email &amp; Phone</th>
+            <th>Engagements</th>
+            <th>Access Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered
+            .map(
+              (client) => `
+            <tr>
+              <td>
+                <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(client.companyName)}</strong>
+                <span style="font-size:0.78rem;color:var(--admin-text-muted);">${escapeHtml(client.contactName)}${
+                client.country ? ` · ${escapeHtml(client.country)}` : ''
+              }</span>
+              </td>
+              <td>
+                <span class="ops-tabular" style="font-size:0.8rem;color:var(--admin-text-primary);display:block;">${escapeHtml(client.email)}</span>
+                <span style="font-size:0.76rem;color:var(--admin-text-muted);">${escapeHtml(client.phone || 'No phone on file')}</span>
+              </td>
+              <td class="ops-tabular">
+                <strong style="color:var(--admin-accent);">${Number(client.activeProjectCount || 0)}</strong>
+                <span style="color:var(--admin-text-muted);"> running · ${Number(client.projectCount || 0)} total</span>
+              </td>
+              <td>${renderOpsTag(client.status)}</td>
+              <td style="text-align:right;">
+                <div class="ops-table-actions">
+                  <button type="button" class="btn btn-secondary btn-sm client-edit-btn" data-client="${escapeHtml(client.id)}">Edit Profile</button>
+                  <button type="button" class="btn btn-secondary btn-sm client-status-btn" data-client="${escapeHtml(client.id)}" data-status="${
+                client.status === 'active' ? 'suspended' : 'active'
+              }">${client.status === 'active' ? 'Suspend' : 'Activate'}</button>
+                  <button type="button" class="btn btn-secondary btn-sm client-password-btn" data-client="${escapeHtml(client.id)}" data-name="${escapeHtml(
+                client.companyName
+              )}">Reset Password</button>
+                </div>
+              </td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function renderProposalsTable() {
+    const container = document.getElementById('proposalsContainer');
+    if (!container) return;
+    const q = deliveryState.proposalQuery.trim().toLowerCase();
+    const filtered = deliveryState.proposals.filter((p) => {
+      const matchesStatus = deliveryState.proposalStatus === 'all' || p.status === deliveryState.proposalStatus;
+      const matchesQuery =
+        !q ||
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.companyName || '').toLowerCase().includes(q) ||
+        (p.scope || '').toLowerCase().includes(q);
+      return matchesStatus && matchesQuery;
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="ops-empty-box"><strong>${
+        deliveryState.proposals.length ? 'No matching proposals' : 'No offers or proposals yet'
+      }</strong><p>Prepare a new client proposal in Create &amp; Onboarding.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Proposal &amp; Scope</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered
+            .map(
+              (proposal) => `
+            <tr>
+              <td style="font-weight:600;color:var(--admin-text-primary);white-space:nowrap;">${escapeHtml(proposal.companyName)}</td>
+              <td>
+                <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(proposal.title)}</strong>
+                <span style="font-size:0.78rem;color:var(--admin-text-muted);display:block;max-width:52ch;">${escapeHtml(
+                  proposal.scope.length > 130 ? proposal.scope.slice(0, 130) + '…' : proposal.scope
+                )}</span>
+              </td>
+              <td class="ops-tabular" style="font-weight:700;color:var(--admin-text-primary);white-space:nowrap;">${formatOpsMoney(
+                proposal.totalAmount,
+                proposal.currency
+              )}</td>
+              <td>${renderOpsTag(proposal.status)}</td>
+              <td style="text-align:right;">
+                <div class="ops-table-actions">
+                  ${
+                    proposal.status === 'draft'
+                      ? `<button type="button" class="btn btn-secondary btn-sm proposal-status-btn" data-proposal="${escapeHtml(
+                          proposal.id
+                        )}" data-status="sent">Send Offer</button>`
+                      : ''
+                  }
+                  ${
+                    proposal.status === 'accepted'
+                      ? `<button type="button" class="btn btn-primary btn-sm proposal-project-btn" data-client="${escapeHtml(
+                          proposal.clientId
+                        )}" data-proposal="${escapeHtml(proposal.id)}" data-title="${escapeHtml(proposal.title)}">Create Project</button>`
+                      : ''
+                  }
+                  ${
+                    proposal.status !== 'draft' && proposal.status !== 'accepted'
+                      ? `<span style="font-size:0.78rem;color:var(--admin-text-subtle);">—</span>`
+                      : ''
+                  }
+                </div>
+              </td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function renderMaintenanceTable() {
+    const container = document.getElementById('maintenanceContractsContainer');
+    if (!container) return;
+    const q = deliveryState.maintenanceQuery.trim().toLowerCase();
+    const filtered = deliveryState.maintenance.filter((item) => {
+      return (
+        !q ||
+        (item.title || '').toLowerCase().includes(q) ||
+        (item.projectName || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q)
+      );
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="ops-empty-box"><strong>${
+        deliveryState.maintenance.length ? 'No matching maintenance contracts' : 'No maintenance contracts yet'
+      }</strong><p>Add recurring or on-demand support retainers under Create &amp; Onboarding.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Contract &amp; Scope</th>
+            <th>Linked Project</th>
+            <th>Billing</th>
+            <th>Rate</th>
+            <th>Next Billing</th>
+            <th>Status</th>
+            <th style="text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered
+            .map(
+              (item) => `
+            <tr>
+              <td>
+                <strong style="color:var(--admin-text-primary);display:block;">${escapeHtml(item.title)}</strong>
+                <span style="font-size:0.78rem;color:var(--admin-text-muted);">${escapeHtml(
+                  item.description || 'Ongoing software maintenance and SLA coverage'
+                )}</span>
+              </td>
+              <td>${escapeHtml(item.projectName || 'Account-level service')}</td>
+              <td>${escapeHtml(formatOpsStatus(item.billingType))}</td>
+              <td class="ops-tabular" style="font-weight:700;color:var(--admin-text-primary);white-space:nowrap;">${formatOpsMoney(
+                item.amount,
+                item.currency
+              )}</td>
+              <td class="ops-tabular">${formatOpsDate(item.nextBillingDate)}</td>
+              <td>${renderOpsTag(item.status)}</td>
+              <td style="text-align:right;">
+                <button type="button" class="btn btn-secondary btn-sm maintenance-invoice-btn" data-maintenance="${escapeHtml(
+                  item.id
+                )}" data-title="${escapeHtml(item.title)}">Generate Invoice</button>
+              </td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function renderProjectsList() {
+    const container = document.getElementById('deliveryProjectsContainer');
+    if (!container) return;
+    const q = deliveryState.projectQuery.trim().toLowerCase();
+    const filtered = deliveryState.projects.filter((project) => {
+      const matchesStatus = deliveryState.projectStatus === 'all' || project.status === deliveryState.projectStatus;
+      const matchesQuery =
+        !q ||
+        (project.name || '').toLowerCase().includes(q) ||
+        (project.companyName || '').toLowerCase().includes(q) ||
+        (project.description || '').toLowerCase().includes(q);
+      return matchesStatus && matchesQuery;
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="ops-empty-box"><strong>${
+        deliveryState.projects.length ? 'No matching projects' : 'No projects created yet'
+      }</strong><p>${
+        deliveryState.projects.length
+          ? 'Clear your search or status filter to view all workspaces.'
+          : 'Click + New Project above to create your first client workspace.'
+      }</p></div>`;
+      return;
+    }
+
+    container.innerHTML = filtered
+      .map((project) => {
+        const pct = Math.min(100, Math.max(0, Number(project.progress) || 0));
+        const isExpanded = deliveryState.expandedProjects.has(project.id);
+        return `
+          <article class="ops-project-card ${isExpanded ? 'is-highlight' : ''}">
+            <div class="ops-project-head">
+              <div class="ops-project-main">
+                <div class="ops-project-title-row">
+                  <h3 class="ops-project-title">${escapeHtml(project.name)}</h3>
+                  ${renderOpsTag(project.status)}
+                </div>
+                <div class="ops-project-meta">
+                  <span>${escapeHtml(project.companyName)}</span>
+                  <span aria-hidden="true">·</span>
+                  <span class="ops-tabular">Due ${formatOpsDate(project.dueDate)}</span>
+                </div>
+                <p class="ops-project-desc">${escapeHtml(project.description || 'No project description provided.')}</p>
+                <div class="ops-project-progress-row">
+                  <div class="ops-progress-track"><div class="ops-progress-fill" style="width:${pct}%"></div></div>
+                  <span class="ops-tabular" style="font-size:0.8rem;font-weight:700;color:var(--admin-accent);">${pct}% complete</span>
+                </div>
+              </div>
+              <div class="ops-project-actions">
+                <button type="button" class="btn ${isExpanded ? 'btn-primary' : 'btn-secondary'} btn-sm delivery-open-btn" data-project="${escapeHtml(
+          project.id
+        )}">${isExpanded ? 'Hide Workspace' : 'Manage Workspace'}</button>
+                <button type="button" class="btn btn-secondary btn-sm delivery-progress-btn" data-project="${escapeHtml(
+          project.id
+        )}" data-name="${escapeHtml(project.name)}" data-status="${escapeHtml(project.status)}" data-progress="${pct}">Update Progress</button>
+                <button type="button" class="btn btn-secondary btn-sm delivery-milestone-btn" data-project="${escapeHtml(
+          project.id
+        )}" data-name="${escapeHtml(project.name)}">+ Milestone</button>
+                <button type="button" class="btn btn-secondary btn-sm delivery-update-btn" data-project="${escapeHtml(
+          project.id
+        )}" data-name="${escapeHtml(project.name)}">Post Update</button>
+              </div>
+            </div>
+            <div class="ops-project-detail ${isExpanded ? 'open' : ''}" id="delivery-detail-${escapeHtml(project.id)}"></div>
+          </article>
+        `;
+      })
+      .join('');
+
+    // Rehydrate any already-expanded workspaces
+    deliveryState.expandedProjects.forEach((projectId) => {
+      if (filtered.some((p) => p.id === projectId)) {
+        loadProjectWorkspaceDetail(projectId);
+      }
+    });
+  }
+
+  async function loadProjectWorkspaceDetail(projectId) {
+    const detail = document.getElementById(`delivery-detail-${projectId}`);
+    if (!detail) return;
+    detail.innerHTML = '<div style="padding:1.25rem;" class="form-help-text">Loading workspace details…</div>';
+    try {
+      const [milestones, updates, files, invoices] = await Promise.all([
+        adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/milestones`),
+        adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/updates`),
+        adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/files`),
+        adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/invoices`)
+      ]);
+
+      const msList = milestones.milestones || [];
+      const invList = invoices.invoices || [];
+      const updList = updates.updates || [];
+      const fileList = files.files || [];
+
+      const milestoneHtml = msList.length
+        ? msList
+            .map(
+              (item) => `
+          <div class="ops-detail-item">
+            <div>
+              <span class="ops-detail-item-title">${escapeHtml(item.title)}</span>
+              <span class="ops-detail-item-sub ops-tabular">${formatOpsMoney(item.amount, item.currency)} · Due ${formatOpsDate(
+                item.dueDate
+              )}</span>
+            </div>
+            ${renderOpsTag(item.status)}
+          </div>`
+            )
+            .join('')
+        : '<span class="form-help-text">No milestones scheduled yet.</span>';
+
+      const invoiceHtml = invList.length
+        ? invList
+            .map(
+              (inv) => `
+          <div class="ops-detail-item">
+            <div>
+              <span class="ops-detail-item-title ops-tabular">${escapeHtml(inv.invoiceNumber)}</span>
+              <span class="ops-detail-item-sub">${escapeHtml(inv.description)} · ${formatOpsMoney(inv.amount, inv.currency)}</span>
+            </div>
+            ${renderOpsTag(inv.status)}
+          </div>`
+            )
+            .join('')
+        : '<span class="form-help-text">No invoices created yet.</span>';
+
+      const updateHtml = updList.length
+        ? updList
+            .map(
+              (item) => `
+          <div class="ops-detail-item">
+            <div>
+              <span class="ops-detail-item-title">${escapeHtml(item.title)}</span>
+              <span class="ops-detail-item-sub">${escapeHtml(item.body)}</span>
+            </div>
+            <small class="ops-tabular" style="color:var(--admin-text-subtle);white-space:nowrap;">${formatOpsDate(item.createdAt)}</small>
+          </div>`
+            )
+            .join('')
+        : '<span class="form-help-text">No delivery updates posted yet.</span>';
+
+      const fileHtml = fileList.length
+        ? fileList
+            .map(
+              (file) => `
+          <div class="ops-detail-item">
+            <div>
+              <span class="ops-detail-item-title">${escapeHtml(file.originalName)}</span>
+              <span class="ops-detail-item-sub ops-tabular">${Math.max(1, Math.ceil(Number(file.fileSize || 0) / 1024))} KB · ${
+                file.visibleToClient ? 'Visible to client' : 'Internal only'
+              }</span>
+            </div>
+          </div>`
+            )
+            .join('')
+        : '<span class="form-help-text">No files uploaded yet.</span>';
+
+      detail.innerHTML = `
+        <div class="ops-detail-grid">
+          <div class="ops-detail-pane">
+            <div class="ops-detail-pane-header">
+              <span class="ops-detail-pane-title">Milestones (${msList.length})</span>
+              <button type="button" class="btn btn-secondary btn-sm delivery-milestone-btn" data-project="${escapeHtml(projectId)}">+ Add Milestone</button>
+            </div>
+            <div class="ops-detail-list">${milestoneHtml}</div>
+          </div>
+          <div class="ops-detail-pane">
+            <div class="ops-detail-pane-header">
+              <span class="ops-detail-pane-title">Invoices (${invList.length})</span>
+              <button type="button" class="btn btn-secondary btn-sm delivery-invoice-btn" data-project="${escapeHtml(projectId)}">+ Create Invoice</button>
+            </div>
+            <div class="ops-detail-list">${invoiceHtml}</div>
+          </div>
+          <div class="ops-detail-pane">
+            <div class="ops-detail-pane-header">
+              <span class="ops-detail-pane-title">Client Updates (${updList.length})</span>
+              <button type="button" class="btn btn-secondary btn-sm delivery-update-btn" data-project="${escapeHtml(projectId)}">+ Post Update</button>
+            </div>
+            <div class="ops-detail-list">${updateHtml}</div>
+          </div>
+          <div class="ops-detail-pane">
+            <div class="ops-detail-pane-header">
+              <span class="ops-detail-pane-title">Shared Files (${fileList.length})</span>
+            </div>
+            <div class="ops-detail-list">${fileHtml}</div>
+            <div class="ops-upload-bar">
+              <input type="file" class="delivery-file-input" accept="application/pdf,image/jpeg,image/png,image/webp,.zip,.docx,.xlsx" data-project="${escapeHtml(
+                projectId
+              )}">
+              <label class="ops-upload-check"><input type="checkbox" class="delivery-file-visible" checked> Visible to client</label>
+              <button type="button" class="btn btn-secondary btn-sm delivery-upload-btn" data-project="${escapeHtml(projectId)}">Upload</button>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      detail.innerHTML = `<div style="padding:1.25rem;color:#ef4444;" class="form-help-text">${escapeHtml(error.message)}</div>`;
+    }
+  }
+
+  async function loadDeliveryData() {
+    try {
+      const [clientResult, projectResult, maintenanceResult, proposalResult] = await Promise.all([
+        adminApiFetch('/api/clients'),
+        adminApiFetch('/api/projects'),
+        adminApiFetch('/api/maintenance'),
+        adminApiFetch('/api/proposals')
+      ]);
+
+      deliveryState.clients = clientResult.clients || [];
+      deliveryState.projects = projectResult.projects || [];
+      deliveryState.maintenance = maintenanceResult.maintenance || [];
+      deliveryState.proposals = proposalResult.proposals || [];
+
+      const clientOptions =
+        '<option value="">Select a client</option>' +
+        deliveryState.clients
+          .map((client) => `<option value="${escapeHtml(client.id)}">${escapeHtml(client.companyName)} — ${escapeHtml(client.contactName)}</option>`)
+          .join('');
+      if (clientSelect) clientSelect.innerHTML = clientOptions;
+      if (proposalClientSelect) proposalClientSelect.innerHTML = clientOptions;
+      if (maintenanceClientSelect) maintenanceClientSelect.innerHTML = clientOptions;
+      if (maintenanceProjectSelect) {
+        maintenanceProjectSelect.innerHTML =
+          '<option value="">Account-level service</option>' +
+          deliveryState.projects
+            .map((project) => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)} — ${escapeHtml(project.companyName)}</option>`)
+            .join('');
+      }
+
+      updateWorkspaceKpis();
+      renderClientAccountsTable();
+      renderProposalsTable();
+      renderMaintenanceTable();
+      renderProjectsList();
+    } catch (error) {
+      const errHtml = `<div class="ops-empty-box"><strong style="color:#ef4444">Unable to load workspace data</strong><p>${escapeHtml(
+        error.message
+      )}</p></div>`;
+      const pCont = document.getElementById('deliveryProjectsContainer');
+      if (pCont) pCont.innerHTML = errHtml;
+    }
+  }
+
+  // Search & Filter Listeners
+  document.getElementById('deliveryProjectSearch')?.addEventListener('input', (e) => {
+    deliveryState.projectQuery = e.target.value;
+    renderProjectsList();
+  });
+  document.getElementById('deliveryProjectStatusFilter')?.addEventListener('change', (e) => {
+    deliveryState.projectStatus = e.target.value;
+    renderProjectsList();
+  });
+  document.getElementById('deliveryProposalSearch')?.addEventListener('input', (e) => {
+    deliveryState.proposalQuery = e.target.value;
+    renderProposalsTable();
+  });
+  document.getElementById('deliveryProposalStatusFilter')?.addEventListener('change', (e) => {
+    deliveryState.proposalStatus = e.target.value;
+    renderProposalsTable();
+  });
+  document.getElementById('deliveryMaintenanceSearch')?.addEventListener('input', (e) => {
+    deliveryState.maintenanceQuery = e.target.value;
+    renderMaintenanceTable();
+  });
+  document.getElementById('usersSearchInput')?.addEventListener('input', (e) => {
+    deliveryState.userQuery = e.target.value;
+    renderClientAccountsTable();
+  });
+  document.querySelectorAll('[data-user-status-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      deliveryState.userStatus = btn.dataset.userStatusFilter;
+      document.querySelectorAll('[data-user-status-filter]').forEach((b) => b.classList.toggle('active', b === btn));
+      renderClientAccountsTable();
+    });
+  });
+
+  // Creation Forms
   clientForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (clientForm.dataset.submitting === 'true') return;
-    clientForm.dataset.submitting = 'true'; const submitButton = clientForm.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Creating…'; }
+    clientForm.dataset.submitting = 'true';
+    const submitButton = clientForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Creating…';
+    }
     const feedback = document.getElementById('clientCreateFeedback');
     try {
-      await adminApiFetch('/api/clients', { method: 'POST', body: JSON.stringify({ companyName: document.getElementById('clientCompanyName').value.trim(), contactName: document.getElementById('clientContactName').value.trim(), email: document.getElementById('clientEmail').value.trim(), phone: document.getElementById('clientPhone').value.trim(), password: document.getElementById('clientPassword').value }) });
-      clientForm.reset(); feedback.textContent = 'Client account created successfully.'; await loadDeliveryData();
-    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
-    finally { clientForm.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Create client access'; } }
+      await adminApiFetch('/api/clients', {
+        method: 'POST',
+        body: JSON.stringify({
+          companyName: document.getElementById('clientCompanyName').value.trim(),
+          contactName: document.getElementById('clientContactName').value.trim(),
+          email: document.getElementById('clientEmail').value.trim(),
+          phone: document.getElementById('clientPhone').value.trim(),
+          password: document.getElementById('clientPassword').value
+        })
+      });
+      clientForm.reset();
+      if (feedback) {
+        feedback.textContent = 'Client account created successfully.';
+        feedback.style.color = 'var(--admin-accent)';
+      }
+      showToast('Client portal account created.');
+      await loadDeliveryData();
+    } catch (error) {
+      if (feedback) {
+        feedback.textContent = error.message;
+        feedback.style.color = '#ef4444';
+      }
+    } finally {
+      clientForm.dataset.submitting = 'false';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Create Client Access';
+      }
+    }
   });
 
   projectForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (projectForm.dataset.submitting === 'true') return;
-    projectForm.dataset.submitting = 'true'; const submitButton = projectForm.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Creating…'; }
+    projectForm.dataset.submitting = 'true';
+    const submitButton = projectForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Creating…';
+    }
     const feedback = document.getElementById('projectCreateFeedback');
     try {
-      await adminApiFetch('/api/projects', { method: 'POST', body: JSON.stringify({ clientId: clientSelect.value, name: document.getElementById('deliveryProjectName').value.trim(), description: document.getElementById('deliveryProjectDescription').value.trim() }) });
-      projectForm.reset(); feedback.textContent = 'Project created successfully.'; await loadDeliveryData();
-    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
-    finally { projectForm.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Create project'; } }
+      await adminApiFetch('/api/projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientId: clientSelect.value,
+          name: document.getElementById('deliveryProjectName').value.trim(),
+          description: document.getElementById('deliveryProjectDescription').value.trim()
+        })
+      });
+      projectForm.reset();
+      if (feedback) {
+        feedback.textContent = 'Project created successfully.';
+        feedback.style.color = 'var(--admin-accent)';
+      }
+      showToast('Project workspace created.');
+      await loadDeliveryData();
+      switchDeliverySubtab('projects');
+    } catch (error) {
+      if (feedback) {
+        feedback.textContent = error.message;
+        feedback.style.color = '#ef4444';
+      }
+    } finally {
+      projectForm.dataset.submitting = 'false';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Create Project';
+      }
+    }
   });
 
   document.getElementById('proposalCreateForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (event.currentTarget.dataset.submitting === 'true') return;
-    event.currentTarget.dataset.submitting = 'true'; const submitButton = event.currentTarget.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Saving…'; }
+    event.currentTarget.dataset.submitting = 'true';
+    const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Saving…';
+    }
     const feedback = document.getElementById('proposalCreateFeedback');
     try {
-      await adminApiFetch('/api/proposals', { method: 'POST', body: JSON.stringify({ clientId: proposalClientSelect.value, title: document.getElementById('proposalTitle').value.trim(), scope: document.getElementById('proposalScope').value.trim(), currency: document.getElementById('proposalCurrency').value, totalAmount: Number(document.getElementById('proposalAmount').value) }) });
-      event.target.reset(); feedback.textContent = 'Draft offer saved successfully.'; feedback.style.color = ''; await loadDeliveryData();
-    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
-    finally { event.currentTarget.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Save draft offer'; } }
+      await adminApiFetch('/api/proposals', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientId: proposalClientSelect.value,
+          title: document.getElementById('proposalTitle').value.trim(),
+          scope: document.getElementById('proposalScope').value.trim(),
+          currency: document.getElementById('proposalCurrency').value,
+          totalAmount: Number(document.getElementById('proposalAmount').value)
+        })
+      });
+      event.target.reset();
+      if (feedback) {
+        feedback.textContent = 'Draft offer saved successfully.';
+        feedback.style.color = 'var(--admin-accent)';
+      }
+      showToast('Draft offer created.');
+      await loadDeliveryData();
+      switchDeliverySubtab('proposals');
+    } catch (error) {
+      if (feedback) {
+        feedback.textContent = error.message;
+        feedback.style.color = '#ef4444';
+      }
+    } finally {
+      event.currentTarget.dataset.submitting = 'false';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save Draft Offer';
+      }
+    }
   });
 
   document.getElementById('maintenanceCreateForm')?.addEventListener('submit', async (event) => {
-    event.preventDefault(); const feedback = document.getElementById('maintenanceCreateFeedback');
+    event.preventDefault();
+    const feedback = document.getElementById('maintenanceCreateFeedback');
     if (event.currentTarget.dataset.submitting === 'true') return;
-    event.currentTarget.dataset.submitting = 'true'; const submitButton = event.currentTarget.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Saving…'; }
+    event.currentTarget.dataset.submitting = 'true';
+    const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Saving…';
+    }
     try {
-      await adminApiFetch('/api/maintenance', { method:'POST', body:JSON.stringify({ clientId: maintenanceClientSelect.value, projectId: maintenanceProjectSelect.value || null, title: document.getElementById('maintenanceTitle').value.trim(), description: document.getElementById('maintenanceDescription').value.trim(), billingType: document.getElementById('maintenanceBillingType').value, currency: document.getElementById('maintenanceCurrency').value, amount: Number(document.getElementById('maintenanceAmount').value) }) });
-      event.target.reset(); feedback.textContent = 'Maintenance service saved successfully.'; feedback.style.color = ''; 
-    } catch (error) { feedback.textContent = error.message; feedback.style.color = '#ef4444'; }
-    finally { event.currentTarget.dataset.submitting = 'false'; if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Save maintenance service'; } }
+      await adminApiFetch('/api/maintenance', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientId: maintenanceClientSelect.value,
+          projectId: maintenanceProjectSelect.value || null,
+          title: document.getElementById('maintenanceTitle').value.trim(),
+          description: document.getElementById('maintenanceDescription').value.trim(),
+          billingType: document.getElementById('maintenanceBillingType').value,
+          currency: document.getElementById('maintenanceCurrency').value,
+          amount: Number(document.getElementById('maintenanceAmount').value)
+        })
+      });
+      event.target.reset();
+      if (feedback) {
+        feedback.textContent = 'Maintenance service saved successfully.';
+        feedback.style.color = 'var(--admin-accent)';
+      }
+      showToast('Maintenance contract created.');
+      await loadDeliveryData();
+      switchDeliverySubtab('maintenance');
+    } catch (error) {
+      if (feedback) {
+        feedback.textContent = error.message;
+        feedback.style.color = '#ef4444';
+      }
+    } finally {
+      event.currentTarget.dataset.submitting = 'false';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save Maintenance Service';
+      }
+    }
   });
 
-  document.getElementById('maintenanceContractsContainer')?.addEventListener('click', async (event) => {
-    const button = event.target.closest('.maintenance-invoice-btn'); if (!button) return;
-    const dueDate = prompt('Invoice due date (YYYY-MM-DD, optional):', '');
-    try { await adminApiFetch(`/api/maintenance/${encodeURIComponent(button.dataset.maintenance)}/invoices`, { method:'POST', body:JSON.stringify({ dueDate: dueDate || null }) }); button.textContent = 'Invoice generated'; button.disabled = true; } catch (error) { alert(error.message); }
+  // Table & Project Delegated Actions
+  document.getElementById('maintenanceContractsContainer')?.addEventListener('click', (event) => {
+    const button = event.target.closest('.maintenance-invoice-btn');
+    if (!button) return;
+    openDeliveryActionModal({
+      kicker: 'Maintenance Billing',
+      title: `Generate Invoice — ${button.dataset.title || 'Contract'}`,
+      submitLabel: 'Generate Invoice',
+      bodyHtml: `
+        <div class="form-group">
+          <label class="form-label" for="modalMaintDueDate">Due Date (optional)</label>
+          <input type="date" id="modalMaintDueDate" name="dueDate" class="form-input" />
+          <span class="form-help-text">Leave blank if no specific due date is required.</span>
+        </div>
+      `,
+      onSubmit: async (formData) => {
+        const dueDate = formData.get('dueDate') || null;
+        await adminApiFetch(`/api/maintenance/${encodeURIComponent(button.dataset.maintenance)}/invoices`, {
+          method: 'POST',
+          body: JSON.stringify({ dueDate })
+        });
+        showToast('Maintenance invoice generated.');
+      }
+    });
   });
+
   document.getElementById('proposalsContainer')?.addEventListener('click', async (event) => {
     const proposalStatusBtn = event.target.closest('.proposal-status-btn');
     const proposalProjectBtn = event.target.closest('.proposal-project-btn');
@@ -820,14 +1630,17 @@ async function initDeliveryWorkspace() {
       const originalText = proposalStatusBtn.textContent;
       proposalStatusBtn.textContent = 'Sending…';
       try {
-        await adminApiFetch(`/api/proposals/${encodeURIComponent(proposalStatusBtn.dataset.proposal)}/status`, { method: 'PATCH', body: JSON.stringify({ status: proposalStatusBtn.dataset.status }) });
-        showToast('Proposal marked as sent and email notification queued.');
+        await adminApiFetch(`/api/proposals/${encodeURIComponent(proposalStatusBtn.dataset.proposal)}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: proposalStatusBtn.dataset.status })
+        });
+        showToast('Proposal marked as sent and notification queued.');
         await loadDeliveryData();
       } catch (error) {
         proposalStatusBtn.disabled = false;
         proposalStatusBtn.dataset.submitting = 'false';
         proposalStatusBtn.textContent = originalText;
-        alert(error.message);
+        showToast(error.message, 'error');
       }
       return;
     }
@@ -836,90 +1649,338 @@ async function initDeliveryWorkspace() {
       proposalProjectBtn.dataset.submitting = 'true';
       proposalProjectBtn.disabled = true;
       try {
-        await adminApiFetch('/api/projects', { method: 'POST', body: JSON.stringify({ clientId: proposalProjectBtn.dataset.client, proposalId: proposalProjectBtn.dataset.proposal, name: proposalProjectBtn.dataset.title, description: 'Project created from accepted proposal.' }) });
+        await adminApiFetch('/api/projects', {
+          method: 'POST',
+          body: JSON.stringify({
+            clientId: proposalProjectBtn.dataset.client,
+            proposalId: proposalProjectBtn.dataset.proposal,
+            name: proposalProjectBtn.dataset.title,
+            description: 'Project created from accepted proposal.'
+          })
+        });
         showToast('Project created from accepted proposal.');
         await loadDeliveryData();
+        switchDeliverySubtab('projects');
       } catch (error) {
         proposalProjectBtn.disabled = false;
         proposalProjectBtn.dataset.submitting = 'false';
-        alert(error.message);
+        showToast(error.message, 'error');
       }
     }
   });
+
   document.getElementById('clientAccountsContainer')?.addEventListener('click', async (event) => {
     const editButton = event.target.closest('.client-edit-btn');
-    if (editButton) { const modal = document.getElementById('clientEditModal'); const frame = document.getElementById('clientEditFrame'); frame.src = `/admin-client.html?id=${encodeURIComponent(editButton.dataset.client)}&embedded=1`; modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); return; }
+    if (editButton) {
+      const modal = document.getElementById('clientEditModal');
+      const frame = document.getElementById('clientEditFrame');
+      frame.src = `/admin-client.html?id=${encodeURIComponent(editButton.dataset.client)}&embedded=1`;
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+      return;
+    }
     const statusButton = event.target.closest('.client-status-btn');
-    if (statusButton) { try { await adminApiFetch(`/api/clients/${encodeURIComponent(statusButton.dataset.client)}`, { method:'PATCH', body:JSON.stringify({ status:statusButton.dataset.status }) }); await loadDeliveryData(); } catch (error) { alert(error.message); } return; }
+    if (statusButton) {
+      statusButton.disabled = true;
+      try {
+        await adminApiFetch(`/api/clients/${encodeURIComponent(statusButton.dataset.client)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: statusButton.dataset.status })
+        });
+        showToast(`Client access set to ${statusButton.dataset.status}.`);
+        await loadDeliveryData();
+      } catch (error) {
+        statusButton.disabled = false;
+        showToast(error.message, 'error');
+      }
+      return;
+    }
     const passwordButton = event.target.closest('.client-password-btn');
-    if (passwordButton) { const password=prompt('Enter a new temporary password (minimum 10 characters):'); if (!password) return; try { await adminApiFetch(`/api/clients/${encodeURIComponent(passwordButton.dataset.client)}/reset-password`, { method:'POST', body:JSON.stringify({ password }) }); alert('Client password reset successfully.'); } catch (error) { alert(error.message); } }
+    if (passwordButton) {
+      openDeliveryActionModal({
+        kicker: 'Account Recovery',
+        title: `Reset Password — ${passwordButton.dataset.name || 'Client'}`,
+        submitLabel: 'Reset Password',
+        bodyHtml: `
+          <div class="form-group">
+            <label class="form-label" for="modalResetPasswordInput">New Temporary Password (min. 10 characters)</label>
+            <div class="password-field">
+              <input type="text" id="modalResetPasswordInput" name="password" class="form-input" minlength="10" required placeholder="Enter or generate password" />
+              <button type="button" class="password-action" id="modalGenClientPwdBtn" style="right:0.75rem;">Generate</button>
+            </div>
+            <span class="form-help-text">Share this temporary password securely. The client can change it inside their portal.</span>
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          const password = String(formData.get('password') || '');
+          await adminApiFetch(`/api/clients/${encodeURIComponent(passwordButton.dataset.client)}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify({ password })
+          });
+          showToast('Client password reset successfully.');
+        }
+      });
+      document.getElementById('modalGenClientPwdBtn')?.addEventListener('click', () => {
+        const inp = document.getElementById('modalResetPasswordInput');
+        if (inp) inp.value = generateSecurePassword();
+      });
+    }
   });
-  document.querySelectorAll('[data-close-client-modal]').forEach((element) => element.addEventListener('click', () => { const modal = document.getElementById('clientEditModal'); modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); document.getElementById('clientEditFrame').src = 'about:blank'; loadDeliveryData(); }));
+
+  document.querySelectorAll('[data-close-client-modal]').forEach((element) =>
+    element.addEventListener('click', () => {
+      const modal = document.getElementById('clientEditModal');
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.getElementById('clientEditFrame').src = 'about:blank';
+      loadDeliveryData();
+    })
+  );
+
   document.getElementById('generateDueMaintenanceBtn')?.addEventListener('click', async () => {
-    try { const result = await adminApiFetch('/api/maintenance/generate-due-invoices', { method:'POST' }); alert(result.message || 'Due invoices generated.'); await loadDeliveryData(); } catch (error) { alert(error.message); }
+    try {
+      const result = await adminApiFetch('/api/maintenance/generate-due-invoices', { method: 'POST' });
+      showToast(result.message || 'Due invoices generated.');
+      await loadDeliveryData();
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
   });
 
   document.getElementById('deliveryProjectsContainer')?.addEventListener('click', async (event) => {
-    const progressBtn = event.target.closest('.delivery-progress-btn');
-    if (progressBtn) {
-      const progress = Number(prompt('Project progress (0-100):', progressBtn.dataset.progress));
-      const status = prompt('Project status (active, on_hold, client_review, testing, completed):', progressBtn.dataset.status) || progressBtn.dataset.status;
-      if (!Number.isInteger(progress) || progress < 0 || progress > 100) return;
-      await adminApiFetch(`/api/projects/${progressBtn.dataset.project}`, { method: 'PATCH', body: JSON.stringify({ progress, status }) }); showToast('Project progress updated.'); await loadDeliveryData(); return;
-    }
     const openBtn = event.target.closest('.delivery-open-btn');
     if (openBtn) {
-      const detail = document.getElementById(`delivery-detail-${openBtn.dataset.project}`);
-      if (!detail) return;
-      detail.innerHTML = '<p class="form-help-text">Loading workspace…</p>';
-      try {
-        const [milestones, updates, files, invoices] = await Promise.all([adminApiFetch(`/api/projects/${openBtn.dataset.project}/milestones`), adminApiFetch(`/api/projects/${openBtn.dataset.project}/updates`), adminApiFetch(`/api/projects/${openBtn.dataset.project}/files`), adminApiFetch(`/api/projects/${openBtn.dataset.project}/invoices`)]);
-        const milestoneHtml = (milestones.milestones || []).map((item) => `<div class="delivery-detail-row"><span><strong>${escapeHtml(item.title)}</strong><br><small>${escapeHtml(item.currency)} ${Number(item.amount || 0).toFixed(2)} · due ${escapeHtml(item.dueDate || 'not set')}</small></span><span class="status-chip ${item.status === 'paid' ? 'new' : ''}">${escapeHtml(item.status.replaceAll('_', ' '))}</span></div>`).join('') || '<small>No milestones yet.</small>';
-        const updateHtml = (updates.updates || []).map((item) => `<div class="delivery-detail-row"><span><strong>${escapeHtml(item.title)}</strong><br><small>${escapeHtml(item.body)}</small></span><small>${new Date(item.createdAt).toLocaleDateString()}</small></div>`).join('') || '<small>No updates yet.</small>';
-        const fileHtml = (files.files || []).map((file) => `<div class="delivery-detail-row"><span>${escapeHtml(file.originalName)}<br><small>${Math.ceil(Number(file.fileSize || 0) / 1024)} KB · ${file.visibleToClient ? 'client-visible' : 'internal'}</small></span></div>`).join('') || '<small>No files uploaded yet.</small>';
-        const invoiceHtml = (invoices.invoices || []).map((invoice) => `<div class="delivery-detail-row"><span><strong>${escapeHtml(invoice.invoiceNumber)}</strong><br><small>${escapeHtml(invoice.description)} · ${escapeHtml(invoice.currency)} ${Number(invoice.amount || 0).toFixed(2)}</small></span><span class="status-chip">${escapeHtml(invoice.status)}</span></div>`).join('') || '<small>No invoices yet.</small>';
-        detail.innerHTML = `<div class="delivery-detail-section"><strong>Milestones</strong>${milestoneHtml}</div><div class="delivery-detail-section"><strong>Invoices</strong>${invoiceHtml}<button class="btn btn-secondary btn-sm delivery-invoice-btn" data-project="${escapeHtml(openBtn.dataset.project)}">+ Create invoice</button></div><div class="delivery-detail-section"><strong>Client-visible updates</strong>${updateHtml}</div><div class="delivery-detail-section"><strong>Project files</strong>${fileHtml}<div class="delivery-upload-row"><input type="file" class="delivery-file-input" accept="application/pdf,image/jpeg,image/png,image/webp,.zip,.docx,.xlsx" data-project="${escapeHtml(openBtn.dataset.project)}"><label><input type="checkbox" class="delivery-file-visible"> Client can see this file</label><button class="btn btn-secondary btn-sm delivery-upload-btn" data-project="${escapeHtml(openBtn.dataset.project)}">Upload file</button></div></div>`;
-      } catch (error) { detail.innerHTML = `<small style="color:#ef4444">${escapeHtml(error.message)}</small>`; }
+      const projectId = openBtn.dataset.project;
+      const detail = document.getElementById(`delivery-detail-${projectId}`);
+      const card = openBtn.closest('.ops-project-card');
+      if (deliveryState.expandedProjects.has(projectId)) {
+        deliveryState.expandedProjects.delete(projectId);
+        detail?.classList.remove('open');
+        card?.classList.remove('is-highlight');
+        openBtn.textContent = 'Manage Workspace';
+        openBtn.classList.replace('btn-primary', 'btn-secondary');
+      } else {
+        deliveryState.expandedProjects.add(projectId);
+        detail?.classList.add('open');
+        card?.classList.add('is-highlight');
+        openBtn.textContent = 'Hide Workspace';
+        openBtn.classList.replace('btn-secondary', 'btn-primary');
+        await loadProjectWorkspaceDetail(projectId);
+      }
       return;
     }
+
+    const progressBtn = event.target.closest('.delivery-progress-btn');
+    if (progressBtn) {
+      const currentProgress = Number(progressBtn.dataset.progress) || 0;
+      const currentStatus = progressBtn.dataset.status || 'active';
+      openDeliveryActionModal({
+        kicker: 'Project Status',
+        title: `Update Progress — ${progressBtn.dataset.name || 'Project'}`,
+        submitLabel: 'Update Project',
+        bodyHtml: `
+          <div class="form-grid two-col">
+            <div class="form-group">
+              <label class="form-label" for="modalProjectProgress">Progress (0–100%)</label>
+              <input type="number" id="modalProjectProgress" name="progress" class="form-input" min="0" max="100" required value="${currentProgress}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modalProjectStatus">Status</label>
+              <select id="modalProjectStatus" name="status" class="form-select">
+                ${['active', 'on_hold', 'client_review', 'testing', 'completed', 'maintenance']
+                  .map((s) => `<option value="${s}" ${s === currentStatus ? 'selected' : ''}>${formatOpsStatus(s)}</option>`)
+                  .join('')}
+              </select>
+            </div>
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          const progress = Number(formData.get('progress'));
+          const status = String(formData.get('status') || currentStatus);
+          await adminApiFetch(`/api/projects/${encodeURIComponent(progressBtn.dataset.project)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ progress, status })
+          });
+          showToast('Project progress updated.');
+          await loadDeliveryData();
+        }
+      });
+      return;
+    }
+
     const uploadBtn = event.target.closest('.delivery-upload-btn');
     if (uploadBtn) {
-      const fileInput = document.querySelector(`.delivery-file-input[data-project="${CSS.escape(uploadBtn.dataset.project)}"]`);
-      const file = fileInput?.files?.[0]; if (!file) return;
-      const formData = new FormData(); formData.append('file', file); formData.append('visibleToClient', String(document.querySelector('.delivery-file-visible')?.checked || false));
-      const session = getAdminSession();
-      const response = await fetch(`/api/projects/${uploadBtn.dataset.project}/files`, { method: 'POST', headers: session?.token ? { Authorization: `Bearer ${session.token}` } : {}, body: formData });
-      const result = await response.json(); if (!response.ok) throw new Error(result.message || 'Upload failed.');
-      showToast('Project file uploaded successfully.');
-      document.querySelector(`.delivery-open-btn[data-project="${CSS.escape(uploadBtn.dataset.project)}"]`)?.click();
+      const projectId = uploadBtn.dataset.project;
+      const pane = uploadBtn.closest('.ops-detail-pane');
+      const fileInput = pane?.querySelector(`.delivery-file-input[data-project="${CSS.escape(projectId)}"]`);
+      const visibleCheck = pane?.querySelector('.delivery-file-visible');
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        showToast('Select a file to upload first.', 'error');
+        return;
+      }
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading…';
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('visibleToClient', String(Boolean(visibleCheck?.checked)));
+        const session = getAdminSession();
+        const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+          method: 'POST',
+          headers: session?.token ? { Authorization: `Bearer ${session.token}` } : {},
+          body: formData
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Upload failed.');
+        showToast('Project file uploaded successfully.');
+        await loadProjectWorkspaceDetail(projectId);
+      } catch (error) {
+        showToast(error.message, 'error');
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload';
+      }
       return;
     }
+
     const invoiceBtn = event.target.closest('.delivery-invoice-btn');
     if (invoiceBtn) {
-      const description = prompt('Invoice description:'); if (!description) return;
-      const amount = Number(prompt('Invoice amount:', '0')); if (!Number.isFinite(amount) || amount <= 0) return;
-      await adminApiFetch(`/api/projects/${invoiceBtn.dataset.project}/invoices`, { method: 'POST', body: JSON.stringify({ description, amount, currency: 'EUR' }) });
-      showToast('Invoice created successfully.');
-      document.querySelector(`.delivery-open-btn[data-project="${CSS.escape(invoiceBtn.dataset.project)}"]`)?.click();
+      const projectId = invoiceBtn.dataset.project;
+      openDeliveryActionModal({
+        kicker: 'Project Billing',
+        title: 'Create Project Invoice',
+        submitLabel: 'Create Invoice',
+        bodyHtml: `
+          <div class="form-group">
+            <label class="form-label" for="modalInvoiceDesc">Description</label>
+            <input type="text" id="modalInvoiceDesc" name="description" class="form-input" required placeholder="Sprint 2 frontend engineering" />
+          </div>
+          <div class="form-grid three-col">
+            <div class="form-group">
+              <label class="form-label" for="modalInvoiceCurrency">Currency</label>
+              <select id="modalInvoiceCurrency" name="currency" class="form-select"><option value="EUR">EUR</option><option value="USD">USD</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modalInvoiceAmount">Amount</label>
+              <input type="number" id="modalInvoiceAmount" name="amount" class="form-input" min="0.01" step="0.01" required placeholder="2500" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modalInvoiceDueDate">Due Date</label>
+              <input type="date" id="modalInvoiceDueDate" name="dueDate" class="form-input" />
+            </div>
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          await adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/invoices`, {
+            method: 'POST',
+            body: JSON.stringify({
+              description: String(formData.get('description') || '').trim(),
+              amount: Number(formData.get('amount') || 0),
+              currency: String(formData.get('currency') || 'EUR'),
+              dueDate: formData.get('dueDate') || null
+            })
+          });
+          showToast('Invoice created successfully.');
+          await loadProjectWorkspaceDetail(projectId);
+        }
+      });
       return;
     }
+
     const milestoneBtn = event.target.closest('.delivery-milestone-btn');
-    const updateBtn = event.target.closest('.delivery-update-btn');
-    const projectId = milestoneBtn?.dataset.project || updateBtn?.dataset.project;
-    if (!projectId) return;
     if (milestoneBtn) {
-      const title = prompt('Milestone title:'); if (!title) return;
-      const amount = prompt('Amount (number only):', '0');
-      await adminApiFetch(`/api/projects/${projectId}/milestones`, { method: 'POST', body: JSON.stringify({ title, amount: Number(amount || 0), currency: 'EUR' }) });
-      showToast('Milestone added successfully.');
-    } else {
-      const title = prompt('Update title:'); if (!title) return;
-      const body = prompt('Update details:'); if (!body) return;
-      await adminApiFetch(`/api/projects/${projectId}/updates`, { method: 'POST', body: JSON.stringify({ title, body, visibleToClient: true }) });
-      showToast('Client update posted successfully.');
+      const projectId = milestoneBtn.dataset.project;
+      openDeliveryActionModal({
+        kicker: 'Project Milestone',
+        title: `Add Milestone${milestoneBtn.dataset.name ? ` — ${milestoneBtn.dataset.name}` : ''}`,
+        submitLabel: 'Save Milestone',
+        bodyHtml: `
+          <div class="form-group">
+            <label class="form-label" for="modalMilestoneTitle">Milestone Title</label>
+            <input type="text" id="modalMilestoneTitle" name="title" class="form-input" required placeholder="Architecture & Design Sign-off" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modalMilestoneDesc">Deliverables Summary (optional)</label>
+            <textarea id="modalMilestoneDesc" name="description" class="form-textarea" rows="2" placeholder="Interactive prototypes and database schema"></textarea>
+          </div>
+          <div class="form-grid three-col">
+            <div class="form-group">
+              <label class="form-label" for="modalMilestoneCurrency">Currency</label>
+              <select id="modalMilestoneCurrency" name="currency" class="form-select"><option value="EUR">EUR</option><option value="USD">USD</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modalMilestoneAmount">Amount</label>
+              <input type="number" id="modalMilestoneAmount" name="amount" class="form-input" min="0" step="0.01" value="0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modalMilestoneDue">Due Date</label>
+              <input type="date" id="modalMilestoneDue" name="dueDate" class="form-input" />
+            </div>
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          await adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/milestones`, {
+            method: 'POST',
+            body: JSON.stringify({
+              title: String(formData.get('title') || '').trim(),
+              description: String(formData.get('description') || '').trim(),
+              amount: Number(formData.get('amount') || 0),
+              currency: String(formData.get('currency') || 'EUR'),
+              dueDate: formData.get('dueDate') || null
+            })
+          });
+          showToast('Milestone added successfully.');
+          if (deliveryState.expandedProjects.has(projectId)) {
+            await loadProjectWorkspaceDetail(projectId);
+          }
+        }
+      });
+      return;
+    }
+
+    const updateBtn = event.target.closest('.delivery-update-btn');
+    if (updateBtn) {
+      const projectId = updateBtn.dataset.project;
+      openDeliveryActionModal({
+        kicker: 'Client Communication',
+        title: `Post Delivery Update${updateBtn.dataset.name ? ` — ${updateBtn.dataset.name}` : ''}`,
+        submitLabel: 'Publish Update',
+        bodyHtml: `
+          <div class="form-group">
+            <label class="form-label" for="modalUpdateTitle">Update Title</label>
+            <input type="text" id="modalUpdateTitle" name="title" class="form-input" required placeholder="Sprint 3 API Integration Completed" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modalUpdateBody">Update Details</label>
+            <textarea id="modalUpdateBody" name="body" class="form-textarea" rows="4" required placeholder="Summarize completed engineering deliverables and next steps..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modalUpdateProgress">Progress Snapshot % (optional)</label>
+            <input type="number" id="modalUpdateProgress" name="progress" class="form-input" min="0" max="100" placeholder="Leave blank if unchanged" />
+          </div>
+        `,
+        onSubmit: async (formData) => {
+          const progressRaw = String(formData.get('progress') || '').trim();
+          await adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/updates`, {
+            method: 'POST',
+            body: JSON.stringify({
+              title: String(formData.get('title') || '').trim(),
+              body: String(formData.get('body') || '').trim(),
+              progress: progressRaw === '' ? null : Number(progressRaw),
+              visibleToClient: true
+            })
+          });
+          showToast('Client update posted successfully.');
+          if (deliveryState.expandedProjects.has(projectId)) {
+            await loadProjectWorkspaceDetail(projectId);
+          }
+        }
+      });
     }
   });
+
   refresh?.addEventListener('click', loadDeliveryData);
+  refreshUsersBtn?.addEventListener('click', loadDeliveryData);
   await loadDeliveryData();
 }
 

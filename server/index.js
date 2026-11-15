@@ -12,6 +12,7 @@ import { createReadStream, existsSync, mkdirSync } from 'node:fs';
 import { readFile, rename, unlink } from 'node:fs/promises';
 import { checkDatabase, initializeDatabase, pool } from './db.js';
 import { emailEnabled, sendNotification } from './mailer.js';
+import { resolveReceiptData, streamReceiptPdf } from './receipts.js';
 
 const app = express();
 
@@ -72,7 +73,7 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
     if (!paymentSucceeded) return res.json({ received: true, ignored: 'payment_not_complete' });
     if (paymentId) {
       await pool.execute('UPDATE payments SET status = ?, provider_reference = ?, paid_at = NOW() WHERE id = ? AND status <> \'paid\'', ['paid', session.payment_intent || session.id, paymentId]);
-      await pool.execute('UPDATE project_milestones m JOIN payments p ON p.milestone_id = m.id SET m.status = \'paid\', m.payment_reference = p.provider_reference, m.paid_at = NOW() WHERE p.id = ? AND p.status = \'paid\'', [paymentId]);
+      await pool.execute('UPDATE project_milestones m JOIN payments p ON p.milestone_id = m.id SET m.status = \'paid\', m.payment_provider = p.provider, m.payment_reference = p.provider_reference, m.paid_at = NOW() WHERE p.id = ? AND p.status = \'paid\'', [paymentId]);
     }
     if (maintenanceInvoiceId) {
       await pool.execute('UPDATE maintenance_invoices SET status = \'paid\', provider_reference = ?, paid_at = NOW() WHERE id = ? AND status <> \'paid\'', [session.payment_intent || session.id, maintenanceInvoiceId]);
@@ -597,7 +598,7 @@ app.patch('/api/maintenance/:id', requireAuth, requireStaff, async (req, res) =>
 
 app.get('/api/maintenance/invoices', requireAuth, async (req, res) => {
   const staff = isStaffRole(req.user.role);
-  const [rows] = await pool.query(`SELECT i.id, i.contract_id AS contractId, i.client_id AS clientId, i.invoice_number AS invoiceNumber, i.period_start AS periodStart, i.period_end AS periodEnd, i.amount, i.currency, i.status, i.due_date AS dueDate, i.paid_at AS paidAt, m.title FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id ${staff ? '' : 'WHERE i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)'} ORDER BY i.created_at DESC`, staff ? [] : [req.user.sub]);
+  const [rows] = await pool.query(`SELECT i.id, i.contract_id AS contractId, i.client_id AS clientId, i.invoice_number AS invoiceNumber, i.period_start AS periodStart, i.period_end AS periodEnd, i.amount, i.currency, i.status, i.due_date AS dueDate, i.paid_at AS paidAt, i.provider AS paymentProvider, i.provider_reference AS providerReference, m.title, m.billing_type AS billingType, p.name AS projectName FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id LEFT JOIN projects p ON p.id = m.project_id ${staff ? '' : 'WHERE i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)'} ORDER BY i.created_at DESC`, staff ? [] : [req.user.sub]);
   return res.json({ success: true, invoices: rows });
 });
 
@@ -625,14 +626,15 @@ app.post('/api/maintenance/generate-due-invoices', requireAuth, requireStaff, as
 });
 
 app.post('/api/maintenance/invoices/:id/checkout', requireAuth, async (req, res) => {
-  const [rows] = await pool.execute(`SELECT i.id, i.invoice_number AS invoiceNumber, i.amount, i.currency, i.status, i.client_id AS clientId, m.title FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id WHERE i.id = ? AND (? IN ('Administrator','admin','sub_admin','manager','developer') OR i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)) LIMIT 1`, [req.params.id, req.user.role, req.user.sub]);
+  const staffFlag = isStaffRole(req.user.role) ? 1 : 0;
+  const [rows] = await pool.execute('SELECT i.id, i.invoice_number AS invoiceNumber, i.amount, i.currency, i.status, i.client_id AS clientId, m.title FROM maintenance_invoices i JOIN maintenance_contracts m ON m.id = i.contract_id WHERE i.id = ? AND (? = 1 OR i.client_id = (SELECT id FROM clients WHERE user_id = ? LIMIT 1)) LIMIT 1', [req.params.id, staffFlag, req.user.sub]);
   const invoice = rows[0];
   if (!invoice) return res.status(404).json({ success: false, message: 'Maintenance invoice not found.' });
   if (invoice.status === 'paid') return res.status(400).json({ success: false, message: 'This invoice is already paid.' });
   const provider = cleanString(req.body?.provider, 20).toLowerCase();
   if (provider === 'stripe') {
     if (!stripe) return res.status(503).json({ success: false, message: 'Stripe is not configured.' });
-    const session = await stripe.checkout.sessions.create({ mode:'payment', line_items:[{ price_data:{ currency:invoice.currency.toLowerCase(), product_data:{ name:`Maintenance invoice ${invoice.invoiceNumber}` }, unit_amount:Math.round(Number(invoice.amount)*100) }, quantity:1 }], success_url:`${process.env.APP_URL || 'http://localhost:3000'}/portal.html?maintenancePayment=success`, cancel_url:`${process.env.APP_URL || 'http://localhost:3000'}/portal.html?maintenancePayment=cancelled`, metadata:{ maintenanceInvoiceId: invoice.id } });
+    const session = await stripe.checkout.sessions.create({ mode:'payment', line_items:[{ price_data:{ currency:invoice.currency.toLowerCase(), product_data:{ name:`Maintenance invoice ${invoice.invoiceNumber}` }, unit_amount:Math.round(Number(invoice.amount)*100) }, quantity:1 }], success_url:`${process.env.APP_URL || 'http://localhost:3000'}/portal.html?maintenancePayment=success&invoice=${encodeURIComponent(invoice.id)}&session_id={CHECKOUT_SESSION_ID}`, cancel_url:`${process.env.APP_URL || 'http://localhost:3000'}/portal.html?maintenancePayment=cancelled`, metadata:{ maintenanceInvoiceId: invoice.id } });
     await pool.execute('UPDATE maintenance_invoices SET provider = ?, provider_reference = ? WHERE id = ?', ['stripe', session.id, invoice.id]);
     return res.json({ success:true, checkoutUrl:session.url });
   }
@@ -752,7 +754,7 @@ app.patch('/api/projects/:id', requireAuth, requireStaff, async (req, res) => {
 });
 
 app.get('/api/projects/:id/milestones', requireAuth, async (req, res) => {
-  const [rows] = await pool.query('SELECT m.id, m.project_id AS projectId, m.title, m.description, m.amount, m.currency, m.due_date AS dueDate, m.status, m.paid_at AS paidAt, m.sort_order AS sortOrder FROM project_milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id WHERE m.project_id = ? AND (? IN (\'Administrator\', \'admin\', \'sub_admin\', \'manager\', \'developer\') OR c.user_id = ?) ORDER BY m.sort_order, m.created_at', [req.params.id, req.user.role, req.user.sub]);
+  const [rows] = await pool.query('SELECT m.id, m.project_id AS projectId, m.title, m.description, m.amount, m.currency, m.due_date AS dueDate, m.status, m.payment_provider AS paymentProvider, m.payment_reference AS paymentReference, m.paid_at AS paidAt, m.sort_order AS sortOrder FROM project_milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id WHERE m.project_id = ? AND (? IN (\'Administrator\', \'admin\', \'sub_admin\', \'manager\', \'developer\') OR c.user_id = ?) ORDER BY m.sort_order, m.created_at', [req.params.id, req.user.role, req.user.sub]);
   return res.json({ success: true, milestones: rows });
 });
 
@@ -771,7 +773,21 @@ app.patch('/api/projects/:id/milestones/:milestoneId/status', requireAuth, async
   if (!allowedStatuses.has(status)) return res.status(400).json({ success: false, message: 'Invalid milestone status.' });
   const milestone = await getMilestoneForUser(req.params.id, req.params.milestoneId, req.user);
   if (!milestone || (!staff && !['approved', 'revision_requested'].includes(status))) return res.status(403).json({ success: false, message: 'You cannot update this milestone.' });
-  await pool.execute('UPDATE project_milestones SET status = ?, paid_at = IF(? = \'paid\', NOW(), paid_at) WHERE id = ? AND project_id = ?', [status, status, req.params.milestoneId, req.params.id]);
+  if (status === 'paid') {
+    const provider = cleanString(req.body?.paymentProvider, 40) || 'manual';
+    const ref = cleanString(req.body?.paymentReference, 120) || `SET-${req.params.milestoneId.slice(0, 8).toUpperCase()}`;
+    await pool.execute(
+      `UPDATE project_milestones
+       SET status = 'paid',
+           paid_at = COALESCE(paid_at, NOW()),
+           payment_provider = COALESCE(payment_provider, ?),
+           payment_reference = COALESCE(payment_reference, ?)
+       WHERE id = ? AND project_id = ?`,
+      [provider, ref, req.params.milestoneId, req.params.id]
+    );
+  } else {
+    await pool.execute('UPDATE project_milestones SET status = ? WHERE id = ? AND project_id = ?', [status, req.params.milestoneId, req.params.id]);
+  }
   return res.json({ success: true, status });
 });
 
@@ -801,7 +817,9 @@ app.post('/api/projects/:id/invoices', requireAuth, requireStaff, async (req, re
 app.patch('/api/invoices/:id/status', requireAuth, requireStaff, async (req, res) => {
   const status = cleanString(req.body?.status, 30);
   if (!['draft', 'sent', 'paid', 'overdue', 'cancelled'].includes(status)) return res.status(400).json({ success: false, message: 'Invalid invoice status.' });
-  const [result] = await pool.execute('UPDATE invoices SET status = ?, paid_at = IF(? = \'paid\', NOW(), paid_at) WHERE id = ?', [status, status, req.params.id]);
+  const [result] = status === 'paid'
+    ? await pool.execute('UPDATE invoices SET status = \'paid\', paid_at = COALESCE(paid_at, NOW()) WHERE id = ?', [req.params.id])
+    : await pool.execute('UPDATE invoices SET status = ? WHERE id = ?', [status, req.params.id]);
   if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Invoice not found.' });
   return res.json({ success: true, status });
 });
@@ -850,7 +868,7 @@ app.post('/api/projects/:id/milestones/:milestoneId/checkout', requireAuth, asyn
   try {
     if (provider === 'stripe') {
       if (!stripe) return res.status(503).json({ success: false, message: 'Stripe is not configured.' });
-      const session = await stripe.checkout.sessions.create({ mode: 'payment', line_items: [{ price_data: { currency: milestone.currency.toLowerCase(), product_data: { name: `${milestone.projectName} — ${milestone.title}` }, unit_amount: Math.round(Number(milestone.amount) * 100) }, quantity: 1 }], success_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?payment=success`, cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?payment=cancelled`, metadata: { paymentId, projectId: req.params.id, milestoneId: req.params.milestoneId } });
+      const session = await stripe.checkout.sessions.create({ mode: 'payment', line_items: [{ price_data: { currency: milestone.currency.toLowerCase(), product_data: { name: `${milestone.projectName} — ${milestone.title}` }, unit_amount: Math.round(Number(milestone.amount) * 100) }, quantity: 1 }], success_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?payment=success&project=${encodeURIComponent(req.params.id)}&milestone=${encodeURIComponent(req.params.milestoneId)}&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?payment=cancelled`, metadata: { paymentId, projectId: req.params.id, milestoneId: req.params.milestoneId } });
       await pool.execute('UPDATE payments SET provider_reference = ? WHERE id = ?', [session.id, paymentId]);
       return res.json({ success: true, provider: 'stripe', checkoutUrl: session.url });
     }
@@ -861,7 +879,7 @@ app.post('/api/projects/:id/milestones/:milestoneId/checkout', requireAuth, asyn
       const tokenResponse = await fetch(`${base}/v1/oauth2/token`, { method: 'POST', headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials' });
       const tokenData = await tokenResponse.json();
       if (!tokenResponse.ok) throw new Error('PayPal authentication failed.');
-      const orderResponse = await fetch(`${base}/v2/checkout/orders`, { method: 'POST', headers: { Authorization: `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json', 'PayPal-Request-Id': paymentId }, body: JSON.stringify({ intent: 'CAPTURE', purchase_units: [{ reference_id: paymentId, description: `${milestone.projectName} — ${milestone.title}`, amount: { currency_code: milestone.currency, value: Number(milestone.amount).toFixed(2) } }], application_context: { return_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?paypal=success`, cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?paypal=cancelled` } }) });
+      const orderResponse = await fetch(`${base}/v2/checkout/orders`, { method: 'POST', headers: { Authorization: `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json', 'PayPal-Request-Id': paymentId }, body: JSON.stringify({ intent: 'CAPTURE', purchase_units: [{ reference_id: paymentId, description: `${milestone.projectName} — ${milestone.title}`, amount: { currency_code: milestone.currency, value: Number(milestone.amount).toFixed(2) } }], application_context: { return_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?paypal=success&project=${encodeURIComponent(req.params.id)}&milestone=${encodeURIComponent(req.params.milestoneId)}`, cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/portal.html?paypal=cancelled` } }) });
       const order = await orderResponse.json();
       if (!orderResponse.ok) throw new Error(order.message || 'PayPal order creation failed.');
       await pool.execute('UPDATE payments SET provider_reference = ? WHERE id = ?', [order.id, paymentId]);
@@ -890,8 +908,82 @@ app.post('/api/projects/:id/milestones/:milestoneId/paypal/capture', requireAuth
   if (!captureResponse.ok) return res.status(502).json({ success: false, message: capture.message || 'PayPal capture failed.' });
   if (!isPayPalCaptureConfirmed(capture, payment.providerReference, payment.amount, payment.currency)) return res.status(409).json({ success: false, message: 'PayPal has not confirmed the expected milestone amount yet.' });
   await pool.execute('UPDATE payments SET status = \'paid\', paid_at = NOW() WHERE id = ?', [payment.id]);
-  await pool.execute('UPDATE project_milestones SET status = \'paid\', payment_reference = ?, paid_at = NOW() WHERE id = ?', [payment.providerReference, req.params.milestoneId]);
+  await pool.execute('UPDATE project_milestones SET status = \'paid\', payment_provider = \'paypal\', payment_reference = ?, paid_at = NOW() WHERE id = ?', [payment.providerReference, req.params.milestoneId]);
   return res.json({ success: true, status: 'paid' });
+});
+
+app.post('/api/payments/stripe/verify-session', requireAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ success: false, message: 'Stripe verification is unavailable.' });
+  const sessionId = cleanString(req.body?.sessionId, 200);
+  if (!sessionId) return res.status(400).json({ success: false, message: 'Stripe session ID is required.' });
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message || 'Unable to verify Stripe checkout session.' });
+  }
+  if (session.payment_status !== 'paid') {
+    return res.json({ success: true, verified: false, paymentStatus: session.payment_status });
+  }
+  const paymentId = cleanString(session.metadata?.paymentId, 36);
+  const milestoneId = cleanString(session.metadata?.milestoneId, 36);
+  const projectId = cleanString(session.metadata?.projectId, 36);
+  const maintenanceInvoiceId = cleanString(session.metadata?.maintenanceInvoiceId, 36);
+  const txRef = cleanString(typeof session.payment_intent === 'string' ? session.payment_intent : session.id, 255);
+  const staff = isStaffRole(req.user.role);
+
+  if (milestoneId && projectId) {
+    const milestone = await getMilestoneForUser(projectId, milestoneId, req.user);
+    if (!milestone) return res.status(404).json({ success: false, message: 'Milestone payment record not found.' });
+    if (paymentId) {
+      await pool.execute(
+        'UPDATE payments SET status = \'paid\', provider_reference = COALESCE(?, provider_reference), paid_at = COALESCE(paid_at, NOW()) WHERE id = ?',
+        [txRef, paymentId]
+      );
+    }
+    await pool.execute(
+      'UPDATE project_milestones SET status = \'paid\', payment_provider = \'stripe\', payment_reference = ?, paid_at = COALESCE(paid_at, NOW()) WHERE id = ?',
+      [txRef, milestoneId]
+    );
+    return res.json({ success: true, verified: true, receiptType: 'milestone', receiptId: milestoneId });
+  }
+
+  if (maintenanceInvoiceId) {
+    const [rows] = await pool.execute(
+      `SELECT i.id, c.user_id AS clientUserId
+       FROM maintenance_invoices i
+       JOIN clients c ON c.id = i.client_id
+       WHERE i.id = ? LIMIT 1`,
+      [maintenanceInvoiceId]
+    );
+    const inv = rows[0];
+    if (!inv || (!staff && inv.clientUserId !== req.user.sub)) {
+      return res.status(404).json({ success: false, message: 'Maintenance invoice not found.' });
+    }
+    await pool.execute(
+      'UPDATE maintenance_invoices SET status = \'paid\', provider = \'stripe\', provider_reference = ?, paid_at = COALESCE(paid_at, NOW()) WHERE id = ?',
+      [txRef, maintenanceInvoiceId]
+    );
+    return res.json({ success: true, verified: true, receiptType: 'maintenance', receiptId: maintenanceInvoiceId });
+  }
+
+  return res.status(404).json({ success: false, message: 'No linked payment item found in session metadata.' });
+});
+
+app.get('/api/receipts/:type/:id', requireAuth, async (req, res) => {
+  const result = await resolveReceiptData(req.params.type, req.params.id, req.user, isStaffRole(req.user.role));
+  if (result.errorStatus) {
+    return res.status(result.errorStatus).json({ success: false, message: result.errorMessage });
+  }
+  return res.json({ success: true, receipt: result.receipt });
+});
+
+app.get('/api/receipts/:type/:id/pdf', requireAuth, async (req, res) => {
+  const result = await resolveReceiptData(req.params.type, req.params.id, req.user, isStaffRole(req.user.role));
+  if (result.errorStatus) {
+    return res.status(result.errorStatus).json({ success: false, message: result.errorMessage });
+  }
+  return streamReceiptPdf(result.receipt, res);
 });
 
 app.get('/api/projects/:id/updates', requireAuth, async (req, res) => {

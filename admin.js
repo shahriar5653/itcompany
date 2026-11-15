@@ -1598,7 +1598,14 @@ async function initDeliveryWorkspace() {
                 item.dueDate
               )}</span>
             </div>
-            ${renderOpsTag(item.status)}
+            <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;justify-content:flex-end;">
+              ${renderOpsTag(item.status)}
+              ${
+                item.status === 'paid'
+                  ? `<button type="button" class="btn btn-secondary btn-sm delivery-download-receipt" data-receipt-type="milestone" data-receipt-id="${escapeHtml(item.id)}">Receipt PDF</button>`
+                  : `<button type="button" class="btn btn-secondary btn-sm delivery-mark-milestone-paid" data-project="${escapeHtml(projectId)}" data-milestone="${escapeHtml(item.id)}">Mark Paid</button>`
+              }
+            </div>
           </div>`
             )
             .join('')
@@ -1613,7 +1620,14 @@ async function initDeliveryWorkspace() {
               <span class="ops-detail-item-title ops-tabular">${escapeHtml(inv.invoiceNumber)}</span>
               <span class="ops-detail-item-sub">${escapeHtml(inv.description)} · ${formatOpsMoney(inv.amount, inv.currency)}</span>
             </div>
-            ${renderOpsTag(inv.status)}
+            <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;justify-content:flex-end;">
+              ${renderOpsTag(inv.status)}
+              ${
+                inv.status === 'paid'
+                  ? `<button type="button" class="btn btn-secondary btn-sm delivery-download-receipt" data-receipt-type="invoice" data-receipt-id="${escapeHtml(inv.id)}">Receipt PDF</button>`
+                  : `<button type="button" class="btn btn-secondary btn-sm delivery-mark-invoice-paid" data-project="${escapeHtml(projectId)}" data-invoice="${escapeHtml(inv.id)}">Mark Paid</button>`
+              }
+            </div>
           </div>`
             )
             .join('')
@@ -2327,6 +2341,77 @@ async function initDeliveryWorkspace() {
       return;
     }
 
+    const markMilestonePaidBtn = event.target.closest('.delivery-mark-milestone-paid');
+    if (markMilestonePaidBtn) {
+      const projectId = markMilestonePaidBtn.dataset.project;
+      const milestoneId = markMilestonePaidBtn.dataset.milestone;
+      markMilestonePaidBtn.disabled = true;
+      try {
+        await adminApiFetch(`/api/projects/${encodeURIComponent(projectId)}/milestones/${encodeURIComponent(milestoneId)}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'paid', paymentProvider: 'manual' })
+        });
+        showToast('Milestone marked paid. Receipt PDF ready.');
+        await loadProjectWorkspaceDetail(projectId);
+      } catch (error) {
+        showToast(error.message, 'error');
+        markMilestonePaidBtn.disabled = false;
+      }
+      return;
+    }
+
+    const markInvoicePaidBtn = event.target.closest('.delivery-mark-invoice-paid');
+    if (markInvoicePaidBtn) {
+      const projectId = markInvoicePaidBtn.dataset.project;
+      const invoiceId = markInvoicePaidBtn.dataset.invoice;
+      markInvoicePaidBtn.disabled = true;
+      try {
+        await adminApiFetch(`/api/invoices/${encodeURIComponent(invoiceId)}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'paid' })
+        });
+        showToast('Invoice marked paid. Receipt PDF ready.');
+        await loadProjectWorkspaceDetail(projectId);
+      } catch (error) {
+        showToast(error.message, 'error');
+        markInvoicePaidBtn.disabled = false;
+      }
+      return;
+    }
+
+    const receiptPdfBtn = event.target.closest('.delivery-download-receipt');
+    if (receiptPdfBtn) {
+      const rType = receiptPdfBtn.dataset.receiptType;
+      const rId = receiptPdfBtn.dataset.receiptId;
+      receiptPdfBtn.disabled = true;
+      try {
+        const session = getAdminSession();
+        const response = await fetch(`/api/receipts/${encodeURIComponent(rType)}/${encodeURIComponent(rId)}/pdf`, {
+          headers: session?.token ? { Authorization: `Bearer ${session.token}` } : {}
+        });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.message || 'Unable to generate PDF receipt.');
+        }
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="([^"]+)"/i);
+        const filename = match ? match[1] : `RSTechwerk-Receipt-${rType}.pdf`;
+        const blobUrl = URL.createObjectURL(await response.blob());
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } catch (error) {
+        showToast(error.message || 'Unable to download receipt.', 'error');
+      } finally {
+        receiptPdfBtn.disabled = false;
+      }
+      return;
+    }
+
     const invoiceBtn = event.target.closest('.delivery-invoice-btn');
     if (invoiceBtn) {
       const projectId = invoiceBtn.dataset.project;
@@ -2342,7 +2427,7 @@ async function initDeliveryWorkspace() {
           <div class="form-grid three-col">
             <div class="form-group">
               <label class="form-label" for="modalInvoiceCurrency">Currency</label>
-              <select id="modalInvoiceCurrency" name="currency" class="form-select"><option value="EUR">EUR</option><option value="USD">USD</option></select>
+              <select id="modalInvoiceCurrency" name="currency" class="form-select"><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="CHF">CHF</option><option value="BDT">BDT</option></select>
             </div>
             <div class="form-group">
               <label class="form-label" for="modalInvoiceAmount">Amount</label>
@@ -2390,7 +2475,7 @@ async function initDeliveryWorkspace() {
           <div class="form-grid three-col">
             <div class="form-group">
               <label class="form-label" for="modalMilestoneCurrency">Currency</label>
-              <select id="modalMilestoneCurrency" name="currency" class="form-select"><option value="EUR">EUR</option><option value="USD">USD</option></select>
+              <select id="modalMilestoneCurrency" name="currency" class="form-select"><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="CHF">CHF</option><option value="BDT">BDT</option></select>
             </div>
             <div class="form-group">
               <label class="form-label" for="modalMilestoneAmount">Amount</label>

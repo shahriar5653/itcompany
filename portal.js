@@ -38,10 +38,12 @@ Object.assign(PORTAL_LANGUAGE_COPY.es, {
   'Welcome back,':'Le damos la bienvenida,','Client Delivery Workspace':'Espacio de proyectos del cliente','Active Projects':'Proyectos activos','total projects':'proyectos en total','total project':'proyecto en total','Open Offers':'Ofertas abiertas','proposal on file':'propuesta disponible','proposals on file':'propuestas disponibles','Across running projects':'En los proyectos activos','active care plan':'plan de soporte activo','active care plans':'planes de soporte activos','Need something from the team?':'¿Necesita ayuda del equipo?','Action Required':'Acción necesaria','Review Offer:':'Revisar oferta:','Offered amount':'Importe ofertado','Awaiting your decision':'Pendiente de su decisión','Accept Offer':'Aceptar oferta','Decline':'Rechazar','Approve Deliverable:':'Aprobar entrega:','Submitted for your review':'Enviado para su revisión','Milestone Payment:':'Pago del hito:','Pay with Stripe':'Pagar con Stripe','Maintenance Invoice':'Factura de mantenimiento','Projects & Milestones':'Proyectos e hitos','Track active builds, review submitted deliverables, and manage milestone payments.':'Siga los proyectos activos, revise las entregas y gestione los pagos por hitos.','No Projects Assigned Yet':'Aún no hay proyectos asignados','Once your proposal is accepted and engineering kickoff begins, your full project workspace will appear here.':'Cuando acepte una propuesta y comience el desarrollo, aquí aparecerá su espacio de proyecto.','Check Quotes & Offers':'Consultar ofertas','Milestone':'Hito','Due Date':'Fecha de vencimiento','Actions':'Acciones','No Milestones Configured':'Aún no hay hitos configurados','Start':'Inicio','Target Due':'Fecha prevista','complete':'completado','Milestones':'Hitos','Invoices':'Facturas','Delivery Updates':'Actualizaciones','Shared Documents':'Documentos compartidos','Invoices linked to this project will appear here when issued.':'Las facturas del proyecto aparecerán aquí cuando se emitan.','Sprint progress reports and deployment notices for this project will appear here.':'Aquí aparecerán los informes de sprint y avisos de despliegue del proyecto.','No Updates Posted':'Aún no hay actualizaciones','No Shared Files':'Aún no hay archivos compartidos','Architecture diagrams, specifications, and release bundles shared by your team will appear here.':'Aquí aparecerán los diagramas de arquitectura, especificaciones y entregas compartidas por su equipo.','Quotes & Offers':'Presupuestos y ofertas','Review project proposals, commercial scope, and authorize engagement kickoff.':'Revise las propuestas y el alcance comercial y autorice el inicio del proyecto.','Created':'Creada','Valid until':'Válida hasta','Open':'Abiertas','Accepted':'Aceptadas','Closed':'Cerradas','No Offers in This View':'No hay ofertas en esta vista','Maintenance & Retainers':'Mantenimiento y retainers','Monitor active SLA plans, recurring engineering retainers, and maintenance billing.':'Consulte los acuerdos SLA, los servicios recurrentes y la facturación del mantenimiento.','Plan / Service':'Plan / servicio','Linked Project':'Proyecto asociado','Cadence':'Frecuencia','Next Billing':'Próxima facturación','Rate':'Tarifa','Account-wide':'Toda la cuenta','No Maintenance Contracts':'No hay contratos de mantenimiento','Active retainer agreements and post-launch SLA coverage will appear here.':'Aquí aparecerán los contratos activos y la cobertura posterior al lanzamiento.','Ongoing software maintenance and SLA coverage':'Mantenimiento continuo del software y cobertura SLA','Invoice #':'Número de factura','Contract':'Contrato','Payment':'Pago','Paid':'Pagada','No Maintenance Invoices':'No hay facturas de mantenimiento','Recurring and on-demand retainer invoices will appear here once billed.':'Aquí aparecerán las facturas recurrentes y bajo demanda cuando se emitan.','Active Care Plans':'Planes de soporte activos','Monthly Retainer Rate':'Tarifa mensual del retainer','Active monthly commitments':'Servicios mensuales activos','Open Maintenance Invoices':'Facturas de mantenimiento pendientes','Active Maintenance Contracts':'Contratos de mantenimiento activos','Maintenance Invoices':'Facturas de mantenimiento','Billing & Invoices':'Facturación y facturas','Consolidated ledger of project milestones, invoices, and maintenance payments.':'Resumen de hitos, facturas y pagos de mantenimiento.','Reference':'Referencia','Item & Project':'Concepto y proyecto','Action':'Acción','All':'Todas','Unpaid':'Pendientes','Paid':'Pagadas','No Billing Records Found':'No hay registros de facturación','Project milestone charges, invoices, and maintenance bills will appear here.':'Aquí aparecerán los hitos, facturas y cargos de mantenimiento.','Due':'Vence','Chronological sprint progress and engineering notes across your projects.':'Progreso cronológico de los sprints y notas técnicas de sus proyectos.','All Projects':'Todos los proyectos','No Delivery Updates Yet':'Aún no hay novedades','Weekly sprint summaries and engineering release notes will appear here.':'Aquí aparecerán resúmenes semanales de sprint y notas de versiones.','Secure access to specifications, technical deliverables, and project documentation.':'Acceso seguro a especificaciones, entregas técnicas y documentación del proyecto.','Document Name':'Nombre del documento','Project':'Proyecto','Type':'Tipo','Size':'Tamaño','Shared On':'Compartido el','Search files or projects…':'Buscar archivos o proyectos…','No Shared Documents Yet':'Aún no hay documentos compartidos','Try clearing your search filter to inspect all project files.':'Quite el filtro de búsqueda para ver todos los archivos del proyecto.','Contracts, technical specifications, and delivery packages shared with you will appear here.':'Aquí aparecerán contratos, especificaciones técnicas y entregas compartidas.','Profile & Security':'Perfil y seguridad','Manage your organization details, contact preferences, and account password.':'Gestione los datos de su empresa, sus preferencias de contacto y su contraseña.','Saving…':'Guardando…','Updating…':'Actualizando…','Profile saved successfully.':'Perfil guardado correctamente.','Password updated. Use it on your next sign-in.':'Contraseña actualizada. Úsela en su próximo inicio de sesión.','% complete':'% completado','Download failed.':'No se pudo descargar el archivo.','Unable to download file.':'No se pudo descargar el archivo.','Payment checkout URL was not returned.':'No se recibió la URL de pago.','Please sign in to access your client workspace.':'Inicie sesión para acceder al espacio de cliente.','Unable to load portal data.':'No se pudieron cargar los datos del portal.','PayPal maintenance payment confirmed and recorded.':'El pago de mantenimiento con PayPal se confirmó y registró.','PayPal capture is pending verification.':'El pago de PayPal está pendiente de verificación.','Payment completed. Invoice status updates automatically once confirmed.':'Pago completado. La factura se actualizará automáticamente al confirmarse.','Checkout was cancelled. No charge was made.':'Se canceló el pago. No se realizó ningún cargo.','Dismiss':'Cerrar','Unknown':'Desconocido','In Progress':'En curso','On Hold':'En pausa','Client Review':'Revisión del cliente','Testing':'En pruebas','Completed':'Completado','Cancelled':'Cancelado','Draft':'Borrador','Sent':'Enviada','Rejected':'Rechazada','Expired':'Vencida','Pending':'Pendiente','Overdue':'Vencida','Approved':'Aprobado','Submitted':'Enviado','Revision Requested':'Cambios solicitados','Payment Pending':'Pago pendiente','Failed':'Fallido','Active':'Activo','PayPal':'PayPal','Stripe':'Stripe','Your project workspace will appear automatically once you accept an open offer.':'Su espacio de proyecto aparecerá al aceptar una oferta.','Projects assigned to your company account will appear here.':'Aquí aparecerán los proyectos asignados a su empresa.'
 });
 Object.assign(PORTAL_LANGUAGE_COPY.de, {
-  'Workspace active':'Arbeitsbereich aktiv','Active RSTechwerk delivery workspace.':'Aktiver Projektbereich von RSTechwerk.','Maintenance Retainer':'Wartungs-Retainer','Client Sign-In Required':'Anmeldung im Kundenportal erforderlich','Staff Account Detected':'Mitarbeiterkonto erkannt','Unable to Load Workspace':'Arbeitsbereich konnte nicht geladen werden','You are signed in with an administrator account that does not have an associated client profile. Open the Admin Console or sign in with a client account.':'Sie sind mit einem Administratorkonto ohne Kundenprofil angemeldet. Öffnen Sie die Admin-Konsole oder melden Sie sich mit einem Kundenkonto an.','Open Admin Console':'Admin-Konsole öffnen','Switch Account':'Konto wechseln','Sign In to Portal':'Im Portal anmelden','Create Client Account':'Kundenkonto erstellen'
+  'Workspace active':'Arbeitsbereich aktiv','Active RSTechwerk delivery workspace.':'Aktiver Projektbereich von RSTechwerk.','Maintenance Retainer':'Wartungs-Retainer','Client Sign-In Required':'Anmeldung im Kundenportal erforderlich','Staff Account Detected':'Mitarbeiterkonto erkannt','Unable to Load Workspace':'Arbeitsbereich konnte nicht geladen werden','You are signed in with an administrator account that does not have an associated client profile. Open the Admin Console or sign in with a client account.':'Sie sind mit einem Administratorkonto ohne Kundenprofil angemeldet. Öffnen Sie die Admin-Konsole oder melden Sie sich mit einem Kundenkonto an.','Open Admin Console':'Admin-Konsole öffnen','Switch Account':'Konto wechseln','Sign In to Portal':'Im Portal anmelden','Create Client Account':'Kundenkonto erstellen',
+  'Receipt':'Beleg','PDF':'PDF','Download PDF Receipt':'PDF-Beleg herunterladen','View Receipt':'Beleg ansehen','Download PDF':'PDF herunterladen','Payment Receipt':'Zahlungsbeleg','Official Payment Proof':'Offizieller Zahlungsnachweis','Total Amount Paid':'Bezahlter Gesamtbetrag','Payment Purpose':'Zahlungszweck','Payment Method':'Zahlungsmethode','Paid Date & Time':'Zahlungsdatum & -uhrzeit','Received From (Client)':'Erhalten von (Kunde)','Receipt & Issuer Details':'Beleg- & Ausstellerdaten','Receipt No.':'Beleg-Nr.','Reference ID':'Referenz-ID','Currency':'Währung','Payment Gateway':'Zahlungsanbieter','Transaction Ref':'Transaktionsreferenz','Issuer Email':'Aussteller-E-Mail','Subtotal':'Zwischensumme','Currency Settled':'Beglichene Währung','Total Paid':'Gesamt bezahlt','Status: Paid in Full · Balance Due: 0.00':'Status: Vollständig bezahlt · Offener Betrag: 0,00','Official Payment Confirmation':'Offizielle Zahlungsbestätigung','Total Settled':'Bereits bezahlt','Paid Receipts':'Bezahlte Belege','Close':'Schließen','PayPal milestone payment confirmed and recorded.':'PayPal-Meilensteinzahlung bestätigt und verbucht.','Payment verified and recorded.':'Zahlung bestätigt und verbucht.','Loading payment receipt…':'Zahlungsbeleg wird geladen…','Unable to load payment receipt.':'Zahlungsbeleg konnte nicht geladen werden.'
 });
 Object.assign(PORTAL_LANGUAGE_COPY.es, {
-  'Workspace active':'Espacio activo','Active RSTechwerk delivery workspace.':'Espacio de proyectos activo de RSTechwerk.','Maintenance Retainer':'Servicio de mantenimiento','Client Sign-In Required':'Se requiere iniciar sesión en el portal','Staff Account Detected':'Se ha detectado una cuenta de equipo','Unable to Load Workspace':'No se pudo cargar el espacio de trabajo','You are signed in with an administrator account that does not have an associated client profile. Open the Admin Console or sign in with a client account.':'Ha iniciado sesión con una cuenta de administrador sin perfil de cliente asociado. Abra la consola de administración o use una cuenta de cliente.','Open Admin Console':'Abrir consola de administración','Switch Account':'Cambiar de cuenta','Sign In to Portal':'Iniciar sesión en el portal','Create Client Account':'Crear cuenta de cliente'
+  'Workspace active':'Espacio activo','Active RSTechwerk delivery workspace.':'Espacio de proyectos activo de RSTechwerk.','Maintenance Retainer':'Servicio de mantenimiento','Client Sign-In Required':'Se requiere iniciar sesión en el portal','Staff Account Detected':'Se ha detectado una cuenta de equipo','Unable to Load Workspace':'No se pudo cargar el espacio de trabajo','You are signed in with an administrator account that does not have an associated client profile. Open the Admin Console or sign in with a client account.':'Ha iniciado sesión con una cuenta de administrador sin perfil de cliente asociado. Abra la consola de administración o use una cuenta de cliente.','Open Admin Console':'Abrir consola de administración','Switch Account':'Cambiar de cuenta','Sign In to Portal':'Iniciar sesión en el portal','Create Client Account':'Crear cuenta de cliente',
+  'Receipt':'Recibo','PDF':'PDF','Download PDF Receipt':'Descargar recibo PDF','View Receipt':'Ver recibo','Download PDF':'Descargar PDF','Payment Receipt':'Recibo de pago','Official Payment Proof':'Comprobante oficial de pago','Total Amount Paid':'Importe total pagado','Payment Purpose':'Concepto del pago','Payment Method':'Método de pago','Paid Date & Time':'Fecha y hora del pago','Received From (Client)':'Recibido de (Cliente)','Receipt & Issuer Details':'Datos del recibo y emisor','Receipt No.':'N.º de recibo','Reference ID':'ID de referencia','Currency':'Moneda','Payment Gateway':'Pasarela de pago','Transaction Ref':'Ref. de transacción','Issuer Email':'Correo del emisor','Subtotal':'Subtotal','Currency Settled':'Moneda liquidada','Total Paid':'Total pagado','Status: Paid in Full · Balance Due: 0.00':'Estado: Pagado en su totalidad · Saldo pendiente: 0,00','Official Payment Confirmation':'Confirmación oficial de pago','Total Settled':'Total pagado','Paid Receipts':'Recibos pagados','Close':'Cerrar','PayPal milestone payment confirmed and recorded.':'El pago del hito con PayPal se confirmó y registró.','Payment verified and recorded.':'Pago verificado y registrado.','Loading payment receipt…':'Cargando recibo de pago…','Unable to load payment receipt.':'No se pudo cargar el recibo de pago.'
 });
 window.RSTechwerkPortalLanguageCopy = PORTAL_LANGUAGE_COPY;
 const PORTAL_ORIGINAL_TEXT = new WeakMap();
@@ -193,6 +195,305 @@ function getFileExtension(name) {
   return parts.length > 1 ? parts.pop().toUpperCase().slice(0, 4) : 'FILE';
 }
 
+function formatDateTime(value) {
+  if (!value) return 'Verified';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  const locale = { en: 'en-GB', de: 'de-DE', es: 'es-ES' }[localStorage.getItem('tecklumo-language')] || 'en-GB';
+  return date.toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC'
+  }) + ' UTC';
+}
+
+function formatProviderShort(provider) {
+  const norm = String(provider || '').trim().toLowerCase();
+  if (norm === 'stripe') return 'Stripe';
+  if (norm === 'paypal') return 'PayPal';
+  if (norm === 'bank' || norm === 'bank_transfer' || norm === 'sepa') return 'Bank Transfer';
+  return 'Direct Settlement';
+}
+
+function renderPaidReceiptControls(type, id, paidAt, paymentProvider) {
+  return `
+    <div class="paid-action-group">
+      <span class="paid-meta-note">${escapeHtml(formatProviderShort(paymentProvider))} · ${formatDate(paidAt)}</span>
+      <button type="button" class="btn btn-secondary btn-sm open-receipt-modal" data-receipt-type="${escapeHtml(type)}" data-receipt-id="${escapeHtml(id)}">Receipt</button>
+      <button type="button" class="btn btn-primary btn-sm download-receipt-pdf" data-receipt-type="${escapeHtml(type)}" data-receipt-id="${escapeHtml(id)}">PDF</button>
+    </div>
+  `;
+}
+
+async function downloadReceiptPdf(type, id, triggerBtn) {
+  if (!session?.token) {
+    showPaymentBanner('danger', 'Please sign in to download your payment receipt.');
+    return;
+  }
+  const originalLabel = triggerBtn ? triggerBtn.innerHTML : '';
+  if (triggerBtn) triggerBtn.disabled = true;
+  try {
+    const response = await fetch(`/api/receipts/${encodeURIComponent(type)}/${encodeURIComponent(id)}/pdf`, {
+      headers: { Authorization: `Bearer ${session.token}` }
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || 'Unable to generate PDF receipt.');
+    }
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/i);
+    const filename = match ? match[1] : `RSTechwerk-Receipt-${type}.pdf`;
+    const blobUrl = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  } catch (error) {
+    showPaymentBanner('danger', error.message || 'Unable to download PDF receipt.');
+  } finally {
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.innerHTML = originalLabel;
+    }
+  }
+}
+
+function closeReceiptModal() {
+  const modal = document.getElementById('receiptPreviewModal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function buildReceiptEmblemSvg() {
+  return `
+    <svg class="receipt-brand-emblem" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="receipt-rs-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0b1320" />
+          <stop offset="100%" stop-color="#041f17" />
+        </linearGradient>
+        <linearGradient id="receipt-rs-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#10b981" />
+          <stop offset="50%" stop-color="#06b6d4" />
+          <stop offset="100%" stop-color="#3b82f6" />
+        </linearGradient>
+        <linearGradient id="receipt-rs-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#34d399" />
+          <stop offset="100%" stop-color="#38bdf8" />
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width="34" height="34" rx="9" fill="url(#receipt-rs-bg)" stroke="url(#receipt-rs-glow)" stroke-width="1.5" />
+      <circle cx="28" cy="8" r="1.75" fill="#38bdf8" />
+      <path d="M26 8H22" stroke="#38bdf8" stroke-width="1.25" stroke-linecap="round" />
+      <path d="M9 26V10H16C18.4853 10 20.5 12.0147 20.5 14.5C20.5 16.9853 18.4853 19 16 19H9M14.5 19L21 26" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M23 13C23 13 26 13 27 14.2C28 15.4 26.8 17 24.8 17.6C22.8 18.2 21.8 19.8 22.8 21.2C23.8 22.6 26.5 22.5 27.5 22" stroke="url(#receipt-rs-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  `;
+}
+
+async function openReceiptModal(type, id) {
+  const modal = document.getElementById('receiptPreviewModal');
+  const bodyEl = document.getElementById('receiptModalBody');
+  const headingEl = document.getElementById('receiptModalHeading');
+  const kickerEl = document.getElementById('receiptModalKicker');
+  const dlBtn = document.getElementById('receiptModalDownloadBtn');
+  if (!modal || !bodyEl) return;
+
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  if (headingEl) headingEl.textContent = 'Payment Receipt';
+  if (kickerEl) kickerEl.textContent = 'Official Payment Proof';
+  if (dlBtn) {
+    dlBtn.disabled = true;
+    dlBtn.dataset.receiptType = type;
+    dlBtn.dataset.receiptId = id;
+  }
+  bodyEl.innerHTML = `<div class="receipt-sheet" style="text-align:center;padding:3rem 1.5rem;color:#64748b;">Loading payment receipt…</div>`;
+
+  try {
+    const result = await portalFetch(`/api/receipts/${encodeURIComponent(type)}/${encodeURIComponent(id)}`);
+    const receipt = result.receipt;
+    if (!receipt) throw new Error('Unable to load payment receipt.');
+
+    if (headingEl) headingEl.textContent = receipt.receiptNumber;
+    if (kickerEl) kickerEl.textContent = receipt.typeLabel || 'Official Payment Proof';
+    if (dlBtn) dlBtn.disabled = false;
+
+    const clientLocation = [receipt.client.address, receipt.client.postalCode, receipt.client.city, receipt.client.country]
+      .filter(Boolean)
+      .join(', ');
+
+    const milestoneBoxHtml = receipt.milestoneBreakdown
+      ? `
+        <div class="receipt-milestone-box">
+          <strong>PROJECT MILESTONE SCHEDULE (${receipt.milestoneBreakdown.milestoneNumber} OF ${receipt.milestoneBreakdown.milestoneCount})</strong>
+          <div>This milestone settled: <b>${formatMoney(receipt.milestoneBreakdown.milestoneAmount, receipt.currency)}</b></div>
+          <div>Total project milestones: ${formatMoney(receipt.milestoneBreakdown.projectMilestonesTotal, receipt.currency)} · Paid to date: ${formatMoney(receipt.milestoneBreakdown.projectPaidTotal, receipt.currency)}</div>
+          <div>Remaining milestone balance: ${formatMoney(receipt.milestoneBreakdown.projectRemainingTotal, receipt.currency)}</div>
+        </div>
+      `
+      : '';
+
+    const officesHtml = (receipt.company.offices || []).length
+      ? receipt.company.offices
+          .slice(0, 3)
+          .map(
+            (office) => `
+          <div>
+            <strong>${escapeHtml(office.officeLabel)} (${escapeHtml(office.country)})</strong>
+            <div>${escapeHtml([office.streetAddress, office.postalCity].filter(Boolean).join(', '))}</div>
+            ${office.phone || office.email ? `<div>${escapeHtml([office.phone, office.email].filter(Boolean).join(' · '))}</div>` : ''}
+          </div>
+        `
+          )
+          .join('')
+      : `<div><strong>${escapeHtml(receipt.company.companyName)}</strong><div>${escapeHtml(receipt.company.companyEmail)} · ${escapeHtml(receipt.company.companyWebsite)}</div></div>`;
+
+    const companyRaw = String(receipt.company.companyName || 'RSTechwerk');
+    const brandHtml = companyRaw.startsWith('RS')
+      ? `<span class="rs">RS</span>${escapeHtml(companyRaw.slice(2))}`
+      : escapeHtml(companyRaw);
+
+    bodyEl.innerHTML = `
+      <div class="receipt-sheet">
+        <div class="receipt-brand-row">
+          <div class="receipt-brand-lockup">
+            ${buildReceiptEmblemSvg()}
+            <div>
+              <div class="receipt-brand-name">${brandHtml}</div>
+              <div class="receipt-brand-tagline">Software Engineering &amp; Digital Delivery · ${escapeHtml(String(receipt.company.companyWebsite || '').replace(/^https?:\/\//, ''))}</div>
+            </div>
+          </div>
+          <div class="receipt-title-block">
+            <div class="receipt-doc-title">PAYMENT RECEIPT</div>
+            <span class="receipt-status-stamp">PAID · VERIFIED</span>
+          </div>
+        </div>
+
+        <div class="receipt-proof-strip">
+          <div class="receipt-proof-cell">
+            <span class="receipt-proof-label">Total Amount Paid</span>
+            <span class="receipt-proof-val accent">${formatMoney(receipt.amount, receipt.currency)}</span>
+            <span class="receipt-proof-sub">${escapeHtml(receipt.currencyLabel)}</span>
+          </div>
+          <div class="receipt-proof-cell">
+            <span class="receipt-proof-label">Payment Purpose</span>
+            <span class="receipt-proof-val">${escapeHtml(receipt.typeLabel)}</span>
+            <span class="receipt-proof-sub">${escapeHtml(receipt.projectName || 'Client Workspace')}</span>
+          </div>
+          <div class="receipt-proof-cell">
+            <span class="receipt-proof-label">Payment Method</span>
+            <span class="receipt-proof-val">${escapeHtml(receipt.paymentMethodLabel)}</span>
+            <span class="receipt-proof-sub">Ref: ${escapeHtml(String(receipt.transactionReference).slice(0, 26))}</span>
+          </div>
+          <div class="receipt-proof-cell">
+            <span class="receipt-proof-label">Paid Date &amp; Time</span>
+            <span class="receipt-proof-val">${formatDate(receipt.paidAt)}</span>
+            <span class="receipt-proof-sub">${formatDateTime(receipt.paidAt)}</span>
+          </div>
+        </div>
+
+        <div class="receipt-parties-grid">
+          <div>
+            <div class="receipt-section-kicker">Received From (Client)</div>
+            <div class="receipt-client-company">${escapeHtml(receipt.client.companyName)}</div>
+            <div class="receipt-client-lines">
+              <div>Attn: ${escapeHtml(receipt.client.contactName)}</div>
+              <div>${escapeHtml(receipt.client.email)}</div>
+              ${receipt.client.phone ? `<div>Phone: ${escapeHtml(receipt.client.phone)}</div>` : ''}
+              ${clientLocation ? `<div>${escapeHtml(clientLocation)}</div>` : ''}
+            </div>
+          </div>
+          <div>
+            <div class="receipt-section-kicker">Receipt &amp; Issuer Details</div>
+            <div class="receipt-meta-rows">
+              <div class="receipt-meta-row"><span>Receipt No.</span><strong>${escapeHtml(receipt.receiptNumber)}</strong></div>
+              <div class="receipt-meta-row"><span>Reference ID</span><strong>${escapeHtml(receipt.referenceCode)}</strong></div>
+              <div class="receipt-meta-row"><span>Currency</span><strong>${escapeHtml(receipt.currencyLabel)}</strong></div>
+              <div class="receipt-meta-row"><span>Payment Gateway</span><strong>${escapeHtml(receipt.paymentMethodLabel)}</strong></div>
+              <div class="receipt-meta-row"><span>Transaction Ref</span><strong>${escapeHtml(receipt.transactionReference)}</strong></div>
+              <div class="receipt-meta-row"><span>Issuer Email</span><strong>${escapeHtml(receipt.company.companyEmail)}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="receipt-table-wrap">
+          <table class="receipt-table">
+            <thead>
+              <tr>
+                <th>Item &amp; Description</th>
+                <th>Type / Currency</th>
+                <th>Due / Period</th>
+                <th class="text-right">Paid Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong style="color:#0f172a;display:block;">${escapeHtml(receipt.itemTitle)}</strong>
+                  <span style="font-size:0.78rem;color:#475569;">${escapeHtml(receipt.projectName)}${receipt.itemDescription ? ` — ${escapeHtml(receipt.itemDescription)}` : ''}</span>
+                </td>
+                <td>
+                  <strong style="color:#0f172a;display:block;">${receipt.type === 'milestone' ? 'Milestone' : receipt.type === 'maintenance' ? 'Retainer' : 'Invoice'}</strong>
+                  <span style="font-size:0.76rem;color:#64748b;">${escapeHtml(receipt.currency)}</span>
+                </td>
+                <td class="tabular-nums">${escapeHtml(receipt.periodText || formatDate(receipt.dueDate))}</td>
+                <td class="text-right" style="font-family:var(--font-mono);font-weight:700;color:#0f172a;white-space:nowrap;">${formatMoney(receipt.amount, receipt.currency)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="receipt-bottom-split">
+          ${milestoneBoxHtml}
+          <div class="receipt-totals-box">
+            <div class="receipt-total-row"><span>Subtotal</span><span class="tabular-nums">${formatMoney(receipt.amount, receipt.currency)}</span></div>
+            <div class="receipt-total-row"><span>Currency Settled</span><span>${escapeHtml(receipt.currency)}</span></div>
+            <div class="receipt-total-grand"><span>Total Paid</span><span class="amount tabular-nums">${formatMoney(receipt.amount, receipt.currency)}</span></div>
+            <div class="receipt-paid-note">Status: Paid in Full · Balance Due: 0.00</div>
+          </div>
+        </div>
+
+        <div class="receipt-verified-box">
+          <strong>Official Payment Confirmation</strong>
+          This receipt confirms that ${escapeHtml(receipt.company.companyName)} received ${formatMoney(receipt.amount, receipt.currency)} via ${escapeHtml(receipt.paymentMethodLabel)} for "${escapeHtml(receipt.itemTitle)}" (${escapeHtml(receipt.projectName)}). Download the signed PDF for accounting and audit records.
+        </div>
+
+        <div class="receipt-office-footer">${officesHtml}</div>
+      </div>
+    `;
+  } catch (error) {
+    bodyEl.innerHTML = `<div class="receipt-sheet" style="text-align:center;padding:2.5rem 1.5rem;color:#dc2626;">${escapeHtml(error.message || 'Unable to load payment receipt.')}</div>`;
+  }
+}
+
+function initReceiptModalShell() {
+  const modal = document.getElementById('receiptPreviewModal');
+  if (!modal) return;
+  document.getElementById('receiptModalCloseBtn')?.addEventListener('click', closeReceiptModal);
+  document.getElementById('receiptModalDownloadBtn')?.addEventListener('click', (event) => {
+    const btn = event.currentTarget;
+    if (btn.dataset.receiptType && btn.dataset.receiptId) {
+      downloadReceiptPdf(btn.dataset.receiptType, btn.dataset.receiptId, btn);
+    }
+  });
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeReceiptModal();
+  });
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+      closeReceiptModal();
+    }
+  });
+}
+
 /* Theme & Drawer Controls
    ========================================================================== */
 function initPortalTheme() {
@@ -294,13 +595,18 @@ async function handlePaymentReturnParams() {
   if (!paymentBannerEl) return;
   const params = new URLSearchParams(window.location.search);
 
-  if (params.get('paypalMaintenance') === 'success' && params.get('invoice')) {
-    const invoiceId = params.get('invoice');
+  if (params.get('paypal') === 'success' && params.get('project') && params.get('milestone')) {
+    const projectId = params.get('project');
+    const milestoneId = params.get('milestone');
     try {
-      await portalFetch(`/api/maintenance/invoices/${encodeURIComponent(invoiceId)}/paypal/capture`, {
-        method: 'POST'
+      await portalFetch(
+        `/api/projects/${encodeURIComponent(projectId)}/milestones/${encodeURIComponent(milestoneId)}/paypal/capture`,
+        { method: 'POST' }
+      );
+      showPaymentBanner('success', 'PayPal milestone payment confirmed and recorded.', {
+        receiptType: 'milestone',
+        receiptId: milestoneId
       });
-      showPaymentBanner('success', 'PayPal maintenance payment confirmed and recorded.');
     } catch (error) {
       showPaymentBanner('warn', error.message || 'PayPal capture is pending verification.');
     }
@@ -308,8 +614,55 @@ async function handlePaymentReturnParams() {
     return;
   }
 
+  if (params.get('paypalMaintenance') === 'success' && params.get('invoice')) {
+    const invoiceId = params.get('invoice');
+    try {
+      await portalFetch(`/api/maintenance/invoices/${encodeURIComponent(invoiceId)}/paypal/capture`, {
+        method: 'POST'
+      });
+      showPaymentBanner('success', 'PayPal maintenance payment confirmed and recorded.', {
+        receiptType: 'maintenance',
+        receiptId: invoiceId
+      });
+    } catch (error) {
+      showPaymentBanner('warn', error.message || 'PayPal capture is pending verification.');
+    }
+    window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+    return;
+  }
+
+  if (
+    (params.get('payment') === 'success' || params.get('maintenancePayment') === 'success') &&
+    params.get('session_id')
+  ) {
+    const sessionId = params.get('session_id');
+    try {
+      const result = await portalFetch('/api/payments/stripe/verify-session', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId })
+      });
+      if (result.verified && result.receiptType && result.receiptId) {
+        showPaymentBanner('success', 'Payment verified and recorded.', {
+          receiptType: result.receiptType,
+          receiptId: result.receiptId
+        });
+      } else {
+        showPaymentBanner('success', 'Payment completed. Invoice status updates automatically once confirmed.');
+      }
+    } catch {
+      showPaymentBanner('success', 'Payment completed. Invoice status updates automatically once confirmed.');
+    }
+    window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+    return;
+  }
+
   if (params.get('payment') === 'success' || params.get('maintenancePayment') === 'success' || params.get('paypal') === 'success') {
-    showPaymentBanner('success', 'Payment completed. Invoice status updates automatically once confirmed.');
+    const fallbackReceipt = params.get('milestone')
+      ? { receiptType: 'milestone', receiptId: params.get('milestone') }
+      : params.get('invoice')
+      ? { receiptType: 'maintenance', receiptId: params.get('invoice') }
+      : null;
+    showPaymentBanner('success', 'Payment completed. Invoice status updates automatically once confirmed.', fallbackReceipt);
     window.history.replaceState({}, '', window.location.pathname + window.location.hash);
   } else if (
     params.get('payment') === 'cancelled' ||
@@ -322,12 +675,22 @@ async function handlePaymentReturnParams() {
   }
 }
 
-function showPaymentBanner(variant, message) {
+function showPaymentBanner(variant, message, receiptRef = null) {
   if (!paymentBannerEl) return;
+  const receiptActionsHtml =
+    receiptRef?.receiptType && receiptRef?.receiptId
+      ? `
+        <button type="button" class="btn btn-secondary btn-sm open-receipt-modal" data-receipt-type="${escapeHtml(receiptRef.receiptType)}" data-receipt-id="${escapeHtml(receiptRef.receiptId)}">View Receipt</button>
+        <button type="button" class="btn btn-primary btn-sm download-receipt-pdf" data-receipt-type="${escapeHtml(receiptRef.receiptType)}" data-receipt-id="${escapeHtml(receiptRef.receiptId)}">Download PDF</button>
+      `
+      : '';
   paymentBannerEl.innerHTML = `
     <div class="portal-banner ${variant}">
       <span>${escapeHtml(message)}</span>
-      <button type="button" class="btn btn-ghost btn-sm" id="dismissPaymentBanner">Dismiss</button>
+      <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+        ${receiptActionsHtml}
+        <button type="button" class="btn btn-ghost btn-sm" id="dismissPaymentBanner">Dismiss</button>
+      </div>
     </div>
   `;
   document.getElementById('dismissPaymentBanner')?.addEventListener('click', () => {
@@ -777,7 +1140,7 @@ function renderProjectsView() {
                         ? `<button class="btn btn-secondary btn-sm portal-pay" data-project="${escapeHtml(activeProject.id)}" data-milestone="${escapeHtml(ms.id)}" data-provider="stripe">Stripe</button>
                            <button class="btn btn-secondary btn-sm portal-pay" data-project="${escapeHtml(activeProject.id)}" data-milestone="${escapeHtml(ms.id)}" data-provider="paypal">PayPal</button>`
                         : ms.status === 'paid'
-                        ? `<span style="font-size:0.78rem;color:var(--portal-ink-muted);">Paid ${formatDate(ms.paidAt)}</span>`
+                        ? renderPaidReceiptControls('milestone', ms.id, ms.paidAt, ms.paymentProvider)
                         : ''
                     }
                   </div>
@@ -803,6 +1166,7 @@ function renderProjectsView() {
               <th>Due Date</th>
               <th>Status</th>
               <th class="text-right">Amount</th>
+              <th class="text-right">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -815,6 +1179,13 @@ function renderProjectsView() {
                 <td class="tabular-nums">${formatDate(inv.dueDate)}</td>
                 <td>${renderStatusTag(inv.status)}</td>
                 <td class="text-right amount-display">${formatMoney(inv.amount, inv.currency)}</td>
+                <td class="text-right">
+                  ${
+                    inv.status === 'paid'
+                      ? renderPaidReceiptControls('invoice', inv.id, inv.paidAt, null)
+                      : `<span style="font-size:0.78rem;color:var(--portal-ink-muted);">—</span>`
+                  }
+                </td>
               </tr>
             `
               )
@@ -1079,7 +1450,7 @@ function renderMaintenanceView() {
                         <button class="btn btn-primary btn-sm maintenance-pay" data-provider="stripe" data-invoice="${escapeHtml(inv.id)}">Stripe</button>
                         <button class="btn btn-secondary btn-sm maintenance-pay" data-provider="paypal" data-invoice="${escapeHtml(inv.id)}">PayPal</button>
                        </div>`
-                    : `<span style="font-size:0.78rem;color:var(--portal-ink-muted);">Paid ${formatDate(inv.paidAt)}</span>`
+                    : renderPaidReceiptControls('maintenance', inv.id, inv.paidAt, inv.paymentProvider)
                 }
               </td>
             </tr>
@@ -1148,8 +1519,11 @@ function renderBillingView() {
   const entries = [];
   for (const project of projects) {
     for (const ms of project.milestones || []) {
-      if (Number(ms.amount) > 0) {
+      if (Number(ms.amount) > 0 || ms.status === 'paid') {
         entries.push({
+          receiptType: 'milestone',
+          receiptId: ms.id,
+          paymentProvider: ms.paymentProvider || null,
           ref: 'Milestone',
           title: ms.title,
           context: project.name,
@@ -1169,6 +1543,9 @@ function renderBillingView() {
     }
     for (const inv of project.invoices || []) {
       entries.push({
+        receiptType: 'invoice',
+        receiptId: inv.id,
+        paymentProvider: null,
         ref: inv.invoiceNumber,
         title: inv.description,
         context: project.name,
@@ -1185,9 +1562,12 @@ function renderBillingView() {
 
   for (const inv of maintenanceInvoices) {
     entries.push({
+      receiptType: 'maintenance',
+      receiptId: inv.id,
+      paymentProvider: inv.paymentProvider || null,
       ref: inv.invoiceNumber,
       title: inv.title,
-      context: 'Maintenance Retainer',
+      context: inv.projectName ? `${inv.projectName} · Maintenance` : 'Maintenance Retainer',
       dueDate: inv.dueDate,
       paidAt: inv.paidAt,
       status: inv.status,
@@ -1201,6 +1581,19 @@ function renderBillingView() {
           : null
     });
   }
+
+  const paidEntries = entries.filter((e) => e.isPaid);
+  const unpaidEntries = entries.filter((e) => !e.isPaid && e.status !== 'cancelled');
+
+  const sumByCurrency = (list) => {
+    const totals = new Map();
+    for (const item of list) {
+      const code = String(item.currency || 'EUR').toUpperCase();
+      totals.set(code, (totals.get(code) || 0) + Number(item.amount || 0));
+    }
+    if (!totals.size) return formatMoney(0, entries[0]?.currency || 'EUR');
+    return [...totals.entries()].map(([cur, val]) => formatMoney(val, cur)).join(' + ');
+  };
 
   const filtered = entries.filter((e) => {
     if (billingFilter === 'unpaid') return !e.isPaid && e.status !== 'cancelled';
@@ -1240,7 +1633,7 @@ function renderBillingView() {
                   item.payButtons
                     ? `<div style="display:inline-flex;gap:0.4rem;">${item.payButtons}</div>`
                     : item.isPaid
-                    ? `<span style="font-size:0.78rem;color:var(--portal-ink-muted);">Paid ${formatDate(item.paidAt)}</span>`
+                    ? renderPaidReceiptControls(item.receiptType, item.receiptId, item.paidAt, item.paymentProvider)
                     : `<span style="font-size:0.78rem;color:var(--portal-ink-muted);">—</span>`
                 }
               </td>
@@ -1262,8 +1655,26 @@ function renderBillingView() {
       </div>
       <div class="segmented-bar" role="tablist" aria-label="Filter billing ledger">
         <button type="button" class="segmented-btn ${billingFilter === 'all' ? 'active' : ''}" data-billing-filter="all">All (${entries.length})</button>
-        <button type="button" class="segmented-btn ${billingFilter === 'unpaid' ? 'active' : ''}" data-billing-filter="unpaid">Unpaid</button>
-        <button type="button" class="segmented-btn ${billingFilter === 'paid' ? 'active' : ''}" data-billing-filter="paid">Paid</button>
+        <button type="button" class="segmented-btn ${billingFilter === 'unpaid' ? 'active' : ''}" data-billing-filter="unpaid">Unpaid (${unpaidEntries.length})</button>
+        <button type="button" class="segmented-btn ${billingFilter === 'paid' ? 'active' : ''}" data-billing-filter="paid">Paid (${paidEntries.length})</button>
+      </div>
+    </div>
+
+    <div class="kpi-strip kpi-strip-3">
+      <div class="kpi-cell">
+        <span class="kpi-label">Paid Receipts</span>
+        <strong class="kpi-value accent">${paidEntries.length}</strong>
+        <span class="kpi-meta">${entries.length} total billing record${entries.length === 1 ? '' : 's'}</span>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-label">Total Settled</span>
+        <strong class="kpi-value">${sumByCurrency(paidEntries)}</strong>
+        <span class="kpi-meta">Verified payment proofs available</span>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-label">Balance Due</span>
+        <strong class="kpi-value ${unpaidEntries.length ? 'warn' : ''}">${sumByCurrency(unpaidEntries)}</strong>
+        <span class="kpi-meta">${unpaidEntries.length} open item${unpaidEntries.length === 1 ? '' : 's'}</span>
       </div>
     </div>
 
@@ -1819,6 +2230,18 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const openReceiptBtn = event.target.closest('.open-receipt-modal');
+  if (openReceiptBtn) {
+    openReceiptModal(openReceiptBtn.dataset.receiptType, openReceiptBtn.dataset.receiptId);
+    return;
+  }
+
+  const pdfBtn = event.target.closest('.download-receipt-pdf');
+  if (pdfBtn) {
+    downloadReceiptPdf(pdfBtn.dataset.receiptType, pdfBtn.dataset.receiptId, pdfBtn);
+    return;
+  }
+
   const button = event.target.closest('.portal-pay');
   if (button) {
     button.disabled = true;
@@ -1841,5 +2264,6 @@ document.addEventListener('click', async (event) => {
 
 initPortalTheme();
 initSidebarShell();
+initReceiptModalShell();
 initPortalLanguage();
 loadPortal();

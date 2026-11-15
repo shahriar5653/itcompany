@@ -1002,6 +1002,164 @@ app.put('/api/content/:key', requireAuth, requireStaff, async (req, res, next) =
   } catch (error) { return next(error); }
 });
 
+function sanitizeHttpUrl(value) {
+  const cleaned = cleanString(value, 500);
+  if (!cleaned) return null;
+  try {
+    const parsed = new URL(cleaned);
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+const OFFICE_SELECT_FIELDS = `
+  id, slug, country, city, office_label AS officeLabel, role_subtitle AS roleSubtitle,
+  street_address AS streetAddress, postal_city AS postalCity, phone, email,
+  business_hours AS businessHours, timezone, map_url AS mapUrl,
+  is_primary AS isPrimary, is_active AS isActive, sort_order AS sortOrder,
+  created_at AS createdAt, updated_at AS updatedAt
+`;
+
+app.get('/api/offices', async (_req, res) => {
+  const [rows] = await pool.query(
+    `SELECT ${OFFICE_SELECT_FIELDS} FROM office_locations WHERE is_active = TRUE ORDER BY sort_order ASC, is_primary DESC, created_at ASC`
+  );
+  return res.json({
+    success: true,
+    offices: rows.map((row) => ({ ...row, isPrimary: Boolean(row.isPrimary), isActive: Boolean(row.isActive) }))
+  });
+});
+
+app.get('/api/admin/offices', requireAuth, requireStaff, async (_req, res) => {
+  const [rows] = await pool.query(
+    `SELECT ${OFFICE_SELECT_FIELDS} FROM office_locations ORDER BY sort_order ASC, is_primary DESC, created_at ASC`
+  );
+  return res.json({
+    success: true,
+    offices: rows.map((row) => ({ ...row, isPrimary: Boolean(row.isPrimary), isActive: Boolean(row.isActive) }))
+  });
+});
+
+app.post('/api/offices', requireAuth, requireStaff, async (req, res, next) => {
+  const country = cleanString(req.body?.country, 100);
+  const city = cleanString(req.body?.city, 100);
+  const officeLabel = cleanString(req.body?.officeLabel, 160);
+  const roleSubtitle = cleanString(req.body?.roleSubtitle, 200) || null;
+  const streetAddress = cleanString(req.body?.streetAddress, 255);
+  const postalCity = cleanString(req.body?.postalCity, 180);
+  const phone = cleanString(req.body?.phone, 60) || null;
+  const email = cleanString(req.body?.email, 255) || null;
+  const businessHours = cleanString(req.body?.businessHours, 160) || null;
+  const timezone = cleanString(req.body?.timezone, 80) || null;
+  const rawMapUrl = cleanString(req.body?.mapUrl, 500);
+  const mapUrl = sanitizeHttpUrl(rawMapUrl);
+  if (rawMapUrl && !mapUrl) {
+    return res.status(400).json({ success: false, message: 'Map URL must start with http:// or https://.' });
+  }
+  if (!country || !city || !officeLabel || !streetAddress || !postalCity) {
+    return res.status(400).json({ success: false, message: 'Country, city, office title, street address, and postal/city line are required.' });
+  }
+  const isPrimary = Boolean(req.body?.isPrimary);
+  const isActive = req.body?.isActive !== false;
+  const sortOrder = Number.isFinite(Number(req.body?.sortOrder)) ? Number(req.body.sortOrder) : 0;
+  const id = randomUUID();
+  const baseSlug = `${country}-${city}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'office';
+  const slug = `${baseSlug}-${id.slice(0, 6)}`;
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    if (isPrimary) {
+      await connection.execute('UPDATE office_locations SET is_primary = FALSE');
+    }
+    await connection.execute(
+      `INSERT INTO office_locations
+       (id, slug, country, city, office_label, role_subtitle, street_address, postal_city, phone, email, business_hours, timezone, map_url, is_primary, is_active, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, slug, country, city, officeLabel, roleSubtitle, streetAddress, postalCity, phone, email, businessHours, timezone, mapUrl, isPrimary, isActive, sortOrder]
+    );
+    const [created] = await connection.execute(`SELECT ${OFFICE_SELECT_FIELDS} FROM office_locations WHERE id = ? LIMIT 1`, [id]);
+    await connection.commit();
+    return res.status(201).json({
+      success: true,
+      office: { ...created[0], isPrimary: Boolean(created[0].isPrimary), isActive: Boolean(created[0].isActive) }
+    });
+  } catch (error) {
+    if (connection) await connection.rollback().catch(() => {});
+    return next(error);
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+app.put('/api/offices/:id', requireAuth, requireStaff, async (req, res, next) => {
+  const [existingRows] = await pool.execute('SELECT * FROM office_locations WHERE id = ? LIMIT 1', [req.params.id]);
+  const existing = existingRows[0];
+  if (!existing) return res.status(404).json({ success: false, message: 'Office location not found.' });
+
+  const country = req.body?.country !== undefined ? cleanString(req.body.country, 100) : existing.country;
+  const city = req.body?.city !== undefined ? cleanString(req.body.city, 100) : existing.city;
+  const officeLabel = req.body?.officeLabel !== undefined ? cleanString(req.body.officeLabel, 160) : existing.office_label;
+  const roleSubtitle = req.body?.roleSubtitle !== undefined ? (cleanString(req.body.roleSubtitle, 200) || null) : existing.role_subtitle;
+  const streetAddress = req.body?.streetAddress !== undefined ? cleanString(req.body.streetAddress, 255) : existing.street_address;
+  const postalCity = req.body?.postalCity !== undefined ? cleanString(req.body.postalCity, 180) : existing.postal_city;
+  const phone = req.body?.phone !== undefined ? (cleanString(req.body.phone, 60) || null) : existing.phone;
+  const email = req.body?.email !== undefined ? (cleanString(req.body.email, 255) || null) : existing.email;
+  const businessHours = req.body?.businessHours !== undefined ? (cleanString(req.body.businessHours, 160) || null) : existing.business_hours;
+  const timezone = req.body?.timezone !== undefined ? (cleanString(req.body.timezone, 80) || null) : existing.timezone;
+  let mapUrl = existing.map_url;
+  if (req.body?.mapUrl !== undefined) {
+    const rawMapUrl = cleanString(req.body.mapUrl, 500);
+    mapUrl = sanitizeHttpUrl(rawMapUrl);
+    if (rawMapUrl && !mapUrl) {
+      return res.status(400).json({ success: false, message: 'Map URL must start with http:// or https://.' });
+    }
+  }
+  if (!country || !city || !officeLabel || !streetAddress || !postalCity) {
+    return res.status(400).json({ success: false, message: 'Country, city, office title, street address, and postal/city line are required.' });
+  }
+  const isPrimary = req.body?.isPrimary !== undefined ? Boolean(req.body.isPrimary) : Boolean(existing.is_primary);
+  const isActive = req.body?.isActive !== undefined ? Boolean(req.body.isActive) : Boolean(existing.is_active);
+  const sortOrder = req.body?.sortOrder !== undefined && Number.isFinite(Number(req.body.sortOrder))
+    ? Number(req.body.sortOrder)
+    : existing.sort_order;
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    if (isPrimary) {
+      await connection.execute('UPDATE office_locations SET is_primary = FALSE WHERE id <> ?', [req.params.id]);
+    }
+    await connection.execute(
+      `UPDATE office_locations
+       SET country = ?, city = ?, office_label = ?, role_subtitle = ?, street_address = ?, postal_city = ?,
+           phone = ?, email = ?, business_hours = ?, timezone = ?, map_url = ?, is_primary = ?, is_active = ?, sort_order = ?
+       WHERE id = ?`,
+      [country, city, officeLabel, roleSubtitle, streetAddress, postalCity, phone, email, businessHours, timezone, mapUrl, isPrimary, isActive, sortOrder, req.params.id]
+    );
+    const [updated] = await connection.execute(`SELECT ${OFFICE_SELECT_FIELDS} FROM office_locations WHERE id = ? LIMIT 1`, [req.params.id]);
+    await connection.commit();
+    return res.json({
+      success: true,
+      office: { ...updated[0], isPrimary: Boolean(updated[0].isPrimary), isActive: Boolean(updated[0].isActive) }
+    });
+  } catch (error) {
+    if (connection) await connection.rollback().catch(() => {});
+    return next(error);
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+app.delete('/api/offices/:id', requireAuth, requireStaff, async (req, res) => {
+  const [result] = await pool.execute('DELETE FROM office_locations WHERE id = ?', [req.params.id]);
+  if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Office location not found.' });
+  return res.json({ success: true });
+});
+
 app.use((error, _req, res, _next) => {
   console.error('Unhandled API error:', error);
   res.status(500).json({ success: false, message: 'Internal server error.' });

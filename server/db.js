@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import { randomUUID } from 'node:crypto';
 import 'dotenv/config';
 
 const required = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
@@ -330,4 +331,78 @@ export async function initializeDatabase() {
       INDEX idx_invoices_project (project_id), INDEX idx_invoices_client (client_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS office_locations (
+      id CHAR(36) PRIMARY KEY,
+      slug VARCHAR(64) NOT NULL UNIQUE,
+      country VARCHAR(100) NOT NULL,
+      city VARCHAR(100) NOT NULL,
+      office_label VARCHAR(160) NOT NULL,
+      role_subtitle VARCHAR(200) NULL,
+      street_address VARCHAR(255) NOT NULL,
+      postal_city VARCHAR(180) NOT NULL,
+      phone VARCHAR(60) NULL,
+      email VARCHAR(255) NULL,
+      business_hours VARCHAR(160) NULL,
+      timezone VARCHAR(80) NULL,
+      map_url VARCHAR(500) NULL,
+      is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_offices_active_sort (is_active, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  const [officeCountRows] = await pool.query('SELECT COUNT(*) AS count FROM office_locations');
+  if (!Number(officeCountRows[0]?.count)) {
+    const defaultOffices = [
+      [
+        randomUUID(),
+        'germany-office',
+        'Germany',
+        'Berlin',
+        'Germany Office',
+        'Client Advisory & DACH Operations',
+        'Friedrichstraße 123',
+        '10117 Berlin, Germany',
+        '+49 30 901820',
+        'inquiry@rstechwerk.com',
+        'Mon–Fri · 09:00–18:00 CET',
+        'Europe/Berlin',
+        null,
+        true,
+        true,
+        1
+      ],
+      [
+        randomUUID(),
+        'bangladesh-office',
+        'Bangladesh',
+        'Dhaka',
+        'Bangladesh Office',
+        'Software Engineering & Delivery Hub',
+        'House 42, Road 11, Banani',
+        'Dhaka 1213, Bangladesh',
+        '+880 1700-000000',
+        'inquiry@rstechwerk.com',
+        'Sun–Thu · 10:00–19:00 BST',
+        'Asia/Dhaka',
+        null,
+        false,
+        true,
+        2
+      ]
+    ];
+    for (const row of defaultOffices) {
+      await pool.execute(
+        `INSERT INTO office_locations
+         (id, slug, country, city, office_label, role_subtitle, street_address, postal_city, phone, email, business_hours, timezone, map_url, is_primary, is_active, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        row
+      );
+    }
+  }
 }

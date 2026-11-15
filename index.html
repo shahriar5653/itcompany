@@ -2173,10 +2173,11 @@
     <!-- Site Footer -->
     <footer class="site-footer" role="contentinfo">
       <div class="container">
-        <div class="footer-grid">
-          <!-- Brand Info -->
-          <div>
-            <div class="footer-brand">
+        <!-- Top Tier: Brand, Contact & Organized Columns -->
+        <div class="footer-main-grid">
+          <!-- Column 1: Brand Identity & Direct Contact -->
+          <div class="footer-brand-col">
+            <a href="#home" class="footer-brand" aria-label="RSTechwerk Home">
               <svg class="brand-emblem" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect x="1" y="1" width="34" height="34" rx="9" fill="#0b1320" stroke="#10b981" stroke-width="1.5" />
                 <circle cx="28" cy="8" r="1.75" fill="#38bdf8" />
@@ -2186,33 +2187,39 @@
               <span class="brand-text">
                 <span class="brand-rs">RS</span><span class="brand-tech">Techwerk</span>
               </span>
-            </div>
-            <p class="footer-bio">
+            </a>
+            <p class="footer-bio" id="footerBioText">
               We turn ideas into reliable digital products—from initial discovery and UI/UX design to full-stack engineering and ongoing maintenance. German engineering standards with dedicated Dhaka development hub.
             </p>
-            <div class="footer-email-box">
-              <span aria-hidden="true">&bull;</span>
-              <span>inquiry@rstechwerk.com</span>
+            <div class="footer-contact-actions">
+              <a href="mailto:inquiry@rstechwerk.com" class="footer-contact-link" id="footerEmailLink">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span id="footerEmailText">inquiry@rstechwerk.com</span>
+              </a>
+              <a href="#contact" class="footer-cta-link">
+                <span>Discuss Your Project</span>
+                <span aria-hidden="true">&rarr;</span>
+              </a>
             </div>
           </div>
 
-          <!-- Navigation Links -->
+          <!-- Column 2: Navigation -->
           <div>
             <div class="footer-col-title">Navigation</div>
             <ul class="footer-links">
               <li><a href="#services" class="footer-link">Services</a></li>
-              <li><a href="/services.html" class="footer-link">All Service Details</a></li>
-              <li><a href="/case-studies.html" class="footer-link">Case Studies</a></li>
               <li><a href="#work" class="footer-link">Featured Work</a></li>
               <li><a href="#process" class="footer-link">Development Process</a></li>
               <li><a href="#maintenance" class="footer-link">Maintenance &amp; Retainers</a></li>
               <li><a href="#why-us" class="footer-link">Why RSTechwerk</a></li>
-              <li><a href="#about" class="footer-link">About Team</a></li>
               <li><a href="#faq" class="footer-link">FAQ</a></li>
             </ul>
           </div>
 
-          <!-- Services Overview -->
+          <!-- Column 3: Capabilities -->
           <div>
             <div class="footer-col-title">Capabilities</div>
             <ul class="footer-links">
@@ -2223,6 +2230,98 @@
               <li><a href="#services" class="footer-link">Backend Architecture &amp; APIs</a></li>
               <li><a href="#maintenance" class="footer-link">Dedicated Maintenance &amp; SLAs</a></li>
             </ul>
+          </div>
+
+          <!-- Column 4: Resources & Client Portal -->
+          <div>
+            <div class="footer-col-title">Resources &amp; Portal</div>
+            <ul class="footer-links">
+              <li><a href="/services.html" class="footer-link">All Service Details</a></li>
+              <li><a href="/case-studies.html" class="footer-link">Case Studies</a></li>
+              <li><a href="#about" class="footer-link">About Team</a></li>
+              <li><a href="/login.html?redirect=portal" class="footer-link">Client Portal</a></li>
+              <li><a href="/register.html" class="footer-link">Create Client Account</a></li>
+              <li><a href="#contact" class="footer-link">Start Your Project</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Middle Tier: Office Locations (Dynamic from Backend) -->
+        <div class="footer-offices-section" aria-labelledby="footerOfficesHeading">
+          <div class="footer-offices-header">
+            <h2 class="footer-offices-title" id="footerOfficesHeading">Office Locations</h2>
+            <p class="footer-offices-subtitle">European client advisory paired with dedicated engineering delivery.</p>
+          </div>
+          <div class="footer-offices-grid" id="footerOfficesGrid">
+            <article class="footer-office-card">
+              <div class="footer-office-top">
+                <div class="footer-office-region">
+                  <span>Germany</span>
+                  <span aria-hidden="true">&middot;</span>
+                  <span>Berlin</span>
+                  <span aria-hidden="true">&middot;</span>
+                  <span class="footer-office-primary">Primary HQ</span>
+                </div>
+                <h3 class="footer-office-name">Germany Office</h3>
+                <p class="footer-office-role">Client Advisory &amp; DACH Operations</p>
+              </div>
+              <div class="footer-office-details">
+                <div class="footer-office-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>Friedrichstraße 123, 10117 Berlin, Germany</span>
+                </div>
+                <div class="footer-office-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <a href="tel:+4930901820">+49 30 901820</a>
+                </div>
+                <div class="footer-office-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>Mon–Fri · 09:00–18:00 CET</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="footer-office-card">
+              <div class="footer-office-top">
+                <div class="footer-office-region">
+                  <span>Bangladesh</span>
+                  <span aria-hidden="true">&middot;</span>
+                  <span>Dhaka</span>
+                </div>
+                <h3 class="footer-office-name">Bangladesh Office</h3>
+                <p class="footer-office-role">Software Engineering &amp; Delivery Hub</p>
+              </div>
+              <div class="footer-office-details">
+                <div class="footer-office-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>House 42, Road 11, Banani, Dhaka 1213, Bangladesh</span>
+                </div>
+                <div class="footer-office-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <a href="tel:+8801700000000">+880 1700-000000</a>
+                </div>
+                <div class="footer-office-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>Sun–Thu · 10:00–19:00 BST</span>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
 

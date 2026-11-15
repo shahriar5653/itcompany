@@ -3024,4 +3024,237 @@ body.admin-body.drawer-open {
   }
 }
 
+/* ==========================================================================
+   Office Addresses & Footer Management Module
+   ========================================================================== */
+
+.addresses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 1.15rem;
+}
+
+.address-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--admin-canvas-subtle);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: border-color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.address-card:hover {
+  border-color: var(--admin-border-strong);
+}
+
+.address-card.is-hidden-office {
+  opacity: 0.62;
+  border-style: dashed;
+}
+
+.address-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.address-card-region {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.address-card-primary {
+  color: var(--admin-accent);
+}
+
+.address-card-status {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-accent);
+  white-space: nowrap;
+}
+
+.address-card-status.is-hidden {
+  color: var(--admin-text-muted);
+}
+
+.address-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--admin-text-primary);
+  margin: 0;
+}
+
+.address-card-role {
+  font-size: 0.82rem;
+  color: var(--admin-text-secondary);
+  margin: 0.25rem 0 0;
+  line-height: 1.45;
+}
+
+.address-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--admin-border);
+  font-size: 0.82rem;
+  color: var(--admin-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.address-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.address-detail-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-text-muted);
+  min-width: 58px;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+
+.address-detail-link {
+  color: var(--admin-accent);
+  text-decoration: none;
+}
+
+.address-detail-link:hover {
+  text-decoration: underline;
+}
+
+.address-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+.address-card-actions .btn {
+  min-height: 34px;
+}
+
+.btn-danger-ghost {
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-muted);
+}
+
+.btn-danger-ghost:hover {
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.btn-danger-ghost.is-confirming {
+  border-color: rgba(239, 68, 68, 0.65);
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+}
+
+.address-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.65rem;
+  padding: 2.5rem 1.5rem;
+  border: 1px dashed var(--admin-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--admin-text-secondary);
+}
+
+.address-empty-state h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--admin-text-primary);
+}
+
+.address-empty-state p {
+  margin: 0;
+  font-size: 0.85rem;
+  max-width: 420px;
+}
+
+.form-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.form-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--admin-canvas-subtle);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--admin-text-primary);
+  cursor: pointer;
+}
+
+.form-checkbox-row input[type="checkbox"] {
+  accent-color: var(--admin-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .addresses-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .address-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .address-card-actions .btn {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .address-card-actions .address-delete-btn {
+    grid-column: 1 / -1;
+  }
+}
+
+
 

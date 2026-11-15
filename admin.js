@@ -457,6 +457,7 @@ const DEFAULT_ADMIN_DATA = {
   settings: {
     companyName: 'RSTechwerk',
     inquiryEmail: 'inquiry@rstechwerk.com',
+    footerBio: 'We turn ideas into reliable digital products—from initial discovery and UI/UX design to full-stack engineering and ongoing maintenance. German engineering standards with dedicated Dhaka development hub.',
     responseSla: 'We reply to every business inquiry within 24 business hours.',
     ndaText: 'We gladly sign standard mutual NDAs prior to detailed technical discussions.',
     cityOne: 'Berlin (CET)',
@@ -482,7 +483,8 @@ function loadAdminState() {
         ...DEFAULT_ADMIN_DATA,
         ...parsed,
         process: parsed.process ? { ...DEFAULT_ADMIN_DATA.process, ...parsed.process } : DEFAULT_ADMIN_DATA.process,
-        techStack: parsed.techStack ? { ...DEFAULT_ADMIN_DATA.techStack, ...parsed.techStack } : DEFAULT_ADMIN_DATA.techStack
+        techStack: parsed.techStack ? { ...DEFAULT_ADMIN_DATA.techStack, ...parsed.techStack } : DEFAULT_ADMIN_DATA.techStack,
+        settings: parsed.settings ? { ...DEFAULT_ADMIN_DATA.settings, ...parsed.settings } : DEFAULT_ADMIN_DATA.settings
       };
     }
   } catch (e) {
@@ -745,6 +747,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSeoLiveModule();
   initMultilingualModule();
   initSectionTranslations();
+  initAddressesModule();
   initSettingsModule();
   initApiModule();
   initResetDataHandler();
@@ -4109,10 +4112,368 @@ function initSettingsModule() {
       adminState.settings.ogImage = ogImgInput.value.trim();
 
       saveAdminState();
+      const footerEmailInput = document.getElementById('addressFooterEmail');
+      if (footerEmailInput) footerEmailInput.value = adminState.settings.inquiryEmail;
       updateJsonSchemaDisplay();
       showToast('All company settings and SEO meta saved!');
     });
   }
+}
+
+/* ==========================================================================
+   10B. Office Addresses & Footer Module (MySQL Synced)
+   ========================================================================== */
+
+function initAddressesModule() {
+  const bioInput = document.getElementById('addressFooterBio');
+  const emailInput = document.getElementById('addressFooterEmail');
+  const saveFooterBtn = document.getElementById('saveFooterSummaryBtn');
+  const addOfficeBtn = document.getElementById('addOfficeBtn');
+  const refreshBtn = document.getElementById('refreshOfficesBtn');
+  const listEl = document.getElementById('adminOfficesList');
+  const statusEl = document.getElementById('addressesStatusText');
+  const badgeEl = document.getElementById('addressesCountBadge');
+
+  const modal = document.getElementById('officeEditModal');
+  const form = document.getElementById('officeModalForm');
+  const closeModalBtn = document.getElementById('closeOfficeModalBtn');
+  const cancelModalBtn = document.getElementById('cancelOfficeModalBtn');
+  const saveModalBtn = document.getElementById('saveOfficeModalBtn');
+  const modalKicker = document.getElementById('officeModalKicker');
+  const modalTitle = document.getElementById('officeModalTitle');
+
+  const idInput = document.getElementById('officeModalId');
+  const countryInput = document.getElementById('officeCountry');
+  const cityInput = document.getElementById('officeCity');
+  const labelInput = document.getElementById('officeLabel');
+  const roleInput = document.getElementById('officeRoleSubtitle');
+  const streetInput = document.getElementById('officeStreetAddress');
+  const postalInput = document.getElementById('officePostalCity');
+  const sortInput = document.getElementById('officeSortOrder');
+  const phoneInput = document.getElementById('officePhone');
+  const officeEmailInput = document.getElementById('officeEmail');
+  const hoursInput = document.getElementById('officeBusinessHours');
+  const timezoneInput = document.getElementById('officeTimezone');
+  const mapUrlInput = document.getElementById('officeMapUrl');
+  const isActiveInput = document.getElementById('officeIsActive');
+  const isPrimaryInput = document.getElementById('officeIsPrimary');
+
+  if (!listEl) return;
+
+  let officesList = [];
+  let pendingDeleteId = null;
+  let pendingDeleteTimer = null;
+
+  if (bioInput) {
+    bioInput.value = adminState.settings.footerBio || DEFAULT_ADMIN_DATA.settings.footerBio;
+  }
+  if (emailInput) {
+    emailInput.value = adminState.settings.inquiryEmail || DEFAULT_ADMIN_DATA.settings.inquiryEmail;
+  }
+
+  if (saveFooterBtn) {
+    saveFooterBtn.addEventListener('click', () => {
+      const nextBio = bioInput ? bioInput.value.trim() : '';
+      const nextEmail = emailInput ? emailInput.value.trim() : '';
+      if (nextEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
+        showToast('Please enter a valid footer contact email address.', 'error');
+        return;
+      }
+      adminState.settings.footerBio = nextBio || DEFAULT_ADMIN_DATA.settings.footerBio;
+      if (nextEmail) {
+        adminState.settings.inquiryEmail = nextEmail;
+        const settingEmailEl = document.getElementById('settingInquiryEmail');
+        if (settingEmailEl) settingEmailEl.value = nextEmail;
+      }
+      saveAdminState();
+      updateJsonSchemaDisplay();
+      showToast('Footer brand bio & contact email saved!');
+    });
+  }
+
+  function clearDeleteConfirmation() {
+    if (pendingDeleteTimer) {
+      clearTimeout(pendingDeleteTimer);
+      pendingDeleteTimer = null;
+    }
+    pendingDeleteId = null;
+  }
+
+  function openOfficeModal(office = null) {
+    if (!modal || !form) return;
+    clearDeleteConfirmation();
+    form.reset();
+    if (office) {
+      if (modalKicker) modalKicker.textContent = `${office.country || 'Office'} · ${office.city || ''}`.trim();
+      if (modalTitle) modalTitle.textContent = `Edit ${office.officeLabel || 'Office Location'}`;
+      if (idInput) idInput.value = office.id || '';
+      if (countryInput) countryInput.value = office.country || '';
+      if (cityInput) cityInput.value = office.city || '';
+      if (labelInput) labelInput.value = office.officeLabel || '';
+      if (roleInput) roleInput.value = office.roleSubtitle || '';
+      if (streetInput) streetInput.value = office.streetAddress || '';
+      if (postalInput) postalInput.value = office.postalCity || '';
+      if (sortInput) sortInput.value = String(office.sortOrder ?? 1);
+      if (phoneInput) phoneInput.value = office.phone || '';
+      if (officeEmailInput) officeEmailInput.value = office.email || '';
+      if (hoursInput) hoursInput.value = office.businessHours || '';
+      if (timezoneInput) timezoneInput.value = office.timezone || '';
+      if (mapUrlInput) mapUrlInput.value = office.mapUrl || '';
+      if (isActiveInput) isActiveInput.checked = office.isActive !== false;
+      if (isPrimaryInput) isPrimaryInput.checked = Boolean(office.isPrimary);
+    } else {
+      if (modalKicker) modalKicker.textContent = 'New Office Location';
+      if (modalTitle) modalTitle.textContent = 'Add Office Location';
+      if (idInput) idInput.value = '';
+      if (sortInput) sortInput.value = String(officesList.length + 1);
+      if (isActiveInput) isActiveInput.checked = true;
+      if (isPrimaryInput) isPrimaryInput.checked = officesList.length === 0;
+    }
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    if (countryInput) countryInput.focus();
+  }
+
+  function closeOfficeModal() {
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (addOfficeBtn) addOfficeBtn.addEventListener('click', () => openOfficeModal(null));
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeOfficeModal);
+  if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeOfficeModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeOfficeModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('open')) {
+      closeOfficeModal();
+    }
+  });
+
+  function renderOffices() {
+    if (badgeEl) badgeEl.textContent = String(officesList.filter((item) => item.isActive).length);
+    if (statusEl) {
+      const activeCount = officesList.filter((item) => item.isActive).length;
+      statusEl.textContent = officesList.length
+        ? `${officesList.length} location${officesList.length === 1 ? '' : 's'} stored · ${activeCount} visible in public footer`
+        : 'No office locations saved yet';
+    }
+
+    if (!officesList.length) {
+      listEl.innerHTML = `
+        <div class="address-empty-state">
+          <h3>No office locations yet</h3>
+          <p>Add your Germany, Bangladesh, or regional offices to display them dynamically in the landing page footer.</p>
+          <button type="button" class="btn btn-primary btn-sm" id="emptyAddOfficeBtn">+ Add First Office</button>
+        </div>
+      `;
+      document.getElementById('emptyAddOfficeBtn')?.addEventListener('click', () => openOfficeModal(null));
+      return;
+    }
+
+    listEl.innerHTML = officesList.map((office) => {
+      const isHidden = !office.isActive;
+      const isConfirmingDelete = pendingDeleteId === office.id;
+      const fullAddress = [office.streetAddress, office.postalCity].filter(Boolean).join(', ');
+      return `
+        <article class="address-card${isHidden ? ' is-hidden-office' : ''}" data-office-id="${escapeHtml(office.id)}">
+          <div>
+            <div class="address-card-header">
+              <div>
+                <div class="address-card-region">
+                  <span>${escapeHtml(office.country)}</span>
+                  <span aria-hidden="true">&middot;</span>
+                  <span>${escapeHtml(office.city)}</span>
+                  ${office.isPrimary ? '<span aria-hidden="true">&middot;</span><span class="address-card-primary">Primary HQ</span>' : ''}
+                </div>
+                <h3 class="address-card-title">${escapeHtml(office.officeLabel)}</h3>
+                ${office.roleSubtitle ? `<p class="address-card-role">${escapeHtml(office.roleSubtitle)}</p>` : ''}
+              </div>
+              <span class="address-card-status${isHidden ? ' is-hidden' : ''}">${isHidden ? 'Hidden' : 'Visible'}</span>
+            </div>
+
+            <div class="address-card-details" style="margin-top: 0.9rem;">
+              <div class="address-detail-row">
+                <span class="address-detail-label">Address</span>
+                <span>${escapeHtml(fullAddress)}</span>
+              </div>
+              ${office.phone ? `
+                <div class="address-detail-row">
+                  <span class="address-detail-label">Phone</span>
+                  <span>${escapeHtml(office.phone)}</span>
+                </div>
+              ` : ''}
+              ${office.email ? `
+                <div class="address-detail-row">
+                  <span class="address-detail-label">Email</span>
+                  <span>${escapeHtml(office.email)}</span>
+                </div>
+              ` : ''}
+              ${office.businessHours ? `
+                <div class="address-detail-row">
+                  <span class="address-detail-label">Hours</span>
+                  <span>${escapeHtml(office.businessHours)}${office.timezone ? ` (${escapeHtml(office.timezone)})` : ''}</span>
+                </div>
+              ` : ''}
+              ${office.mapUrl ? `
+                <div class="address-detail-row">
+                  <span class="address-detail-label">Map</span>
+                  <a href="${escapeHtml(office.mapUrl)}" target="_blank" rel="noopener noreferrer" class="address-detail-link">Open directions &rarr;</a>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="address-card-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-edit-office="${escapeHtml(office.id)}">Edit</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-toggle-office="${escapeHtml(office.id)}">${isHidden ? 'Show in Footer' : 'Hide'}</button>
+            <button type="button" class="btn btn-sm btn-danger-ghost address-delete-btn${isConfirmingDelete ? ' is-confirming' : ''}" data-delete-office="${escapeHtml(office.id)}">
+              ${isConfirmingDelete ? 'Confirm Delete?' : 'Delete'}
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
+
+  async function fetchAdminOffices() {
+    if (statusEl) statusEl.textContent = 'Syncing office locations from MySQL...';
+    try {
+      const result = await adminApiFetch('/api/admin/offices');
+      officesList = Array.isArray(result.offices) ? result.offices : [];
+      renderOffices();
+    } catch (error) {
+      if (statusEl) statusEl.textContent = `Could not load office locations: ${error.message}`;
+      listEl.innerHTML = `
+        <div class="address-empty-state">
+          <h3>Unable to load office locations</h3>
+          <p>${escapeHtml(error.message)}</p>
+          <button type="button" class="btn btn-secondary btn-sm" id="retryLoadOfficesBtn">Try Again</button>
+        </div>
+      `;
+      document.getElementById('retryLoadOfficesBtn')?.addEventListener('click', fetchAdminOffices);
+    }
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener('click', fetchAdminOffices);
+
+  listEl.addEventListener('click', async (event) => {
+    const editBtn = event.target.closest('[data-edit-office]');
+    if (editBtn) {
+      const office = officesList.find((item) => item.id === editBtn.getAttribute('data-edit-office'));
+      if (office) openOfficeModal(office);
+      return;
+    }
+
+    const toggleBtn = event.target.closest('[data-toggle-office]');
+    if (toggleBtn) {
+      const id = toggleBtn.getAttribute('data-toggle-office');
+      const office = officesList.find((item) => item.id === id);
+      if (!office) return;
+      toggleBtn.disabled = true;
+      try {
+        await adminApiFetch(`/api/offices/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          body: JSON.stringify({ isActive: !office.isActive })
+        });
+        localStorage.removeItem('rstechwerk_public_offices');
+        await fetchAdminOffices();
+        showToast(office.isActive ? `${office.officeLabel} hidden from footer.` : `${office.officeLabel} published to footer.`);
+      } catch (error) {
+        showToast(error.message || 'Could not update office visibility.', 'error');
+      } finally {
+        toggleBtn.disabled = false;
+      }
+      return;
+    }
+
+    const deleteBtn = event.target.closest('[data-delete-office]');
+    if (deleteBtn) {
+      const id = deleteBtn.getAttribute('data-delete-office');
+      const office = officesList.find((item) => item.id === id);
+      if (!office) return;
+      if (pendingDeleteId !== id) {
+        clearDeleteConfirmation();
+        pendingDeleteId = id;
+        renderOffices();
+        pendingDeleteTimer = setTimeout(() => {
+          pendingDeleteId = null;
+          pendingDeleteTimer = null;
+          renderOffices();
+        }, 4000);
+        return;
+      }
+      clearDeleteConfirmation();
+      deleteBtn.disabled = true;
+      try {
+        await adminApiFetch(`/api/offices/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        localStorage.removeItem('rstechwerk_public_offices');
+        await fetchAdminOffices();
+        showToast(`${office.officeLabel} removed.`);
+      } catch (error) {
+        showToast(error.message || 'Could not delete office location.', 'error');
+      } finally {
+        deleteBtn.disabled = false;
+      }
+    }
+  });
+
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const id = idInput ? idInput.value.trim() : '';
+      const payload = {
+        country: countryInput?.value.trim() || '',
+        city: cityInput?.value.trim() || '',
+        officeLabel: labelInput?.value.trim() || '',
+        roleSubtitle: roleInput?.value.trim() || '',
+        streetAddress: streetInput?.value.trim() || '',
+        postalCity: postalInput?.value.trim() || '',
+        phone: phoneInput?.value.trim() || '',
+        email: officeEmailInput?.value.trim() || '',
+        businessHours: hoursInput?.value.trim() || '',
+        timezone: timezoneInput?.value.trim() || '',
+        mapUrl: mapUrlInput?.value.trim() || '',
+        sortOrder: Number(sortInput?.value || 0),
+        isActive: isActiveInput ? isActiveInput.checked : true,
+        isPrimary: isPrimaryInput ? isPrimaryInput.checked : false
+      };
+
+      if (!payload.country || !payload.city || !payload.officeLabel || !payload.streetAddress || !payload.postalCity) {
+        showToast('Country, city, office title, street address, and postal/city line are required.', 'error');
+        return;
+      }
+
+      if (saveModalBtn) {
+        saveModalBtn.disabled = true;
+        saveModalBtn.textContent = 'Saving...';
+      }
+
+      try {
+        await adminApiFetch(id ? `/api/offices/${encodeURIComponent(id)}` : '/api/offices', {
+          method: id ? 'PUT' : 'POST',
+          body: JSON.stringify(payload)
+        });
+        localStorage.removeItem('rstechwerk_public_offices');
+        closeOfficeModal();
+        await fetchAdminOffices();
+        showToast(id ? `${payload.officeLabel} updated!` : `${payload.officeLabel} added!`);
+      } catch (error) {
+        showToast(error.message || 'Could not save office location.', 'error');
+      } finally {
+        if (saveModalBtn) {
+          saveModalBtn.disabled = false;
+          saveModalBtn.textContent = 'Save Office Location';
+        }
+      }
+    });
+  }
+
+  fetchAdminOffices();
 }
 
 /* ==========================================================================

@@ -208,6 +208,15 @@
             <span class="badge-count" id="faqCountBadge">6</span>
           </button>
 
+          <button type="button" class="nav-tab-btn" data-tab="tab-addresses">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>Office Addresses</span>
+            <span class="badge-count" id="addressesCountBadge">2</span>
+          </button>
+
           <div class="sidebar-section-kicker" style="margin-top: 1.25rem;">SEO &amp; Infrastructure</div>
 
           <button type="button" class="nav-tab-btn" data-tab="tab-seo">
@@ -1253,6 +1262,55 @@
         </section>
 
         <!-- ====================================================================
+             7B. TAB: OFFICE ADDRESSES & FOOTER INFO
+             ==================================================================== -->
+        <section class="admin-tab-panel" id="tab-addresses" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Office Addresses &amp; Footer Info</h1>
+              <p class="panel-subtitle">Manage your Germany and Bangladesh office locations, contact channels, and landing page footer details.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="addOfficeBtn">+ Add Office Location</button>
+            </div>
+          </div>
+
+          <div class="content-box" style="margin-bottom: 1.25rem;">
+            <div class="box-header">
+              <div>
+                <h2 class="box-title">Footer Brand Summary &amp; Contact</h2>
+                <p class="box-subtitle">Controls the brand overview and direct contact email displayed in the landing page footer.</p>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="saveFooterSummaryBtn">Save Footer Info</button>
+            </div>
+            <form id="footerSummaryForm" class="admin-form">
+              <div class="form-grid two-col" style="align-items: start;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="addressFooterBio">Footer Brand Bio</label>
+                  <textarea id="addressFooterBio" class="form-textarea" rows="3" placeholder="We turn ideas into reliable digital products..."></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="addressFooterEmail">Footer Contact Email</label>
+                  <input type="email" id="addressFooterEmail" class="form-input" placeholder="inquiry@rstechwerk.com" />
+                  <span class="form-help">Synced with Official Inquiry Email in Company Info &amp; SLAs.</span>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="content-box">
+            <div class="box-header">
+              <div>
+                <h2 class="box-title">Office Locations</h2>
+                <p class="box-subtitle" id="addressesStatusText">Loading office locations from database...</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="refreshOfficesBtn">Refresh</button>
+            </div>
+            <div class="addresses-grid" id="adminOfficesList"></div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
              8. TAB: COMPANY SETTINGS & SEO
              ==================================================================== -->
         <section class="admin-tab-panel" id="tab-settings" role="tabpanel">
@@ -1669,6 +1727,103 @@
           <button type="button" class="btn btn-secondary btn-sm" id="cancelTechCategoryModalBtn">Cancel</button>
           <button type="button" class="btn btn-primary btn-sm" id="saveTechCategoryModalBtn">Save Category</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add / Edit Office Location -->
+    <div class="admin-modal-backdrop" id="officeEditModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="officeModalTitle">
+      <div class="admin-modal-card" style="max-width: 620px;">
+        <div class="admin-modal-header">
+          <div>
+            <span class="modal-badge-kicker" id="officeModalKicker">Office Location</span>
+            <h2 class="admin-modal-title" id="officeModalTitle">Add Office Location</h2>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeOfficeModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+        <form id="officeModalForm" class="admin-form" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+          <div class="admin-modal-body">
+            <input type="hidden" id="officeModalId" />
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="officeCountry">Country *</label>
+                <input type="text" id="officeCountry" class="form-input" placeholder="e.g. Germany or Bangladesh" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="officeCity">City *</label>
+                <input type="text" id="officeCity" class="form-input" placeholder="e.g. Berlin or Dhaka" required />
+              </div>
+            </div>
+
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="officeLabel">Office Title *</label>
+                <input type="text" id="officeLabel" class="form-input" placeholder="e.g. Germany Office" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="officeRoleSubtitle">Role / Hub Subtitle</label>
+                <input type="text" id="officeRoleSubtitle" class="form-input" placeholder="e.g. European Headquarters & Client Advisory" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="officeStreetAddress">Street Address *</label>
+              <input type="text" id="officeStreetAddress" class="form-input" placeholder="e.g. Friedrichstraße 123 or House 42, Road 11, Banani" required />
+            </div>
+
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="officePostalCity">Postal Code, City &amp; Country *</label>
+                <input type="text" id="officePostalCity" class="form-input" placeholder="e.g. 10117 Berlin, Germany" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="officeSortOrder">Display Order</label>
+                <input type="number" id="officeSortOrder" class="form-input" min="0" step="1" value="1" />
+              </div>
+            </div>
+
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="officePhone">Phone Number</label>
+                <input type="text" id="officePhone" class="form-input" placeholder="e.g. +49 30 901820" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="officeEmail">Office Email</label>
+                <input type="email" id="officeEmail" class="form-input" placeholder="e.g. berlin@rstechwerk.com" />
+              </div>
+            </div>
+
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="officeBusinessHours">Business Hours</label>
+                <input type="text" id="officeBusinessHours" class="form-input" placeholder="e.g. Mon–Fri · 09:00–18:00 CET" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="officeTimezone">Timezone</label>
+                <input type="text" id="officeTimezone" class="form-input" placeholder="e.g. Europe/Berlin or Asia/Dhaka" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="officeMapUrl">Google Maps / Directions URL</label>
+              <input type="url" id="officeMapUrl" class="form-input" placeholder="https://maps.google.com/?q=..." />
+            </div>
+
+            <div class="form-checkbox-grid">
+              <label class="form-checkbox-row" for="officeIsActive">
+                <input type="checkbox" id="officeIsActive" checked />
+                <span>Visible in landing page footer</span>
+              </label>
+              <label class="form-checkbox-row" for="officeIsPrimary">
+                <input type="checkbox" id="officeIsPrimary" />
+                <span>Mark as Primary HQ</span>
+              </label>
+            </div>
+          </div>
+          <div class="admin-modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" id="cancelOfficeModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="saveOfficeModalBtn">Save Office Location</button>
+          </div>
+        </form>
       </div>
     </div>
 

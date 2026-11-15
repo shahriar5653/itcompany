@@ -248,3 +248,25 @@ CREATE TABLE IF NOT EXISTS invoices (
       CONSTRAINT fk_invoices_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
       INDEX idx_invoices_project (project_id), INDEX idx_invoices_client (client_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS office_locations (
+      id CHAR(36) PRIMARY KEY,
+      slug VARCHAR(64) NOT NULL UNIQUE,
+      country VARCHAR(100) NOT NULL,
+      city VARCHAR(100) NOT NULL,
+      office_label VARCHAR(160) NOT NULL,
+      role_subtitle VARCHAR(200) NULL,
+      street_address VARCHAR(255) NOT NULL,
+      postal_city VARCHAR(180) NOT NULL,
+      phone VARCHAR(60) NULL,
+      email VARCHAR(255) NULL,
+      business_hours VARCHAR(160) NULL,
+      timezone VARCHAR(80) NULL,
+      map_url VARCHAR(500) NULL,
+      is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_offices_active_sort (is_active, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

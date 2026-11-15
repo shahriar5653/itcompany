@@ -655,6 +655,34 @@ Object.assign(LANGUAGE_COPY.es, {
   "Your project workspace will appear automatically once you accept an open offer.": "Su espacio de proyecto aparecerá al aceptar una oferta.",
   "Projects assigned to your company account will appear here.": "Aquí aparecerán los proyectos asignados a su empresa."
 });
+Object.assign(LANGUAGE_COPY.de, {
+  "Resources & Portal": "Ressourcen & Portal",
+  "Featured Work": "Ausgewählte Projekte",
+  "About Team": "Über unser Team",
+  "Create Client Account": "Kundenkonto erstellen",
+  "Office Locations": "Bürostandorte",
+  "European client advisory paired with dedicated engineering delivery.": "Europäische Kundenberatung verbunden mit dedizierter Softwareentwicklung.",
+  "Primary HQ": "Hauptsitz",
+  "Germany Office": "Büro Deutschland",
+  "Bangladesh Office": "Büro Bangladesch",
+  "Client Advisory & DACH Operations": "Kundenberatung & DACH-Betreuung",
+  "Software Engineering & Delivery Hub": "Softwareentwicklung & Delivery-Hub",
+  "View on Map": "Auf Karte ansehen"
+});
+Object.assign(LANGUAGE_COPY.es, {
+  "Resources & Portal": "Recursos y portal",
+  "Featured Work": "Proyectos destacados",
+  "About Team": "Sobre el equipo",
+  "Create Client Account": "Crear cuenta de cliente",
+  "Office Locations": "Nuestras oficinas",
+  "European client advisory paired with dedicated engineering delivery.": "Asesoría europea para clientes combinada con desarrollo de software dedicado.",
+  "Primary HQ": "Sede principal",
+  "Germany Office": "Oficina en Alemania",
+  "Bangladesh Office": "Oficina en Bangladesch",
+  "Client Advisory & DACH Operations": "Asesoría a clientes y operaciones DACH",
+  "Software Engineering & Delivery Hub": "Centro de ingeniería y entrega de software",
+  "View on Map": "Ver en el mapa"
+});
 const ORIGINAL_TEXT = new WeakMap();
 const ORIGINAL_ATTRIBUTES = new WeakMap();
 window.RSTechwerkLanguageCopy = LANGUAGE_COPY;
@@ -1849,7 +1877,21 @@ async function applyPublishedAdminContent() {
       const ogDescription = document.querySelector('meta[property="og:description"]');
       if (ogTitle && metaTitle) ogTitle.setAttribute('content', metaTranslations[ogTitle.getAttribute('content')] || metaTitle);
       if (ogDescription && metaDescription) ogDescription.setAttribute('content', metaTranslations[ogDescription.getAttribute('content')] || metaDescription);
+
+      const footerBioEl = document.getElementById('footerBioText');
+      if (footerBioEl && published.settings.footerBio) {
+        const translatedBio = metaTranslations[published.settings.footerBio] || published.settings.footerBio;
+        footerBioEl.textContent = translatedBio;
+      }
+      const footerEmailLink = document.getElementById('footerEmailLink');
+      const footerEmailText = document.getElementById('footerEmailText');
+      if (published.settings.inquiryEmail) {
+        if (footerEmailText) footerEmailText.textContent = published.settings.inquiryEmail;
+        if (footerEmailLink) footerEmailLink.href = `mailto:${published.settings.inquiryEmail}`;
+      }
     }
+
+    await loadPublicOffices(selectedLanguage, requestId);
 
     // 1. Hero Content
     if (published.hero) {
@@ -2037,6 +2079,119 @@ async function applyPublishedAdminContent() {
     }
   } catch (e) {
     console.warn('Could not apply published admin content', e);
+  }
+}
+
+async function loadPublicOffices(selectedLanguage = 'en', requestId = publishedContentRequestId) {
+  const grid = document.getElementById('footerOfficesGrid');
+  if (!grid) return;
+  let offices = null;
+  try {
+    const cached = localStorage.getItem('rstechwerk_public_offices');
+    if (cached) offices = JSON.parse(cached);
+  } catch { /* ignore cache parse failure */ }
+
+  try {
+    const response = await fetch('/api/offices');
+    if (response.ok) {
+      const result = await response.json();
+      if (requestId !== publishedContentRequestId) return;
+      if (result.success && Array.isArray(result.offices)) {
+        offices = result.offices;
+        localStorage.setItem('rstechwerk_public_offices', JSON.stringify(offices));
+      }
+    }
+  } catch {
+    /* keep cached or server-rendered defaults if offline */
+  }
+
+  if (!Array.isArray(offices) || offices.length === 0) return;
+
+  const t = LANGUAGE_COPY[selectedLanguage] || {};
+  const translateLabel = (val) => (val && t[val]) || val || '';
+
+  grid.innerHTML = offices.map((office) => {
+    const fullAddress = [office.streetAddress, office.postalCity].filter(Boolean).join(', ');
+    const phoneHref = office.phone ? `tel:${String(office.phone).replace(/[^+\d]/g, '')}` : '';
+    const mapHref = office.mapUrl && /^https?:\/\//i.test(office.mapUrl) ? office.mapUrl : '';
+    return `
+      <article class="footer-office-card">
+        <div class="footer-office-top">
+          <div class="footer-office-region">
+            <span>${escapeText(office.country)}</span>
+            <span aria-hidden="true">&middot;</span>
+            <span>${escapeText(office.city)}</span>
+            ${office.isPrimary ? `<span aria-hidden="true">&middot;</span><span class="footer-office-primary">${escapeText(translateLabel('Primary HQ'))}</span>` : ''}
+          </div>
+          <h3 class="footer-office-name">${escapeText(translateLabel(office.officeLabel))}</h3>
+          ${office.roleSubtitle ? `<p class="footer-office-role">${escapeText(translateLabel(office.roleSubtitle))}</p>` : ''}
+        </div>
+        <div class="footer-office-details">
+          <div class="footer-office-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>${escapeText(fullAddress)}</span>
+          </div>
+          ${office.phone ? `
+            <div class="footer-office-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <a href="${escapeText(phoneHref)}">${escapeText(office.phone)}</a>
+            </div>
+          ` : ''}
+          ${office.email ? `
+            <div class="footer-office-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <a href="mailto:${escapeText(office.email)}">${escapeText(office.email)}</a>
+            </div>
+          ` : ''}
+          ${office.businessHours ? `
+            <div class="footer-office-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>${escapeText(office.businessHours)}</span>
+            </div>
+          ` : ''}
+          ${mapHref ? `
+            <a href="${escapeText(mapHref)}" target="_blank" rel="noopener noreferrer" class="footer-office-map-link">
+              <span>${escapeText(translateLabel('View on Map'))}</span>
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+          ` : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  if (LEGAL_CONTENT?.impressum) {
+    const officeSummaryHtml = offices.map((office) => (
+      `<br><strong>${escapeText(office.officeLabel)}:</strong> ${escapeText([office.streetAddress, office.postalCity].filter(Boolean).join(', '))}`
+    )).join('');
+    const contactEmail = escapeText(offices[0]?.email || 'inquiry@rstechwerk.com');
+    LEGAL_CONTENT.impressum.content = `
+      <div class="dialog-section-block">
+        <h4 class="dialog-block-title">Website Provider Information</h4>
+        <p><strong>RSTechwerk</strong><br>
+        Software Development &amp; Technology Solutions (rstechwerk.com)${officeSummaryHtml}<br>
+        Contact Email: <a href="mailto:${contactEmail}" style="color:var(--color-accent); text-decoration:underline;">${contactEmail}</a></p>
+      </div>
+      <div class="dialog-section-block">
+        <h4 class="dialog-block-title">Prototype Notice</h4>
+        <p>This web application is an interactive presentation of RSTechwerk's design, technology capabilities, and software delivery process. Portfolio items displayed are conceptual prototypes developed to demonstrate system architecture across various industries.</p>
+      </div>
+      <div class="dialog-section-block">
+        <h4 class="dialog-block-title">Copyright &amp; Intellectual Property</h4>
+        <p>All website content, custom mockups, layout code, and graphics are the property of RSTechwerk unless otherwise indicated. Unauthorized reproduction of code or brand elements is prohibited.</p>
+      </div>
+    `;
   }
 }
 

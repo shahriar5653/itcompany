@@ -3,6 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        if (path !== '/') return;
+
+        const supported = new Set(['en', 'de', 'es']);
+        let language = '';
+        try {
+          const saved = localStorage.getItem('tecklumo-language');
+          if (supported.has(saved)) language = saved;
+        } catch {}
+
+        const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language || ''];
+        if (!language) {
+          language = browserLanguages
+            .map((value) => value.split('-')[0].toLowerCase())
+            .find((value) => supported.has(value)) || '';
+        }
+
+        if (!language) {
+          const regions = browserLanguages.map((value) => {
+            try { return new Intl.Locale(value).region || ''; }
+            catch { return ''; }
+          });
+          const germanRegions = new Set(['DE', 'AT', 'CH', 'LI', 'LU']);
+          const spanishRegions = new Set(['ES', 'MX', 'AR', 'BO', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'GT', 'HN', 'NI', 'PA', 'PE', 'PR', 'PY', 'SV', 'UY', 'VE']);
+          if (regions.some((region) => germanRegions.has(region))) language = 'de';
+          else if (regions.some((region) => spanishRegions.has(region))) language = 'es';
+        }
+
+        if (language && language !== 'en') {
+          window.location.replace(`/${language}/${window.location.search}${window.location.hash}`);
+        }
+      })();
+    </script>
     
     <!-- Primary SEO Metadata -->
     <title>Custom Software Development | RSTechwerk</title>

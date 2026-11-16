@@ -147,6 +147,67 @@ if (existsSync(distDirectory)) {
   app.get(['/register', '/register/'], (_req, res) => res.sendFile(path.join(distDirectory, 'register.html')));
   app.get(['/reset-password', '/reset-password/'], (_req, res) => res.sendFile(path.join(distDirectory, 'reset-password.html')));
   app.get(['/admin-client', '/admin-client/'], (_req, res) => res.sendFile(path.join(distDirectory, 'admin-client.html')));
+  app.get(/^\/(de|es)\/?$/, async (req, res, next) => {
+    try {
+      const language = req.params[0];
+      const [rows] = await pool.execute('SELECT content_key, content_json FROM site_content WHERE content_key IN (?, ?)', ['site', 'i18n']);
+      const content = Object.fromEntries(rows.map((row) => {
+        try { return [row.content_key, JSON.parse(row.content_json)]; }
+        catch { return [row.content_key, {}]; }
+      }));
+      const site = content.site || {};
+      const settings = site.settings || {};
+      const sectionSettings = site.translations?.[language]?.settings || {};
+      const dictionary = content.i18n?.[language] || {};
+      const defaultTitle = 'Custom Software Development | RSTechwerk';
+      const defaultDescription = 'Custom software, ERP, SaaS and mobile apps for businesses in Germany and Europe. RSTechwerk delivers product design, engineering and ongoing support.';
+      const legacyTitle = 'RSTechwerk – Software Development & Technology Solutions | rstechwerk.com';
+      const legacyDescription = 'RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.';
+      const localizedDefaults = {
+        de: {
+          title: 'Individuelle Softwareentwicklung | RSTechwerk',
+          description: 'Individuelle Software, ERP, SaaS und mobile Apps für Unternehmen in Deutschland und Europa. RSTechwerk begleitet Design, Entwicklung und Wartung.'
+        },
+        es: {
+          title: 'Desarrollo de software a medida | RSTechwerk',
+          description: 'Software a medida, ERP, SaaS y aplicaciones móviles para empresas de Alemania y Europa. RSTechwerk ofrece diseño, desarrollo y mantenimiento.'
+        }
+      }[language];
+      const rawTitle = !settings.metaTitle || settings.metaTitle === legacyTitle ? defaultTitle : settings.metaTitle;
+      const rawDescription = !settings.metaDescription || settings.metaDescription === legacyDescription ? defaultDescription : settings.metaDescription;
+      const title = sectionSettings.metaTitle || dictionary[rawTitle] || (rawTitle === defaultTitle ? localizedDefaults.title : rawTitle);
+      const description = sectionSettings.metaDescription || dictionary[rawDescription] || (rawDescription === defaultDescription ? localizedDefaults.description : rawDescription);
+      const escapeAttribute = (value) => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+      const replaceMetaContent = (html, selector, value) => html.replace(selector, (tag) => tag.replace(/content="[^"]*"/, `content="${escapeAttribute(value)}"`));
+      const localizedUrl = `https://rstechwerk.com/${language}/`;
+      let html = await readFile(path.join(distDirectory, 'index.html'), 'utf8');
+      html = html.replace('<html lang="en"', `<html lang="${language}"`);
+      html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeAttribute(title)}</title>`);
+      html = replaceMetaContent(html, /<meta name="description"[^>]*>/, description);
+      html = html.replace(/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${localizedUrl}">`);
+      html = replaceMetaContent(html, /<meta property="og:title"[^>]*>/, title);
+      html = replaceMetaContent(html, /<meta property="og:description"[^>]*>/, description);
+      html = replaceMetaContent(html, /<meta property="og:url"[^>]*>/, localizedUrl);
+      html = replaceMetaContent(html, /<meta property="og:locale"[^>]*>/, language === 'de' ? 'de_DE' : 'es_ES');
+      html = html.replace(/\s*<meta property="og:locale:alternate"[^>]*>/g, '');
+      const alternateLocale = language === 'de' ? 'es_ES' : 'de_DE';
+      html = html.replace(/<meta property="og:locale"[^>]*>/, (tag) => `${tag}\n    <meta property="og:locale:alternate" content="en_GB" />\n    <meta property="og:locale:alternate" content="${alternateLocale}" />`);
+      html = replaceMetaContent(html, /<meta name="twitter:title"[^>]*>/, title);
+      html = replaceMetaContent(html, /<meta name="twitter:description"[^>]*>/, description);
+      html = html.replace('"inLanguage": ["en", "de", "es"]', `"inLanguage": "${language}"`);
+      const alternates = [
+        '<link rel="alternate" hreflang="en" href="https://rstechwerk.com/">',
+        '<link rel="alternate" hreflang="de" href="https://rstechwerk.com/de/">',
+        '<link rel="alternate" hreflang="es" href="https://rstechwerk.com/es/">',
+        '<link rel="alternate" hreflang="x-default" href="https://rstechwerk.com/">'
+      ].join('\n    ');
+      html = html.replace(/\s*<link rel="alternate" hreflang="[^"]+"[^>]*>/g, '');
+      html = html.replace('</head>', `    ${alternates}\n  </head>`);
+      res.type('html').send(html);
+    } catch (error) {
+      return next(error);
+    }
+  });
 }
 
 function issueToken(user) {

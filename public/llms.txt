@@ -8,7 +8,8 @@
 - Contact: mailto:inquiry@rstechwerk.com
 - Primary delivery team: Dhaka, Bangladesh
 - Collaboration: European time-zone overlap with direct senior engineering communication
-- Languages: English and German
+- Languages: English (default), German, and Spanish
+- Language pages: https://rstechwerk.com/ (English), https://rstechwerk.com/de/ (German), https://rstechwerk.com/es/ (Spanish)
 
 ## Services
 

@@ -76,6 +76,8 @@ const LANGUAGE_COPY = {
   }
 };
 Object.assign(LANGUAGE_COPY.de, {
+  'Custom Software Development | RSTechwerk':'Individuelle Softwareentwicklung | RSTechwerk',
+  'Custom software, ERP, SaaS and mobile apps for businesses in Germany and Europe. RSTechwerk delivers product design, engineering and ongoing support.':'Maßgeschneiderte Software, ERP, SaaS und mobile Apps für Unternehmen in Deutschland und Europa. RSTechwerk bietet Produktdesign, Entwicklung und laufenden Support.',
   'NordicLogix Fleet Manager':'NordicLogix Fuhrparkverwaltung','Workspace active':'Arbeitsbereich aktiv','Active RSTechwerk delivery workspace.':'Aktiver Projektbereich von RSTechwerk.','Maintenance Retainer':'Wartungs-Retainer','Client Sign-In Required':'Anmeldung im Kundenportal erforderlich','Staff Account Detected':'Mitarbeiterkonto erkannt','Unable to Load Workspace':'Arbeitsbereich konnte nicht geladen werden','You are signed in with an administrator account that does not have an associated client profile. Open the Admin Console or sign in with a client account.':'Sie sind mit einem Administratorkonto ohne Kundenprofil angemeldet. Öffnen Sie die Admin-Konsole oder melden Sie sich mit einem Kundenkonto an.','Open Admin Console':'Admin-Konsole öffnen','Switch Account':'Konto wechseln','Sign In to Portal':'Im Portal anmelden','Create Client Account':'Kundenkonto erstellen',
   'RSTechwerk – Software Development & Technology Solutions | rstechwerk.com':'RSTechwerk – Softwareentwicklung und Technologielösungen | rstechwerk.com',
   'RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.':'RSTechwerk entwickelt zuverlässige digitale Produkte – von Discovery und UI/UX-Design über Full-Stack-Entwicklung bis zu Cloud-Deployment und Wartung für Unternehmen in Deutschland und Europa.',
@@ -129,6 +131,8 @@ Object.assign(LANGUAGE_COPY.de, {
   'Work Email': 'Geschäftliche E-Mail', 'Estimated Budget Range': 'Geschätztes Budget', 'Select a service category': 'Leistung auswählen', 'Not sure yet / Needs discovery': 'Noch unklar / Beratung erforderlich', 'Custom amount': 'Individueller Betrag', 'Privacy Notice': 'Datenschutzhinweis', 'Navigation': 'Navigation', 'Capabilities': 'Kompetenzen', 'View Case Study': 'Fallstudie ansehen'
 });
 Object.assign(LANGUAGE_COPY.es, {
+  'Custom Software Development | RSTechwerk':'Desarrollo de software a medida | RSTechwerk',
+  'Custom software, ERP, SaaS and mobile apps for businesses in Germany and Europe. RSTechwerk delivers product design, engineering and ongoing support.':'Software a medida, ERP, SaaS y aplicaciones móviles para empresas de Alemania y Europa. RSTechwerk ofrece diseño de producto, desarrollo y soporte continuo.',
   'NordicLogix Fleet Manager':'NordicLogix Gestión de flotas','Workspace active':'Espacio activo','Active RSTechwerk delivery workspace.':'Espacio de proyectos activo de RSTechwerk.','Maintenance Retainer':'Servicio de mantenimiento','Client Sign-In Required':'Se requiere iniciar sesión en el portal','Staff Account Detected':'Se ha detectado una cuenta de equipo','Unable to Load Workspace':'No se pudo cargar el espacio de trabajo','You are signed in with an administrator account that does not have an associated client profile. Open the Admin Console or sign in with a client account.':'Ha iniciado sesión con una cuenta de administrador sin perfil de cliente asociado. Abra la consola de administración o use una cuenta de cliente.','Open Admin Console':'Abrir consola de administración','Switch Account':'Cambiar de cuenta','Sign In to Portal':'Iniciar sesión en el portal','Create Client Account':'Crear cuenta de cliente',
   'RSTechwerk – Software Development & Technology Solutions | rstechwerk.com':'RSTechwerk – Desarrollo de software y soluciones tecnológicas | rstechwerk.com',
   'RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.':'RSTechwerk convierte ideas en productos digitales fiables: desde el análisis y diseño UI/UX hasta el desarrollo full-stack, el despliegue en la nube y el mantenimiento para empresas de Alemania y Europa.',
@@ -687,6 +691,11 @@ const ORIGINAL_TEXT = new WeakMap();
 const ORIGINAL_ATTRIBUTES = new WeakMap();
 window.RSTechwerkLanguageCopy = LANGUAGE_COPY;
 
+function getLandingLanguage() {
+  const match = window.location.pathname.match(/^\/(de|es)\/?$/);
+  return match?.[1] || 'en';
+}
+
 function applyLanguage(language) {
   const translations = LANGUAGE_COPY[language] || {};
   document.documentElement.lang = ['de', 'es'].includes(language) ? language : 'en';
@@ -959,16 +968,14 @@ function setTheme(theme, button) {
 
 function initLanguageSwitcher() {
   const selectors = [document.querySelector('#languageSelect'), document.querySelector('#mobileLanguageSelect')].filter(Boolean);
-  const savedLanguage = localStorage.getItem('tecklumo-language') || 'en';
+  const savedLanguage = getLandingLanguage();
   selectors.forEach((select) => {
     select.value = savedLanguage;
     select.addEventListener('change', (event) => {
       const language = event.target.value;
       localStorage.setItem('tecklumo-language', language);
-      selectors.forEach((other) => { other.value = language; });
-      document.documentElement.lang = language;
-      applyLanguage(language);
-      document.dispatchEvent(new CustomEvent('languagechange', { detail: { language } }));
+      const destination = language === 'en' ? '/' : `/${language}/`;
+      window.location.assign(`${destination}${window.location.search}${window.location.hash}`);
     });
   });
   document.documentElement.lang = savedLanguage;
@@ -1105,7 +1112,7 @@ function initCaseStudyModal() {
     lastActiveElement = triggerBtn;
     const project = localizedPortfolio.find((item) => item.key === projectId);
     const fallback = CASE_STUDIES[projectId];
-    const language = localStorage.getItem('tecklumo-language') || 'en';
+    const language = getLandingLanguage();
     const translatedFallback = CASE_STUDY_COPY[language]?.[projectId];
     const data = project ? { ...fallback, ...project, techStack: project.tech || fallback?.techStack } : (fallback ? { ...fallback } : null);
     if (!data) return;
@@ -1822,7 +1829,7 @@ function animateCardsStaggered(cardsList, stepDelay = 80) {
 let publishedContentRequestId = 0;
 async function applyPublishedAdminContent() {
   const requestId = ++publishedContentRequestId;
-  const selectedLanguage = localStorage.getItem('tecklumo-language') || 'en';
+  const selectedLanguage = getLandingLanguage();
   try {
     const raw = localStorage.getItem('tecklumo_published_content');
     let published = raw ? JSON.parse(raw) : null;
@@ -1861,9 +1868,15 @@ async function applyPublishedAdminContent() {
 
     if (published.settings) {
       const metaTranslations = LANGUAGE_COPY[selectedLanguage] || {};
-      const metaTitle = metaTranslations[published.settings.metaTitle] || published.settings.metaTitle;
-      const metaDescription = metaTranslations[published.settings.metaDescription] || published.settings.metaDescription;
-      const canonicalUrl = published.settings.canonicalUrl;
+      const previousDefaultTitle = 'RSTechwerk – Software Development & Technology Solutions | rstechwerk.com';
+      const previousDefaultDescription = 'RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.';
+      const defaultTitle = 'Custom Software Development | RSTechwerk';
+      const defaultDescription = 'Custom software, ERP, SaaS and mobile apps for businesses in Germany and Europe. RSTechwerk delivers product design, engineering and ongoing support.';
+      const sourceTitle = published.settings.metaTitle === previousDefaultTitle ? defaultTitle : published.settings.metaTitle;
+      const sourceDescription = published.settings.metaDescription === previousDefaultDescription ? defaultDescription : published.settings.metaDescription;
+      const metaTitle = metaTranslations[sourceTitle] || sourceTitle;
+      const metaDescription = metaTranslations[sourceDescription] || sourceDescription;
+      const canonicalUrl = selectedLanguage === 'en' ? published.settings.canonicalUrl : `https://rstechwerk.com/${selectedLanguage}/`;
       if (metaTitle) document.title = metaTitle;
       if (metaDescription) {
         const description = document.querySelector('meta[name="description"]');
@@ -1875,8 +1888,19 @@ async function applyPublishedAdminContent() {
       }
       const ogTitle = document.querySelector('meta[property="og:title"]');
       const ogDescription = document.querySelector('meta[property="og:description"]');
+      const ogUrl = document.querySelector('meta[property="og:url"]');
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      const twitterImage = document.querySelector('meta[name="twitter:image"]');
       if (ogTitle && metaTitle) ogTitle.setAttribute('content', metaTranslations[ogTitle.getAttribute('content')] || metaTitle);
       if (ogDescription && metaDescription) ogDescription.setAttribute('content', metaTranslations[ogDescription.getAttribute('content')] || metaDescription);
+      if (ogUrl && canonicalUrl) ogUrl.setAttribute('content', canonicalUrl);
+      const staleDefaultImages = new Set([
+        'https://rstechwerk.com/og-preview.png',
+        'https://rstechwerk.com/assets/aistudio/Screenshot_2026-11-06_at_1.50.42_AM_998767d7.png'
+      ]);
+      const shareImage = staleDefaultImages.has(published.settings.ogImage) ? 'https://rstechwerk.com/og-preview.jpg' : published.settings.ogImage;
+      if (ogImage && shareImage) ogImage.setAttribute('content', shareImage);
+      if (twitterImage && shareImage) twitterImage.setAttribute('content', shareImage);
 
       const footerBioEl = document.getElementById('footerBioText');
       if (footerBioEl && published.settings.footerBio) {

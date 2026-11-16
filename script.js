@@ -27,7 +27,7 @@ const PORTFOLIO_IMAGE_FALLBACKS = {
 
 const LANGUAGE_COPY = {
   de: {
-    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'FAQ': 'FAQ', 'Client Portal': 'Kundenportal',
+    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'Insights': 'Einblicke', 'Engineering Insights': 'Einblicke in die Softwareentwicklung', 'FAQ': 'FAQ', 'Client Portal': 'Kundenportal',
     'Discuss Your Project': 'Projekt besprechen', 'Start Your Project': 'Projekt starten', 'Explore Our Work': 'Unsere Projekte ansehen', 'Maintain Your Project': 'Projektwartung & Retainer',
     'Europe & DACH': 'Europa & DACH', 'Senior Product Engineering': 'Senior Product Engineering',
     'Build digital products': 'Digitale Produkte entwickeln', 'that move your business forward.': 'die Ihr Unternehmen voranbringen.',
@@ -58,7 +58,7 @@ const LANGUAGE_COPY = {
     'Direct Senior Developer Access': 'Direkter Kontakt zu Senior-Entwicklern', 'Tested on Staging First': 'Zuerst auf Staging getestet'
   },
   es: {
-    'Services': 'Servicios', 'Work': 'Proyectos', 'Process': 'Proceso', 'About': 'Nosotros', 'FAQ': 'Preguntas frecuentes', 'Client Portal': 'Portal del cliente',
+    'Services': 'Servicios', 'Work': 'Proyectos', 'Process': 'Proceso', 'About': 'Nosotros', 'Insights': 'Ideas', 'Engineering Insights': 'Ideas de ingeniería', 'FAQ': 'Preguntas frecuentes', 'Client Portal': 'Portal del cliente',
     'Discuss Your Project': 'Hablemos de su proyecto', 'Start Your Project': 'Iniciar proyecto', 'Explore Our Work': 'Ver nuestros proyectos', 'Maintain Your Project': 'Mantenimiento y soporte',
     'Europe & DACH': 'Europa y DACH', 'Senior Product Engineering': 'Ingeniería de producto senior',
     'Build digital products': 'Construimos productos digitales', 'that move your business forward.': 'que impulsan su negocio.',

@@ -81,7 +81,7 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
   }
   return res.json({ received: true });
 });
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '600kb' }));
 
 const loginAttempts = new Map();
 const inquiryAttempts = new Map();
@@ -139,6 +139,113 @@ const documentUpload = multer({
   fileFilter: (_req, file, callback) => callback(null, ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'application/zip', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(file.mimetype))
 });
 app.use('/uploads', express.static(path.resolve(projectRoot, '..', 'public', 'uploads')));
+
+async function readBlogPosts() {
+  const [rows] = await pool.execute('SELECT content_json FROM site_content WHERE content_key = ? LIMIT 1', ['site']);
+  if (!rows.length) return [];
+  try {
+    const site = JSON.parse(rows[0].content_json);
+    return Array.isArray(site.blogPosts) ? site.blogPosts : [];
+  } catch { return []; }
+}
+
+function blogLanguage(req) {
+  const requested = String(req.query.lang || '').toLowerCase();
+  if (['en', 'de', 'es'].includes(requested)) return requested;
+  const locales = String(req.headers['accept-language'] || '').split(',').map((part) => part.trim().split(';')[0]);
+  for (const locale of locales) {
+    const language = locale.split('-')[0].toLowerCase();
+    if (['en', 'de', 'es'].includes(language)) return language;
+    try {
+      const region = new Intl.Locale(locale).region;
+      if (['DE', 'AT', 'CH', 'LI', 'LU'].includes(region)) return 'de';
+    } catch {}
+  }
+  return 'en';
+}
+
+function blogTranslation(post, language) {
+  const exact = post?.translations?.[language];
+  if (exact?.title && exact?.body) return exact;
+  return post?.translations?.en?.title ? post.translations.en : Object.values(post?.translations || {}).find((copy) => copy?.title && copy?.body) || {};
+}
+
+function escapeBlogHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+}
+
+function blogBodyHtml(body) {
+  return String(body || '').split(/\n\s*\n/).filter(Boolean).map((paragraph) => `<p>${escapeBlogHtml(paragraph.trim()).replaceAll('\n', '<br>')}</p>`).join('');
+}
+
+function blogDateLabel(value, language) {
+  if (!value) return '';
+  const date = new Date(`${String(value).slice(0, 10)}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat({ en: 'en-GB', de: 'de-DE', es: 'es-ES' }[language], { dateStyle: 'medium' }).format(date);
+}
+
+function renderBlogCard(post, language) {
+  const content = blogTranslation(post, language);
+  const url = `/blog/${encodeURIComponent(post.slug)}?lang=${language}`;
+  return `<article class="blog-card">${post.coverImage ? `<a href="${url}"><img src="${escapeBlogHtml(post.coverImage)}" alt="${escapeBlogHtml(content.coverAlt || content.title)}" loading="lazy"></a>` : ''}<div class="blog-card-content"><div class="blog-card-meta"><span>${escapeBlogHtml(content.category || post.category || 'Insights')}</span><time datetime="${escapeBlogHtml(String(post.publishedAt || '').slice(0, 10))}">${escapeBlogHtml(blogDateLabel(post.publishedAt, language))}</time></div><h2><a href="${url}">${escapeBlogHtml(content.title)}</a></h2><p>${escapeBlogHtml(content.excerpt || '')}</p><a class="blog-read" href="${url}">${({ en: 'Read article →', de: 'Artikel lesen →', es: 'Leer artículo →' })[language]}</a></div></article>`;
+}
+
+if (existsSync(distDirectory)) {
+  app.get('/sitemap.xml', async (req, res, next) => {
+    try {
+      const base = await readFile(path.join(distDirectory, 'sitemap.xml'), 'utf8');
+      const posts = (await readBlogPosts()).filter((post) => post.status === 'published' && post.slug);
+      const entries = posts.flatMap((post) => {
+        const languages = ['en', 'de', 'es'].filter((language) => post.translations?.[language]?.title && post.translations?.[language]?.body);
+        const alternates = languages.map((language) => `<xhtml:link rel="alternate" hreflang="${language}" href="https://rstechwerk.com/blog/${encodeURIComponent(post.slug)}?lang=${language}"/>`).join('');
+        const fallback = `<xhtml:link rel="alternate" hreflang="x-default" href="https://rstechwerk.com/blog/${encodeURIComponent(post.slug)}?lang=${languages.includes('en') ? 'en' : languages[0]}"/>`;
+        return languages.map((language) => `<url><loc>https://rstechwerk.com/blog/${encodeURIComponent(post.slug)}?lang=${language}</loc>${alternates}${fallback}<lastmod>${escapeBlogHtml(String(post.updatedAt || post.publishedAt || '').slice(0, 10))}</lastmod><changefreq>yearly</changefreq><priority>0.65</priority></url>`);
+      }).join('');
+      const blogLanguages = ['en', 'de', 'es'];
+      const blogAlternates = blogLanguages.map((language) => `<xhtml:link rel="alternate" hreflang="${language}" href="https://rstechwerk.com/blog?lang=${language}"/>`).join('');
+      const blogEntries = blogLanguages.map((language) => `<url><loc>https://rstechwerk.com/blog?lang=${language}</loc>${blogAlternates}<xhtml:link rel="alternate" hreflang="x-default" href="https://rstechwerk.com/blog?lang=en"/><changefreq>weekly</changefreq><priority>0.7</priority></url>`).join('');
+      return res.type('application/xml').send(base.replace('</urlset>', `${blogEntries}${entries}</urlset>`));
+    } catch (error) { return next(error); }
+  });
+  app.get('/blog', async (req, res, next) => {
+    try {
+      const language = blogLanguage(req);
+      const posts = (await readBlogPosts()).filter((post) => post.status === 'published' && blogTranslation(post, language).title).sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
+      let html = await readFile(path.join(distDirectory, 'blog.html'), 'utf8');
+      const languageCopy = {
+        en: ['Software Engineering Insights | RSTechwerk', 'Practical guidance on custom software, ERP, SaaS, integrations and software delivery for European businesses.', 'Engineering insights', 'Ideas for building better software', 'Practical, experience-led guidance on custom software, ERP, SaaS, integrations and dependable delivery.'],
+        de: ['Einblicke in die Softwareentwicklung | RSTechwerk', 'Praxisnahe Orientierung zu Individualsoftware, ERP, SaaS, Integrationen und zuverlässiger Umsetzung für europäische Unternehmen.', 'Einblicke in die Softwareentwicklung', 'Ideen für bessere Software', 'Praxisnahe Orientierung zu Individualsoftware, ERP, SaaS, Integrationen und zuverlässiger Umsetzung.'],
+        es: ['Ideas de ingeniería de software | RSTechwerk', 'Consejos prácticos sobre software a medida, ERP, SaaS, integraciones y desarrollo de software para empresas europeas.', 'Ideas de ingeniería', 'Ideas para crear mejor software', 'Consejos prácticos sobre software a medida, ERP, SaaS, integraciones y entregas fiables.']
+      }[language];
+      html = html.replace('<html lang="en">', `<html lang="${language}">`).replace('<title>Software Engineering Insights | RSTechwerk</title>', `<title>${escapeBlogHtml(languageCopy[0])}</title>`).replace('content="Practical guidance on custom software, ERP, SaaS, integrations and software delivery for European businesses."', `content="${escapeBlogHtml(languageCopy[1])}"`).replace('href="https://rstechwerk.com/blog"', `href="https://rstechwerk.com/blog?lang=${language}"`).replace('id="blogKicker">Engineering insights', `id="blogKicker">${escapeBlogHtml(languageCopy[2])}`).replace('id="blogHeading">Ideas for building better software', `id="blogHeading">${escapeBlogHtml(languageCopy[3])}`).replace('id="blogIntro">Practical, experience-led guidance on custom software, ERP, SaaS, integrations and dependable delivery.', `id="blogIntro">${escapeBlogHtml(languageCopy[4])}`).replace('<section class="blog-grid" id="blogPostGrid" aria-live="polite"><p class="blog-empty">Loading articles…</p></section>', `<section class="blog-grid" id="blogPostGrid" aria-live="polite" data-server-rendered="true">${posts.length ? posts.map((post) => renderBlogCard(post, language)).join('') : `<p class="blog-empty">${({ en: 'No articles have been published yet.', de: 'Es wurden noch keine Artikel veröffentlicht.', es: 'Todavía no se han publicado artículos.' })[language]}</p>`}</section>`);
+      const listingAlternates = ['en', 'de', 'es'].map((item) => `<link rel="alternate" hreflang="${item}" href="https://rstechwerk.com/blog?lang=${item}">`).join('') + '<link rel="alternate" hreflang="x-default" href="https://rstechwerk.com/blog?lang=en">';
+      html = html.replace('</head>', `${listingAlternates}</head>`);
+      return res.type('html').send(html);
+    } catch (error) { return next(error); }
+  });
+  app.get('/blog/:slug', async (req, res, next) => {
+    try {
+      const post = (await readBlogPosts()).find((item) => item.status === 'published' && item.slug === req.params.slug);
+      const language = blogLanguage(req);
+      const hasTranslation = Boolean(post?.translations?.[language]?.title && post?.translations?.[language]?.body);
+      const pageLanguage = hasTranslation ? language : 'en';
+      const content = blogTranslation(post, pageLanguage);
+      if (!post || !content.title || !content.body) return res.status(404).send('Article not found.');
+      let html = await readFile(path.join(distDirectory, 'blog-post.html'), 'utf8');
+      const title = content.metaTitle || content.title;
+      const description = content.metaDescription || content.excerpt || '';
+      const canonical = `https://rstechwerk.com/blog/${encodeURIComponent(post.slug)}?lang=${pageLanguage}`;
+      const cover = post.coverImage ? `<img class="article-cover" src="${escapeBlogHtml(post.coverImage)}" alt="${escapeBlogHtml(content.coverAlt || content.title)}">` : '';
+      const articleHtml = `<header class="article-header"><span class="article-category">${escapeBlogHtml(content.category || post.category || 'Insights')}</span><h1>${escapeBlogHtml(content.title)}</h1><p class="article-excerpt">${escapeBlogHtml(content.excerpt || '')}</p><div class="article-meta"><span>${escapeBlogHtml(post.author || 'RSTechwerk')}</span><time datetime="${escapeBlogHtml(String(post.publishedAt || '').slice(0, 10))}">${escapeBlogHtml(blogDateLabel(post.publishedAt, pageLanguage))}</time></div></header>${cover}<div class="article-body">${blogBodyHtml(content.body)}</div><footer class="article-footer"><a href="/blog?lang=${pageLanguage}">${({ en: '← All insights', de: '← Alle Beiträge', es: '← Todos los artículos' })[pageLanguage]}</a> · <a href="/#contact">${({ en: 'Discuss a project →', de: 'Projekt besprechen →', es: 'Hablar de un proyecto →' })[pageLanguage]}</a></footer>`;
+      const schema = { '@context': 'https://schema.org', '@type': 'BlogPosting', headline: content.title, description, image: post.coverImage || undefined, datePublished: post.publishedAt || undefined, dateModified: post.updatedAt || post.publishedAt || undefined, articleSection: content.category || post.category || undefined, keywords: Array.isArray(post.tags) ? post.tags.join(', ') : undefined, author: { '@type': post.author ? 'Person' : 'Organization', name: post.author || 'RSTechwerk' }, publisher: { '@type': 'Organization', name: 'RSTechwerk', url: 'https://rstechwerk.com/' }, mainEntityOfPage: canonical, inLanguage: pageLanguage };
+      const translatedLanguages = ['en', 'de', 'es'].filter((item) => post.translations?.[item]?.title && post.translations?.[item]?.body);
+      const articleAlternates = translatedLanguages.map((item) => `<link rel="alternate" hreflang="${item}" href="https://rstechwerk.com/blog/${encodeURIComponent(post.slug)}?lang=${item}">`).join('') + `<link rel="alternate" hreflang="x-default" href="https://rstechwerk.com/blog/${encodeURIComponent(post.slug)}?lang=${translatedLanguages.includes('en') ? 'en' : translatedLanguages[0]}">`;
+      html = html.replace('<html lang="en">', `<html lang="${pageLanguage}">`).replace('<title>Article | RSTechwerk</title>', `<title>${escapeBlogHtml(title)} | RSTechwerk</title>`).replace('content="Software engineering insight from RSTechwerk."', `content="${escapeBlogHtml(description)}"`).replace('href="https://rstechwerk.com/blog"', `href="${escapeBlogHtml(canonical)}"`).replace('id="blogArticle" data-blog-article data-blog-slug="" data-blog-ready="false"', `id="blogArticle" data-blog-article data-blog-slug="${escapeBlogHtml(post.slug)}" data-blog-ready="true" data-blog-language="${pageLanguage}"`).replace('<div id="articleResult"><p>Loading article…</p></div>', `<div id="articleResult">${articleHtml}</div>`).replace('</head>', `${articleAlternates}<meta property="og:title" content="${escapeBlogHtml(title)}"><meta property="og:description" content="${escapeBlogHtml(description)}"><meta property="og:url" content="${escapeBlogHtml(canonical)}">${post.coverImage ? `<meta property="og:image" content="${escapeBlogHtml(post.coverImage)}">` : ''}<script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script></head>`);
+      if (hasTranslation) html = html.replace('<meta name="robots" content="noindex,follow">', '');
+      return res.type('html').send(html);
+    } catch (error) { return next(error); }
+  });
+}
 if (existsSync(distDirectory)) {
   app.use(express.static(distDirectory, { index: 'index.html' }));
   app.get(['/admin', '/admin/'], (_req, res) => res.sendFile(path.join(distDirectory, 'admin.html')));
@@ -1094,7 +1201,40 @@ app.get('/api/content', async (_req, res) => {
     }
     content.site.settings = publicSettings;
   }
+  if (content.site) delete content.site.blogPosts;
   return res.json({ success: true, content, updatedAt: rows[0]?.updatedAt || null });
+});
+
+app.get('/api/blog/posts', async (req, res) => {
+  const language = blogLanguage(req);
+  const posts = (await readBlogPosts()).filter((post) => post.status === 'published' && post.slug && blogTranslation(post, language).title).sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
+  const summaries = posts.map((post) => ({
+    slug: post.slug, category: post.category, tags: post.tags, author: post.author,
+    coverImage: post.coverImage, publishedAt: post.publishedAt,
+    translations: Object.fromEntries(Object.entries(post.translations || {}).filter(([, copy]) => copy?.title && copy?.excerpt && copy?.body).map(([locale, copy]) => [locale, {
+      title: copy.title, excerpt: copy.excerpt, coverAlt: copy.coverAlt, category: copy.category
+    }]))
+  }));
+  res.vary('Accept-Language');
+  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+  return res.json({ success: true, posts: summaries });
+});
+
+app.get('/api/blog/posts/:slug', async (req, res) => {
+  const post = (await readBlogPosts()).find((item) => item.status === 'published' && item.slug === req.params.slug);
+  if (!post) return res.status(404).json({ success: false, message: 'Article not found.' });
+  const language = blogLanguage(req);
+  const effectiveLanguage = post.translations?.[language]?.title && post.translations?.[language]?.excerpt && post.translations?.[language]?.body ? language : 'en';
+  const translation = post.translations?.[effectiveLanguage] || {};
+  if (!translation.title || !translation.body) return res.status(404).json({ success: false, message: 'Article translation not found.' });
+  const publicPost = {
+    slug: post.slug, category: post.category, tags: post.tags, author: post.author,
+    coverImage: post.coverImage, publishedAt: post.publishedAt, updatedAt: post.updatedAt,
+    translations: { [effectiveLanguage]: translation }
+  };
+  res.vary('Accept-Language');
+  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+  return res.json({ success: true, post: publicPost });
 });
 
 app.get('/api/admin/content/site', requireAuth, requireStaff, async (_req, res, next) => {

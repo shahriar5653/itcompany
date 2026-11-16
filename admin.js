@@ -266,6 +266,7 @@ const DEFAULT_ADMIN_DATA = {
       ]
     }
   ],
+  blogPosts: [],
   maintenance: {
     monthly: [
       {
@@ -488,6 +489,7 @@ let adminState = loadAdminState();
 
 function toPublicSiteContent(site) {
   const publicSite = JSON.parse(JSON.stringify(site || {}));
+  delete publicSite.blogPosts;
   if (publicSite.settings) {
     delete publicSite.settings.backendBaseUrl;
     delete publicSite.settings.webhookUrl;
@@ -504,6 +506,7 @@ function loadAdminState() {
       return {
         ...DEFAULT_ADMIN_DATA,
         ...parsed,
+        blogPosts: Array.isArray(parsed.blogPosts) ? parsed.blogPosts : DEFAULT_ADMIN_DATA.blogPosts,
         process: parsed.process ? { ...DEFAULT_ADMIN_DATA.process, ...parsed.process } : DEFAULT_ADMIN_DATA.process,
         techStack: parsed.techStack ? { ...DEFAULT_ADMIN_DATA.techStack, ...parsed.techStack } : DEFAULT_ADMIN_DATA.techStack,
         settings: parsed.settings ? { ...DEFAULT_ADMIN_DATA.settings, ...parsed.settings, legalDocuments: mergeLegalDocumentTemplates(parsed.settings.legalDocuments) } : DEFAULT_ADMIN_DATA.settings
@@ -541,6 +544,7 @@ function saveAdminState() {
           hero: adminState.hero,
           services: adminState.services,
           portfolio: adminState.portfolio,
+          blogPosts: adminState.blogPosts || [],
           process: adminState.process,
           techStack: adminState.techStack,
           maintenance: adminState.maintenance,
@@ -631,6 +635,7 @@ async function loadRemoteAdminContent() {
     adminState = {
       ...adminState,
       ...remote,
+      blogPosts: Array.isArray(remote.blogPosts) ? remote.blogPosts : adminState.blogPosts || [],
       process: remote.process ? { ...adminState.process, ...remote.process } : adminState.process,
       techStack: remote.techStack ? { ...adminState.techStack, ...remote.techStack } : adminState.techStack,
       maintenance: remote.maintenance || adminState.maintenance,
@@ -657,6 +662,7 @@ function publishAdminContentToApi() {
       hero: adminState.hero,
       services: adminState.services,
       portfolio: adminState.portfolio,
+      blogPosts: adminState.blogPosts || [],
       process: adminState.process,
       techStack: adminState.techStack,
       maintenance: adminState.maintenance,
@@ -773,6 +779,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initHeroModule();
   initServicesModule();
   initPortfolioModule();
+  initBlogModule();
   initProcessModule();
   initMaintenanceModule();
   initTechStackModule();
@@ -3318,6 +3325,141 @@ window.deleteService = function(id) {
 /* ==========================================================================
    7. Portfolio & Case Studies Module
    ========================================================================== */
+
+function initBlogModule() {
+  adminState.blogPosts ||= [];
+  renderBlogPosts();
+  const modal = document.getElementById('blogEditModal');
+  const close = () => { modal?.classList.remove('open'); modal?.setAttribute('aria-hidden', 'true'); };
+  document.getElementById('addBlogPostBtn')?.addEventListener('click', () => openBlogPostEditor());
+  document.getElementById('closeBlogModalBtn')?.addEventListener('click', close);
+  document.getElementById('cancelBlogModalBtn')?.addEventListener('click', close);
+  document.getElementById('blogPostLanguage')?.addEventListener('change', loadBlogTranslationFields);
+  document.getElementById('blogPostTitle')?.addEventListener('input', (event) => {
+    const slug = document.getElementById('blogPostSlug');
+    if (!document.getElementById('blogPostId').value && !slug.dataset.edited) slug.value = slugifyBlogTitle(event.target.value);
+  });
+  document.getElementById('blogPostSlug')?.addEventListener('input', (event) => { event.target.dataset.edited = 'true'; });
+  document.getElementById('blogPostCoverFile')?.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const status = document.getElementById('blogPostEditorStatus');
+    status.textContent = 'Uploading cover image…';
+    try { document.getElementById('blogPostCover').value = await uploadPortfolioImage(file); event.target.value = ''; status.textContent = 'Cover uploaded. Save the article to keep this image.'; }
+    catch (error) { status.textContent = error.message || 'Cover image upload failed.'; }
+  });
+  document.getElementById('blogPostsAdminContainer')?.addEventListener('click', async (event) => {
+    const edit = event.target.closest('[data-blog-edit]');
+    const remove = event.target.closest('[data-blog-delete]');
+    if (edit) openBlogPostEditor(edit.dataset.blogEdit);
+    if (remove) {
+      const post = adminState.blogPosts.find((item) => item.id === remove.dataset.blogDelete);
+      if (!post || !window.confirm(`Delete “${post.translations?.en?.title || post.slug}”?`)) return;
+      const previousPosts = adminState.blogPosts;
+      adminState.blogPosts = previousPosts.filter((item) => item.id !== post.id);
+      const result = await saveAdminState();
+      if (result?.error) {
+        adminState.blogPosts = previousPosts;
+        renderBlogPosts();
+        showToast(`Article could not be deleted: ${result.error.message}`, 'error');
+        return;
+      }
+      renderBlogPosts(); showToast('Article deleted.');
+    }
+  });
+  document.getElementById('saveBlogPostBtn')?.addEventListener('click', saveBlogPostFromEditor);
+}
+
+function slugifyBlogTitle(value) {
+  return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100);
+}
+
+function renderBlogPosts() {
+  const container = document.getElementById('blogPostsAdminContainer');
+  const badge = document.getElementById('blogCountBadge');
+  if (!container) return;
+  const posts = [...(adminState.blogPosts || [])].sort((a, b) => String(b.updatedAt || b.publishedAt || '').localeCompare(String(a.updatedAt || a.publishedAt || '')));
+  if (badge) badge.textContent = String(posts.length);
+  if (!posts.length) {
+    container.innerHTML = '<div class="content-box" style="grid-column:1/-1"><h2 class="box-title">No articles yet</h2><p class="box-subtitle">Create a draft, add English content and optional German or Spanish translations, then publish it.</p></div>';
+    return;
+  }
+  container.innerHTML = posts.map((post) => {
+    const english = post.translations?.en || {};
+    const languageCount = ['en', 'de', 'es'].filter((language) => post.translations?.[language]?.title && post.translations?.[language]?.body).length;
+    return `<article class="project-admin-card">${post.coverImage ? `<img class="project-admin-thumbnail" src="${escapeHtml(post.coverImage)}" alt="${escapeHtml(english.coverAlt || english.title || '')}" loading="lazy">` : ''}<div class="card-top-row"><span class="card-kicker">${escapeHtml(post.category || 'Insights')}</span><span class="status-chip ${post.status === 'published' ? 'active' : 'warning'}">${escapeHtml(post.status || 'draft')}</span></div><h3 class="card-title">${escapeHtml(english.title || post.slug)}</h3><p class="card-desc">${escapeHtml(english.excerpt || 'Add an English summary to complete this article.')}</p><div class="card-tech-tag">/${escapeHtml(post.slug)} · ${languageCount}/3 languages · ${escapeHtml(post.author || 'No author')}</div><div class="card-actions-row"><button type="button" class="btn btn-secondary btn-sm" data-blog-edit="${escapeHtml(post.id)}">Edit article</button>${post.status === 'published' ? `<a class="btn btn-secondary btn-sm" href="/blog/${encodeURIComponent(post.slug)}" target="_blank" rel="noopener">View</a>` : ''}<button type="button" class="btn btn-secondary btn-sm" style="color:#ef4444" data-blog-delete="${escapeHtml(post.id)}">Delete</button></div></article>`;
+  }).join('');
+}
+
+function openBlogPostEditor(id = '') {
+  const modal = document.getElementById('blogEditModal');
+  const post = adminState.blogPosts.find((item) => item.id === id);
+  document.getElementById('blogModalTitle').textContent = post ? 'Edit article' : 'New article';
+  document.getElementById('blogPostId').value = post?.id || '';
+  const slugInput = document.getElementById('blogPostSlug');
+  slugInput.value = post?.slug || ''; slugInput.dataset.edited = post ? 'true' : '';
+  document.getElementById('blogPostStatus').value = post?.status || 'draft';
+  document.getElementById('blogPostAuthor').value = post?.author || '';
+  document.getElementById('blogPostDate').value = String(post?.publishedAt || new Date().toISOString()).slice(0, 10);
+  document.getElementById('blogPostCategory').value = post?.category || '';
+  document.getElementById('blogPostTags').value = Array.isArray(post?.tags) ? post.tags.join(', ') : '';
+  document.getElementById('blogPostCover').value = post?.coverImage || '';
+  document.getElementById('blogPostCoverAlt').value = post?.translations?.en?.coverAlt || '';
+  document.getElementById('blogPostLanguage').value = 'en';
+  document.getElementById('blogPostCoverFile').value = '';
+  document.getElementById('blogPostEditorStatus').textContent = '';
+  ['blogPostTitle', 'blogPostExcerpt', 'blogPostBody', 'blogPostMetaTitle', 'blogPostMetaDescription', 'blogPostLocalizedAlt'].forEach((field) => { document.getElementById(field).value = ''; });
+  loadBlogTranslationFields();
+  modal?.classList.add('open'); modal?.setAttribute('aria-hidden', 'false');
+}
+
+function loadBlogTranslationFields() {
+  const language = document.getElementById('blogPostLanguage')?.value || 'en';
+  const id = document.getElementById('blogPostId')?.value;
+  const post = adminState.blogPosts.find((item) => item.id === id);
+  const copy = post?.translations?.[language] || {};
+  document.getElementById('blogPostTitle').value = copy.title || '';
+  document.getElementById('blogPostExcerpt').value = copy.excerpt || '';
+  document.getElementById('blogPostBody').value = copy.body || '';
+  document.getElementById('blogPostMetaTitle').value = copy.metaTitle || '';
+  document.getElementById('blogPostMetaDescription').value = copy.metaDescription || '';
+  document.getElementById('blogPostLocalizedAlt').value = copy.coverAlt || (language === 'en' ? document.getElementById('blogPostCoverAlt').value : '');
+}
+
+async function saveBlogPostFromEditor(event) {
+  const button = event.currentTarget;
+  const statusNode = document.getElementById('blogPostEditorStatus');
+  const id = document.getElementById('blogPostId').value || crypto.randomUUID();
+  const language = document.getElementById('blogPostLanguage').value;
+  const slug = document.getElementById('blogPostSlug').value.trim().toLowerCase();
+  const title = document.getElementById('blogPostTitle').value.trim();
+  const excerpt = document.getElementById('blogPostExcerpt').value.trim();
+  const body = document.getElementById('blogPostBody').value.trim();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) { statusNode.textContent = 'Use a URL-safe slug with lowercase letters, numbers and hyphens.'; return; }
+  if (!title || !excerpt || !body) { statusNode.textContent = 'Add this language’s title, summary and article body before saving.'; return; }
+  const existing = adminState.blogPosts.find((post) => post.id === id);
+  const translations = { ...(existing?.translations || {}), [language]: { title, excerpt, body, metaTitle: document.getElementById('blogPostMetaTitle').value.trim() || title, metaDescription: document.getElementById('blogPostMetaDescription').value.trim() || excerpt, coverAlt: document.getElementById('blogPostLocalizedAlt').value.trim() || (language === 'en' ? document.getElementById('blogPostCoverAlt').value.trim() : '') } };
+  const status = document.getElementById('blogPostStatus').value;
+  if (status === 'published' && (!translations.en?.title || !translations.en?.excerpt || !translations.en?.body)) { statusNode.textContent = 'Add the English title, summary and body before publishing.'; return; }
+  if (adminState.blogPosts.some((post) => post.slug === slug && post.id !== id)) { statusNode.textContent = 'This URL slug is already in use. Choose a unique slug.'; return; }
+  button.disabled = true; button.textContent = 'Saving…';
+  try {
+    const file = document.getElementById('blogPostCoverFile').files?.[0];
+    const uploadedImage = file ? await uploadPortfolioImage(file) : '';
+    const date = document.getElementById('blogPostDate').value || new Date().toISOString().slice(0, 10);
+    const nextPost = { id, slug, status, author: document.getElementById('blogPostAuthor').value.trim(), category: document.getElementById('blogPostCategory').value.trim(), tags: document.getElementById('blogPostTags').value.split(',').map((tag) => tag.trim()).filter(Boolean), coverImage: uploadedImage || document.getElementById('blogPostCover').value.trim(), publishedAt: status === 'published' ? (existing?.publishedAt || date) : (existing?.publishedAt || null), updatedAt: new Date().toISOString(), translations };
+    adminState.blogPosts = [...adminState.blogPosts.filter((post) => post.id !== id), nextPost];
+    const result = await saveAdminState();
+    if (result?.error) { statusNode.textContent = `Server save failed: ${result.error.message}. Changes remain in this browser.`; return; }
+    renderBlogPosts(); modalCloseBlogEditor(); showToast(status === 'published' ? 'Article published.' : 'Draft saved.');
+  } catch (error) { statusNode.textContent = error.message || 'Could not save this article.'; }
+  finally { button.disabled = false; button.textContent = 'Save article'; }
+}
+
+function modalCloseBlogEditor() {
+  const modal = document.getElementById('blogEditModal');
+  modal?.classList.remove('open'); modal?.setAttribute('aria-hidden', 'true');
+}
 
 function initPortfolioModule() {
   renderPortfolioGrid();

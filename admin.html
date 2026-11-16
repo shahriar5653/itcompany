@@ -171,6 +171,12 @@
             <span class="badge-count" id="portfolioCountBadge">6</span>
           </button>
 
+          <button type="button" class="nav-tab-btn" data-tab="tab-blog">
+            <span aria-hidden="true">✍</span>
+            <span>Blog &amp; Insights</span>
+            <span class="badge-count" id="blogCountBadge">0</span>
+          </button>
+
           <button type="button" class="nav-tab-btn" data-tab="tab-process">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -1023,6 +1029,18 @@
           </div>
         </section>
 
+        <section class="admin-tab-panel" id="tab-blog" role="tabpanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Blog &amp; Insights</h1>
+              <p class="panel-subtitle">Write useful software-engineering articles in English, German and Spanish. Drafts stay private; published posts get a crawlable article URL.</p>
+            </div>
+            <div class="panel-actions"><button type="button" class="btn btn-primary btn-sm" id="addBlogPostBtn">+ New article</button></div>
+          </div>
+          <div class="multilingual-help" style="margin-bottom:1rem;">Add original, expert-reviewed advice. Each post needs an English title, summary and body. Add translations and search snippets per language; publish only when ready.</div>
+          <div class="portfolio-admin-grid" id="blogPostsAdminContainer" aria-live="polite"></div>
+        </section>
+
         <!-- ====================================================================
              5.1 TAB: PROCESS & PIPELINE MANAGER
              ==================================================================== -->
@@ -1625,6 +1643,37 @@
           <button type="button" class="btn btn-secondary btn-sm" id="cancelServiceModalBtn">Cancel</button>
           <button type="button" class="btn btn-primary btn-sm" id="saveServiceModalBtn">Save Service Card</button>
         </div>
+      </div>
+    </div>
+
+    <div class="admin-modal-backdrop" id="blogEditModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="admin-modal-card" style="max-width:980px;">
+        <div class="admin-modal-header"><h3 class="admin-modal-title" id="blogModalTitle">New article</h3><button type="button" class="modal-close-btn" id="closeBlogModalBtn" aria-label="Close dialog">&times;</button></div>
+        <div class="admin-modal-body">
+          <form id="blogModalForm" class="admin-form">
+            <input type="hidden" id="blogPostId" />
+            <div class="form-grid two-col">
+              <div class="form-group"><label class="form-label" for="blogPostSlug">URL slug</label><input id="blogPostSlug" class="form-input" maxlength="100" placeholder="custom-erp-vs-off-the-shelf" required /></div>
+              <div class="form-group"><label class="form-label" for="blogPostStatus">Status</label><select id="blogPostStatus" class="form-select"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+              <div class="form-group"><label class="form-label" for="blogPostAuthor">Author / reviewer</label><input id="blogPostAuthor" class="form-input" maxlength="120" placeholder="Author name" /></div>
+              <div class="form-group"><label class="form-label" for="blogPostDate">Publish date</label><input id="blogPostDate" class="form-input" type="date" /></div>
+              <div class="form-group"><label class="form-label" for="blogPostCategory">Topic category</label><input id="blogPostCategory" class="form-input" maxlength="80" placeholder="ERP, SaaS, AI, software delivery" /></div>
+              <div class="form-group"><label class="form-label" for="blogPostTags">Tags (comma separated)</label><input id="blogPostTags" class="form-input" maxlength="300" placeholder="ERP, Germany, integrations" /></div>
+            </div>
+            <div class="form-group"><label class="form-label" for="blogPostCover">Cover image</label><input id="blogPostCover" class="form-input" placeholder="/uploads/portfolio/image.webp" /><label class="upload-dropzone" for="blogPostCoverFile"><span>Upload cover image</span><input type="file" id="blogPostCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" /></label><input id="blogPostCoverAlt" class="form-input" style="margin-top:.6rem" placeholder="English image description (alt text)" /></div>
+            <div class="form-group"><label class="form-label" for="blogPostLanguage">Content language</label><select id="blogPostLanguage" class="form-select"><option value="en">English (default)</option><option value="de">Deutsch</option><option value="es">Español</option></select></div>
+            <div class="form-group"><label class="form-label" for="blogPostTitle">Article title</label><input id="blogPostTitle" class="form-input" maxlength="180" required /></div>
+            <div class="form-group"><label class="form-label" for="blogPostExcerpt">Short summary</label><textarea id="blogPostExcerpt" class="form-textarea" rows="3" maxlength="400" required></textarea></div>
+            <div class="form-group"><label class="form-label" for="blogPostBody">Article body</label><textarea id="blogPostBody" class="form-textarea" rows="16" required placeholder="Write article paragraphs. Separate paragraphs with a blank line."></textarea><span class="form-help">Plain text only. Use a blank line between paragraphs; content is safely escaped when displayed.</span></div>
+            <div class="form-grid two-col">
+              <div class="form-group"><label class="form-label" for="blogPostMetaTitle">SEO title</label><input id="blogPostMetaTitle" class="form-input" maxlength="180" /></div>
+              <div class="form-group"><label class="form-label" for="blogPostMetaDescription">Meta description</label><textarea id="blogPostMetaDescription" class="form-textarea" rows="2" maxlength="300"></textarea></div>
+            </div>
+            <div class="form-group"><label class="form-label" for="blogPostLocalizedAlt">Image alt text for this language</label><input id="blogPostLocalizedAlt" class="form-input" maxlength="220" /></div>
+            <p class="form-help-text" id="blogPostEditorStatus" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+        <div class="admin-modal-footer"><button type="button" class="btn btn-secondary btn-sm" id="cancelBlogModalBtn">Cancel</button><button type="button" class="btn btn-primary btn-sm" id="saveBlogPostBtn">Save article</button></div>
       </div>
     </div>
 

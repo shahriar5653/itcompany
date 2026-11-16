@@ -14,6 +14,7 @@ const classicRuntimeScripts = [
   'reset-password.js',
   'legal-templates.js',
   'legal-page.js',
+  'blog-public.js',
 ];
 
 export default defineConfig(() => {
@@ -60,6 +61,20 @@ export default defineConfig(() => {
             if (pathname === '/register' || pathname === '/register/') {
               res.statusCode = 302;
               res.setHeader('Location', '/register.html');
+              res.end();
+              return;
+            }
+            if (pathname === '/blog') {
+              res.statusCode = 302;
+              res.setHeader('Location', `/blog.html${req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`);
+              res.end();
+              return;
+            }
+            if (pathname.startsWith('/blog/')) {
+              const slug = pathname.slice('/blog/'.length);
+              const query = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+              res.statusCode = 302;
+              res.setHeader('Location', `/blog-post.html?slug=${encodeURIComponent(decodeURIComponent(slug))}${query ? `&${query.slice(1)}` : ''}`);
               res.end();
               return;
             }
@@ -117,6 +132,8 @@ export default defineConfig(() => {
           impressum: path.resolve(__dirname, 'impressum.html'),
           terms: path.resolve(__dirname, 'terms.html'),
           accessibility: path.resolve(__dirname, 'accessibility.html'),
+          blog: path.resolve(__dirname, 'blog.html'),
+          blogPost: path.resolve(__dirname, 'blog-post.html'),
         },
       },
     },

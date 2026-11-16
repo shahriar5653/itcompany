@@ -27,7 +27,7 @@ const PORTFOLIO_IMAGE_FALLBACKS = {
 
 const LANGUAGE_COPY = {
   de: {
-    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'Insights': 'Einblicke', 'Engineering Insights': 'Einblicke in die Softwareentwicklung', 'FAQ': 'FAQ', 'Client Portal': 'Kundenportal',
+    'Services': 'Leistungen', 'Work': 'Projekte', 'Process': 'Prozess', 'About': 'Über uns', 'Blog': 'Blog', 'Blog & Insights': 'Blog & Einblicke', 'FAQ': 'FAQ', 'Client Portal': 'Kundenportal',
     'Discuss Your Project': 'Projekt besprechen', 'Start Your Project': 'Projekt starten', 'Explore Our Work': 'Unsere Projekte ansehen', 'Maintain Your Project': 'Projektwartung & Retainer',
     'Europe & DACH': 'Europa & DACH', 'Senior Product Engineering': 'Senior Product Engineering',
     'Build digital products': 'Digitale Produkte entwickeln', 'that move your business forward.': 'die Ihr Unternehmen voranbringen.',
@@ -58,7 +58,7 @@ const LANGUAGE_COPY = {
     'Direct Senior Developer Access': 'Direkter Kontakt zu Senior-Entwicklern', 'Tested on Staging First': 'Zuerst auf Staging getestet'
   },
   es: {
-    'Services': 'Servicios', 'Work': 'Proyectos', 'Process': 'Proceso', 'About': 'Nosotros', 'Insights': 'Ideas', 'Engineering Insights': 'Ideas de ingeniería', 'FAQ': 'Preguntas frecuentes', 'Client Portal': 'Portal del cliente',
+    'Services': 'Servicios', 'Work': 'Proyectos', 'Process': 'Proceso', 'About': 'Nosotros', 'Blog': 'Blog', 'Blog & Insights': 'Blog e ideas', 'FAQ': 'Preguntas frecuentes', 'Client Portal': 'Portal del cliente',
     'Discuss Your Project': 'Hablemos de su proyecto', 'Start Your Project': 'Iniciar proyecto', 'Explore Our Work': 'Ver nuestros proyectos', 'Maintain Your Project': 'Mantenimiento y soporte',
     'Europe & DACH': 'Europa y DACH', 'Senior Product Engineering': 'Ingeniería de producto senior',
     'Build digital products': 'Construimos productos digitales', 'that move your business forward.': 'que impulsan su negocio.',
@@ -1643,23 +1643,28 @@ function initScrollSpyAndSmoothScroll() {
    Subtle Scroll Reveals (Progressive Enhancement)
    ========================================================================== */
 
+let scrollRevealObserver = null;
 function initScrollReveals() {
-  if (!('IntersectionObserver' in window)) return;
-
   const revealElements = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('revealed');
-        obs.unobserve(entry.target);
-      }
-    });
-  }, {
-    rootMargin: '0px 0px -40px 0px',
-    threshold: 0.1
-  });
+  if (!('IntersectionObserver' in window)) {
+    revealElements.forEach((element) => element.classList.add('revealed'));
+    return;
+  }
 
-  revealElements.forEach(el => observer.observe(el));
+  if (!scrollRevealObserver) {
+    scrollRevealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -40px 0px', threshold: 0.1 });
+  }
+
+  revealElements.forEach((element) => {
+    if (!element.classList.contains('revealed')) scrollRevealObserver.observe(element);
+  });
 }
 
 /* ==========================================================================
@@ -2109,6 +2114,7 @@ async function applyPublishedAdminContent() {
           </div>`;
         }).join('');
         initFaqAccordion();
+        initScrollReveals();
       }
     }
   } catch (e) {

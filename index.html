@@ -2192,7 +2192,7 @@
                     <input type="checkbox" id="inquiryPrivacy" name="privacyAccepted" class="form-checkbox" required aria-describedby="privacyError" />
                     <span>
                       I agree to the secure processing of the details I submit in accordance with the
-                      <button type="button" data-legal-modal="privacy" style="background:none; border:none; color:var(--color-accent); text-decoration:underline; cursor:pointer; padding:0; font:inherit;">Privacy Notice</button>.
+                      <a href="/privacy.html" style="color:var(--color-accent); text-decoration:underline;">Privacy Notice</a>.
                     </span>
                   </label>
                   <span class="form-error-msg" id="privacyError" role="alert"></span>
@@ -2375,9 +2375,10 @@
             &copy; <span id="currentYear">2026</span> RSTechwerk. All rights reserved. &bull; <span style="color:var(--color-accent);">rstechwerk.com</span>
           </div>
           <div class="footer-legal-links">
-            <button type="button" class="footer-legal-btn" data-legal-modal="privacy">Privacy Notice</button>
-            <button type="button" class="footer-legal-btn" data-legal-modal="impressum">Legal Notice / Impressum</button>
-            <button type="button" class="footer-legal-btn" data-legal-modal="accessibility">Accessibility</button>
+            <a class="footer-legal-btn" href="/privacy.html">Privacy Notice</a>
+            <a class="footer-legal-btn" href="/impressum.html">Legal Notice / Impressum</a>
+            <a class="footer-legal-btn" href="/terms.html">Business Terms</a>
+            <a class="footer-legal-btn" href="/accessibility.html">Accessibility</a>
           </div>
         </div>
       </div>
@@ -2456,6 +2457,7 @@
     </button>
 
     <!-- Vanilla JavaScript File -->
+    <script src="/legal-templates.js"></script>
     <script src="/script.js"></script>
   </body>
 </html>

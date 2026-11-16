@@ -466,13 +466,35 @@ const DEFAULT_ADMIN_DATA = {
     metaDescription: 'Custom software, ERP, SaaS and mobile apps for businesses in Germany and Europe. RSTechwerk delivers product design, engineering and ongoing support.',
     canonicalUrl: 'https://rstechwerk.com/',
     ogImage: 'https://rstechwerk.com/og-preview.jpg',
+    legalDocuments: JSON.parse(JSON.stringify(window.RSTECHWERK_LEGAL_TEMPLATES || {})),
     backendBaseUrl: '/api',
     webhookUrl: ''
   }
 };
 
+function mergeLegalDocumentTemplates(saved = {}) {
+  const defaults = DEFAULT_ADMIN_DATA.settings.legalDocuments || {};
+  return Object.fromEntries(Object.entries(defaults).map(([documentKey, languages]) => [
+    documentKey,
+    Object.fromEntries(Object.entries(languages).map(([language, fallback]) => [
+      language,
+      { ...fallback, ...(saved?.[documentKey]?.[language] || {}) }
+    ]))
+  ]));
+}
+
 // Global State
 let adminState = loadAdminState();
+
+function toPublicSiteContent(site) {
+  const publicSite = JSON.parse(JSON.stringify(site || {}));
+  if (publicSite.settings) {
+    delete publicSite.settings.backendBaseUrl;
+    delete publicSite.settings.webhookUrl;
+    if (publicSite.settings.legalDocuments) delete publicSite.settings.legalDocuments.dpa;
+  }
+  return publicSite;
+}
 
 function loadAdminState() {
   try {
@@ -484,7 +506,7 @@ function loadAdminState() {
         ...parsed,
         process: parsed.process ? { ...DEFAULT_ADMIN_DATA.process, ...parsed.process } : DEFAULT_ADMIN_DATA.process,
         techStack: parsed.techStack ? { ...DEFAULT_ADMIN_DATA.techStack, ...parsed.techStack } : DEFAULT_ADMIN_DATA.techStack,
-        settings: parsed.settings ? { ...DEFAULT_ADMIN_DATA.settings, ...parsed.settings } : DEFAULT_ADMIN_DATA.settings
+        settings: parsed.settings ? { ...DEFAULT_ADMIN_DATA.settings, ...parsed.settings, legalDocuments: mergeLegalDocumentTemplates(parsed.settings.legalDocuments) } : DEFAULT_ADMIN_DATA.settings
       };
     }
   } catch (e) {
@@ -494,10 +516,11 @@ function loadAdminState() {
 }
 
 function saveAdminState() {
+  let publishPromise = Promise.resolve(null);
   try {
     localStorage.setItem(STORAGE_KEY_ADMIN, JSON.stringify(adminState));
     // Also publish minimal schema to live website key
-    localStorage.setItem(STORAGE_KEY_PUBLISHED, JSON.stringify({
+    localStorage.setItem(STORAGE_KEY_PUBLISHED, JSON.stringify(toPublicSiteContent({
       hero: adminState.hero,
       services: adminState.services,
       portfolio: adminState.portfolio,
@@ -507,12 +530,12 @@ function saveAdminState() {
       faqs: adminState.faqs,
       settings: adminState.settings
       , translations: adminState.translations || {}
-    }));
+    })));
     // Persist editable public content to the API when an authenticated backend
     // session is available. Local storage remains a draft/cache fallback.
     const session = getAdminSession();
     if (session?.token) {
-      adminApiFetch('/api/content/site', {
+      publishPromise = adminApiFetch('/api/content/site', {
         method: 'PUT',
         body: JSON.stringify({
           hero: adminState.hero,
@@ -525,11 +548,16 @@ function saveAdminState() {
           settings: adminState.settings
           , translations: adminState.translations || {}
         })
-      }).catch((error) => console.warn('Could not publish content to API:', error.message));
+      }).catch((error) => {
+        console.warn('Could not publish content to API:', error.message);
+        return { error };
+      });
     }
   } catch (e) {
     console.error('Failed to save admin state to localStorage', e);
+    return Promise.resolve({ error: e });
   }
+  return publishPromise;
 }
 
 // Toast notification utility
@@ -594,8 +622,8 @@ async function uploadPortfolioImage(file) {
 
 async function loadRemoteAdminContent() {
   try {
-    const result = await adminApiFetch('/api/content');
-    const remote = result.content?.site;
+    const result = await adminApiFetch('/api/admin/content/site');
+    const remote = result.site;
     if (!remote || typeof remote !== 'object') {
       await publishAdminContentToApi();
       return;
@@ -607,10 +635,15 @@ async function loadRemoteAdminContent() {
       techStack: remote.techStack ? { ...adminState.techStack, ...remote.techStack } : adminState.techStack,
       maintenance: remote.maintenance || adminState.maintenance,
       faqs: Array.isArray(remote.faqs) ? remote.faqs : adminState.faqs,
-      settings: remote.settings ? { ...adminState.settings, ...remote.settings } : adminState.settings
+      settings: remote.settings ? {
+        ...adminState.settings,
+        ...remote.settings,
+        legalDocuments: mergeLegalDocumentTemplates(remote.settings.legalDocuments || adminState.settings.legalDocuments)
+      } : adminState.settings
     };
     localStorage.setItem(STORAGE_KEY_ADMIN, JSON.stringify(adminState));
-    localStorage.setItem(STORAGE_KEY_PUBLISHED, JSON.stringify(remote));
+    localStorage.setItem(STORAGE_KEY_PUBLISHED, JSON.stringify(toPublicSiteContent(remote)));
+    document.dispatchEvent(new Event('admincontentloaded'));
     console.info('Loaded published content from database.');
   } catch (error) {
     console.warn('Remote content unavailable; using local admin draft.', error.message);
@@ -749,6 +782,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSectionTranslations();
   initAddressesModule();
   initSettingsModule();
+  initLegalDocumentsEditor();
   initApiModule();
   initResetDataHandler();
 
@@ -4203,6 +4237,82 @@ function initSettingsModule() {
       showToast('All company settings and SEO meta saved!');
     });
   }
+}
+
+function initLegalDocumentsEditor() {
+  const documentSelect = document.getElementById('legalDocumentSelect');
+  const languageSelect = document.getElementById('legalDocumentLanguage');
+  const titleInput = document.getElementById('legalDocumentTitle');
+  const bodyInput = document.getElementById('legalDocumentBody');
+  const reviewedInput = document.getElementById('legalDocumentReviewed');
+  const saveButton = document.getElementById('saveLegalDocumentBtn');
+  const status = document.getElementById('legalDocumentStatus');
+  if (!documentSelect || !languageSelect || !titleInput || !bodyInput || !reviewedInput || !saveButton) return;
+
+  let dirty = false;
+  const getCurrent = () => adminState.settings.legalDocuments?.[documentSelect.value]?.[languageSelect.value];
+  let currentDocument = documentSelect.value;
+  let currentLanguage = languageSelect.value;
+  const load = () => {
+    if (dirty) return;
+    const copy = getCurrent();
+    titleInput.value = copy?.title || '';
+    bodyInput.value = copy?.body || '';
+    reviewedInput.checked = Boolean(copy?.reviewed);
+    if (status) status.textContent = copy?.reviewed
+      ? 'This language version is marked reviewed. Confirm the visible public copy after saving.'
+      : 'Draft: the public page shows a visible draft warning for this language version.';
+  };
+
+  const switchDocument = () => {
+    if (dirty && !window.confirm('Discard unsaved legal document edits?')) {
+      documentSelect.value = currentDocument;
+      languageSelect.value = currentLanguage;
+      return;
+    }
+    dirty = false;
+    currentDocument = documentSelect.value;
+    currentLanguage = languageSelect.value;
+    load();
+  };
+  documentSelect.addEventListener('change', switchDocument);
+  languageSelect.addEventListener('change', switchDocument);
+  [titleInput, bodyInput, reviewedInput].forEach((input) => {
+    input.addEventListener('input', () => { dirty = true; });
+    input.addEventListener('change', () => { dirty = true; });
+  });
+  document.addEventListener('admincontentloaded', load);
+  load();
+
+  saveButton.addEventListener('click', async () => {
+    const documentKey = documentSelect.value;
+    const language = languageSelect.value;
+    const title = titleInput.value.trim();
+    const body = bodyInput.value.trim();
+    if (!title || !body) {
+      if (status) status.textContent = 'Enter both a page title and document text before saving.';
+      return;
+    }
+    if (reviewedInput.checked && /\[[^\]]+\]/.test(body)) {
+      if (status) status.textContent = 'Remove all bracketed placeholders before marking this copy reviewed.';
+      return;
+    }
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving…';
+    if (status) status.textContent = 'Saving this document to the published site content…';
+    adminState.settings.legalDocuments ||= mergeLegalDocumentTemplates();
+    adminState.settings.legalDocuments[documentKey][language] = { title, body, reviewed: reviewedInput.checked };
+    const result = await saveAdminState();
+    saveButton.disabled = false;
+    saveButton.textContent = 'Save legal document';
+    if (result?.error) {
+      if (status) status.textContent = `Could not save to the server: ${result.error.message}. The draft remains in this browser.`;
+      return;
+    }
+    dirty = false;
+    if (status) status.textContent = 'Saved. The public legal page will show this language version; refresh the site to confirm it.';
+  });
 }
 
 /* ==========================================================================

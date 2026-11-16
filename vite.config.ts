@@ -12,6 +12,8 @@ const classicRuntimeScripts = [
   'login.js',
   'register.js',
   'reset-password.js',
+  'legal-templates.js',
+  'legal-page.js',
 ];
 
 export default defineConfig(() => {
@@ -111,6 +113,10 @@ export default defineConfig(() => {
           register: path.resolve(__dirname, 'register.html'),
           resetPassword: path.resolve(__dirname, 'reset-password.html'),
           adminClient: path.resolve(__dirname, 'admin-client.html'),
+          privacy: path.resolve(__dirname, 'privacy.html'),
+          impressum: path.resolve(__dirname, 'impressum.html'),
+          terms: path.resolve(__dirname, 'terms.html'),
+          accessibility: path.resolve(__dirname, 'accessibility.html'),
         },
       },
     },

@@ -1088,9 +1088,23 @@ app.get('/api/content', async (_req, res) => {
   }
   if (content.site?.settings) {
     const { backendBaseUrl, webhookUrl, ...publicSettings } = content.site.settings;
+    if (publicSettings.legalDocuments) {
+      publicSettings.legalDocuments = { ...publicSettings.legalDocuments };
+      delete publicSettings.legalDocuments.dpa;
+    }
     content.site.settings = publicSettings;
   }
   return res.json({ success: true, content, updatedAt: rows[0]?.updatedAt || null });
+});
+
+app.get('/api/admin/content/site', requireAuth, requireStaff, async (_req, res, next) => {
+  try {
+    const [rows] = await pool.execute('SELECT content_json AS contentJson, updated_at AS updatedAt FROM site_content WHERE content_key = ? LIMIT 1', ['site']);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Published site content was not found.' });
+    return res.json({ success: true, site: JSON.parse(rows[0].contentJson), updatedAt: rows[0].updatedAt });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.patch('/api/content/site/translations/:language/:section', requireAuth, requireStaff, async (req, res, next) => {

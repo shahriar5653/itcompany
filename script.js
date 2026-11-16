@@ -891,6 +891,7 @@ const LEGAL_CONTENT = {
     `
   }
 };
+let publishedLegalDocuments = window.RSTECHWERK_LEGAL_TEMPLATES || {};
 
 /* ==========================================================================
    DOM Ready Initialization
@@ -1196,11 +1197,19 @@ function initLegalModal() {
 
   function openLegal(key, triggerBtn) {
     lastActiveElement = triggerBtn;
-    const data = LEGAL_CONTENT[key];
-    if (!data) return;
+    const language = getLandingLanguage();
+    const fallback = publishedLegalDocuments[key]?.[language] || publishedLegalDocuments[key]?.en;
+    const saved = publishedLegalDocuments[key]?.[language];
+    const copy = saved || fallback;
+    if (!copy) return;
+    const hasPlaceholders = /\[[A-Z][A-Z0-9 ,/()—.'’:\-]*\]/.test(copy.body || '');
+    const warning = !copy.reviewed || hasPlaceholders
+      ? `<div role="status" style="padding:.85rem 1rem;margin-bottom:1rem;background:#fff7ed;border:1px solid #fdba74;border-radius:.75rem;color:#9a3412;font-weight:650;">${language === 'de' ? 'ENTWURF: Noch nicht als geprüft markiert oder enthält Platzhalter.' : language === 'es' ? 'BORRADOR: Aún no está revisado o contiene campos pendientes.' : 'DRAFT: Not marked reviewed or still contains placeholders.'}</div>`
+      : '';
+    const body = String(copy.body || '').split(/\n\s*\n/).filter(Boolean).map((paragraph) => `<p>${escapeText(paragraph.trim()).replaceAll('\n', '<br>')}</p>`).join('');
 
-    document.getElementById('legalModalTitle').textContent = data.title;
-    document.getElementById('legalModalBody').innerHTML = data.content;
+    document.getElementById('legalModalTitle').textContent = copy.title || fallback.title;
+    document.getElementById('legalModalBody').innerHTML = `${warning}${body}`;
 
     legalModal.classList.add('open');
     legalModal.setAttribute('aria-hidden', 'false');
@@ -1867,6 +1876,7 @@ async function applyPublishedAdminContent() {
     }
 
     if (published.settings) {
+      if (published.settings.legalDocuments) publishedLegalDocuments = published.settings.legalDocuments;
       const metaTranslations = LANGUAGE_COPY[selectedLanguage] || {};
       const previousDefaultTitle = 'RSTechwerk – Software Development & Technology Solutions | rstechwerk.com';
       const previousDefaultDescription = 'RSTechwerk turns ideas into reliable digital products—from discovery and UI/UX design to full-stack engineering, cloud deployment, and ongoing maintenance for German and European businesses.';

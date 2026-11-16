@@ -405,6 +405,7 @@
               </div>
             </div>
           </div>
+
         </section>
 
         <!-- ====================================================================
@@ -1388,6 +1389,54 @@
               </form>
             </div>
           </div>
+
+          <div class="content-box" style="margin-top:1.25rem;">
+            <div class="box-header">
+              <div>
+                <h2 class="box-title">Legal document templates</h2>
+                <p class="box-subtitle">Editable English, German and Spanish starter text for the public legal pages and a private client DPA appendix. All entries start as drafts with replaceable placeholders.</p>
+              </div>
+              <span class="status-chip warning">Draft templates</span>
+            </div>
+            <div class="multilingual-help" style="margin-bottom:1rem;">These are demonstration templates, not legal advice. Replace every bracketed item, remove sections that do not apply, confirm your vendors and business facts, and ask a qualified adviser to review before marking a language version reviewed.</div>
+            <div class="form-grid two-col">
+              <div class="form-group">
+                <label class="form-label" for="legalDocumentSelect">Document</label>
+                <select id="legalDocumentSelect" class="form-select">
+                  <option value="impressum">Impressum / Legal Notice</option>
+                  <option value="privacy">Privacy Notice</option>
+                  <option value="terms">Business Terms / Project Terms</option>
+                  <option value="accessibility">Accessibility Statement</option>
+                  <option value="dpa">Client DPA Appendix (private)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="legalDocumentLanguage">Language</label>
+                <select id="legalDocumentLanguage" class="form-select">
+                  <option value="en">English</option>
+                  <option value="de">Deutsch</option>
+                  <option value="es">Español</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="legalDocumentTitle">Page title</label>
+              <input id="legalDocumentTitle" class="form-input" maxlength="180" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="legalDocumentBody">Document text</label>
+              <textarea id="legalDocumentBody" class="form-textarea" rows="18" style="font-family:var(--font-mono);font-size:.82rem;line-height:1.65;"></textarea>
+              <span class="form-help">Use a blank line between paragraphs. Text is rendered safely as plain text; HTML is not accepted.</span>
+            </div>
+            <div class="form-grid two-col" style="align-items:center;">
+              <label class="login-checkbox-label" style="margin:0;">
+                <input id="legalDocumentReviewed" type="checkbox" />
+                <span>Mark this language version reviewed and ready to publish</span>
+              </label>
+              <button type="button" class="btn btn-primary" id="saveLegalDocumentBtn">Save legal document</button>
+            </div>
+            <p class="form-help" id="legalDocumentStatus" role="status" aria-live="polite"></p>
+          </div>
         </section>
 
         <!-- ====================================================================
@@ -1849,6 +1898,7 @@
 
     <div class="client-edit-modal" id="clientEditModal" aria-hidden="true"><div class="client-edit-modal-backdrop" data-close-client-modal></div><div class="client-edit-modal-dialog" role="dialog" aria-modal="true" aria-label="Edit client profile"><button type="button" class="client-edit-modal-close" data-close-client-modal aria-label="Close">×</button><iframe id="clientEditFrame" title="Edit client profile"></iframe></div></div>
     <!-- Shared language dictionary, used to seed the multilingual editor -->
+    <script src="/legal-templates.js"></script>
     <script type="module" src="/script.js"></script>
     <!-- Admin Script -->
     <script src="/admin.js"></script>
